@@ -1,6 +1,9 @@
 {
   "name": "meowmeow-bit",
   "type": "commonjs",
+  "engines": {
+    "node": ">=14.15.1"
+  },
   "version": "0.0.1",
   "description": "A decentralized social network that mainly focuses on you.",
   "main": "app.js",
