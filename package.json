@@ -1,0 +1,18 @@
+{
+  "name": "meowmeow-bit",
+  "type": "commonjs",
+  "version": "0.0.1",
+  "description": "A decentralized social network that mainly focuses on you.",
+  "main": "app.js",
+  "scripts": {
+    "app": "node src/app"
+  },
+  "keywords": [
+    "decentralized",
+    "decentralization",
+    "social",
+    "torrent"
+  ],
+  "author": "SysError99",
+  "license": "MIT"
+}
