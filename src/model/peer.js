@@ -2,7 +2,7 @@ const Net = require('net')
 const SymmetricKey = require('./key.symmetric')
 /** 
  * Peer object
- * @param {{ip: string, port: number, pub: string, key: SymmetricKey, knowMyKey: boolean, method: string, socket: Net.Socket}} data JSON
+ * @param {{ip: string, port: number, pub: string, key: SymmetricKey, method: string, socket: Net.Socket}} data JSON
  */
 const Peer = function(data){
     /** This object */
@@ -17,8 +17,6 @@ const Peer = function(data){
     this.pub = ''
     /** @type {SymmetricKey} Peer Symmetric key*/
     this.key = null
-    /** @type {boolean} Is peer already know my symmetric key?*/
-    this.knowMyKey = false
     /** @type {string} Public key handler method*/
     this.method = ''
     /** @type {Net.Socket} Network socket*/

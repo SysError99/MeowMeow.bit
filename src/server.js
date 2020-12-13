@@ -96,10 +96,9 @@ const Server = function(callback){
          * Send message to peer
          * @param {Peer} peer Target peer
          * @param {Object|string} message Message to be sent
-         * @param {boolean} reset Reset symmetric key?
          * @returns {Promise<Result>} Result object
          */
-        send: function(peer, message, reset){
+        send: function(peer, message){
             return new Promise(function(resolve){
                 let socket = Net.createConnection({
                     host: peer.ip,
@@ -113,7 +112,9 @@ const Server = function(callback){
                     }
                     /** @type {string|null} */
                     let payload = ''
+                    let peerKnowMyKey = true
                     if(peer.key === null){
+                        peerKnowMyKey = false
                         peer.key = new SymmetricKey()
                         payload += Crypt.public.encrpyt(JSON.stringify(peer.key.export()), peer.pub) + '\n'
                     }
@@ -132,6 +133,7 @@ const Server = function(callback){
                         }catch(e){
                             console.error('E -> Server.peer.send: error while encrypting: ' + e)
                             payload = null
+                            return
                         }
                     }else{
                         resolve(new Result({
@@ -148,7 +150,6 @@ const Server = function(callback){
                             socket.destroy()
                     })
                     socket.on('end', function(){
-                        peer.knowMyKey = true
                         if(received === ''){
                             resolve(new Result({
                                 message: 'Server responded with nothing'
@@ -175,7 +176,7 @@ const Server = function(callback){
                         }))
                     })
                     if(payload !== null)
-                        socket.end(payload + (typeof reset === 'boolean' ? (reset ? '\n' : '') : ''))
+                        socket.end(payload + (!peerKnowMyKey? '\n' : ''))
                     else{
                         console.error('E -> Server.send: Invalid data type')
                         resolve(new Result({
@@ -286,7 +287,7 @@ const Server = function(callback){
             setTimeout(_this.start,1000)
         }
     }
-    
+
     if(typeof callback === 'function') {
         _this.key.load()
         _this.start()
