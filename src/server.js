@@ -104,17 +104,16 @@ const Server = function(callback){
                     host: peer.ip,
                     port: peer.port
                 }, function(){
+                    let decrypted = null
+                    let payload = ''
+                    let received = ''   
                     if(peer.pub === ''){
                         resolve(new Result({
                             message: 'Don\'t know target public key, can\'t communicate safely'
                         }))
                         return
                     }
-                    /** @type {string|null} */
-                    let payload = ''
-                    let peerKnowMyKey = true
                     if(peer.key === null){
-                        peerKnowMyKey = false
                         peer.key = new SymmetricKey()
                         payload += Crypt.public.encrpyt(JSON.stringify(peer.key.export()), peer.pub) + '\n'
                     }
@@ -141,7 +140,6 @@ const Server = function(callback){
                         }))
                         return
                     }
-                    let received = ''
                     socket.setEncoding('utf-8')
                     socket.on('data', function(chunk){
                         if(received.length <= _.MAX_PAYLOAD)
@@ -150,21 +148,23 @@ const Server = function(callback){
                             socket.destroy()
                     })
                     socket.on('end', function(){
+                        socket.destroy()
                         if(received === ''){
+                            peer.reset()
                             resolve(new Result({
-                                message: 'Server responded with nothing'
+                                message: 'Connection declined by target peer, please try again.'
                             }))
                             return
                         }
-                        /** @type {Object} */
-                        let decrypted
                         try{
                             decrypted = JSON.parse(peer.key.decrypt(received))
                         }catch(e){
                             console.error('E -> Server.peer.send: Received: While parse: ' + e)
-                            decrypted = received
+                            resolve(new Result({
+                                message: 'Data received is corrupted, maybe the connection was hijacked.'
+                            }))
+                            return
                         }
-                        socket.destroy()
                         resolve(new Result({
                             success: true,
                             data: decrypted
@@ -176,7 +176,7 @@ const Server = function(callback){
                         }))
                     })
                     if(payload !== null)
-                        socket.end(payload + (!peerKnowMyKey? '\n' : ''))
+                        socket.end(payload)
                     else{
                         console.error('E -> Server.send: Invalid data type')
                         resolve(new Result({
@@ -218,11 +218,9 @@ const Server = function(callback){
     }
 
     /** @type {Net.Server} TCP server*/
-    let server = Net.createServer(
-        {
-            allowHalfOpen:true
-        },
-    function(socket){
+    let server = Net.createServer({
+        allowHalfOpen:true
+    }, function(socket){
         let addr = socket.address()
         let peerProperties = {
             ip: addr.address,
@@ -246,14 +244,15 @@ const Server = function(callback){
             body = body.split('\n')
             if(body.length === 1)
                 decryptIndex = 0
-            else if(body[0].length > 0){ // decrypt a key
-                if(peer.key === null || body.length === 3){ // no key or key changing request
-                    try{
-                        peer.key = new SymmetricKey(JSON.parse(_this.key.current.decrypt(body[0])))
-                    }catch(e){
-                        console.error('E -> Server.on(\'end\'): while decrypting [0]: ' + e)
-                    }
+            else if(body.length === 2){
+                try{
+                    peer.key = new SymmetricKey(JSON.parse(_this.key.current.decrypt(body[0])))
+                }catch(e){
+                    console.error('E -> Server.on(\'end\'): while decrypting [0]: ' + e)
                 }
+            }else{
+                _this.response(peer)
+                return
             }
             if(peer.key === null){
                 _this.response(peer)
