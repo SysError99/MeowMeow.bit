@@ -47,7 +47,6 @@ const Peer = function(data){
             ip: _this.ip,
             port: _this.port,
             pub: _this.pub,
-            key: _this.key !== null ? _this.key.export() : null
         }
     }
     if(typeof data === 'object') this.import(data)
