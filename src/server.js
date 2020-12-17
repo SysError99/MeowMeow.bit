@@ -171,6 +171,7 @@ const Server = function(callback){
                         }))
                     })
                     socket.on('error', function(err){
+                        console.error('E -> Server.peer.send: Error during connection: ' + err.message)
                         resolve(new Result({
                             message: 'Error occured during connection: ' + err.message
                         }))
