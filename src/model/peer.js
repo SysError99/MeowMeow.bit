@@ -17,15 +17,10 @@ const Peer = function(data){
     this.pub = ''
     /** @type {SymmetricKey} Peer Symmetric key*/
     this.key = null
+    /** @type {number} Peer quality indicator*/
+    this.quality = 5
     /** @type {Net.Socket} Network socket*/
     this.socket = null
-    /**
-     * Reset connection parameters
-     */
-    this.reset = function(){
-        _this.key = null
-        _this.socket = null
-    }
     /**
      * Import from JSON
      * @param {Object} d JSON object
