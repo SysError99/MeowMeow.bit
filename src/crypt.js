@@ -43,6 +43,7 @@ const private = {
      * @returns {string} Encrpyted string.
      */
     encrpyt: function(str, key, password){
+        if(str === '') return ''
         return Crypto.privateEncrypt({
             key: key,
             passphrase: (typeof password === 'string') ? password : ''
@@ -56,6 +57,7 @@ const private = {
      * @returns {string} Decrpyted string.
      */
     decrypt: function(str, key, password){
+        if(str === '') return ''
         return Crypto.privateDecrypt({
             key: key,
             passphrase: (typeof password === 'string') ? password : ''
@@ -71,6 +73,7 @@ const public = {
      * @returns {string} Encrpyted string.
      */
     encrpyt: function(str, key){
+        if(str === '') return ''
         return Crypto.publicEncrypt(key, Buffer.from(str,'utf8')).toString('base64')
     },
     /**
@@ -80,6 +83,7 @@ const public = {
      * @returns {string} Decrpyted string.
      */
     decrypt: function(str, key){
+        if(str === '') return ''
         return Crypto.publicDecrypt(key, Buffer.from(str, 'base64')).toString('utf8')
     }
 }
@@ -93,6 +97,7 @@ const symmetric = {
      * @returns {string} Encrypted string
      */
     encrypt: function(str, key, iv){
+        if(str === '') return ''
         let cipherIv = Crypto.createCipheriv('aes-256-gcm', key, iv)
         let cipher = cipherIv.update(str)
         return Buffer.concat([cipher,cipherIv.final()]).toString('base64')
@@ -105,6 +110,7 @@ const symmetric = {
      * @returns {string} Decrypted string
      */
     decrypt: function(str, key, iv){
+        if(str === '') return ''
         let encrypted = Buffer.from(str, 'base64')
         return Crypto.createDecipheriv('aes-256-gcm', key, iv).update(encrypted).toString('utf-8')
     }
