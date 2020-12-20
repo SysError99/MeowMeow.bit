@@ -1,6 +1,6 @@
 /** 
  * Result object.
- * @param {{success: boolean, message: string}} data JSON
+ * @param {{success: boolean, message: string, data:any}} data JSON
  */
 const Result = function(data){
     /** This object */
