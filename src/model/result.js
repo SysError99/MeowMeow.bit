@@ -19,7 +19,7 @@ const Result = function(data){
      */
     this.import = function(d){
         if(typeof d !== 'object') return
-        if(typeof d.data === 'object') _this.data = d.data
+        if(typeof d.data !== 'undefined') _this.data = d.data
         if(typeof d.message === 'string') _this.message = d.message
         if(typeof d.success === 'boolean') _this.success = d.success
     }
