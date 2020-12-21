@@ -6,6 +6,9 @@ const Locale = require('../locale')
 module.exports = function(locale){
     locale.current = 'en'
 
+    locale.str.file.readErr = 'Error while reading a file: '
+    locale.str.file.writeErr = 'Error while writing a file: '
+
     locale.str.json.parseErr = 'Error while converting JSON to string: '
 
     locale.str.paramInvalid = 'Invalid parameter.'

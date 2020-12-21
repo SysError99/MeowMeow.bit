@@ -16,6 +16,10 @@ const Locale = function(f){
     }
     /** List of locale */
     this.str = {
+        file: {
+            readErr: '',
+            writeErr: ''
+        },
         json: {
             parseErr: '',
             stringifyErr: ''
