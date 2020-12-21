@@ -17,9 +17,9 @@ This project is still under development. Many core features are still missing.
 - Direct Message.
 - Discover places from trackers.
 - Personal place for your posts.
-- Public place for public posts, under your control.
+- Public places for public posts, under your control.
 
 ## Not-promised features, but maybe I will implement them later
 - Digital contract for transactions.
-- Reputation, to check place transparency.
+- Reputation, to check user's transparency.
 - Tor support for anonymity.
