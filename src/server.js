@@ -1,7 +1,6 @@
 /**
  * Micro HTTP server, with basic stuffs.
  */
-const FileSystem = require('fs')
 const Net = require('net')
 
 const _ = require('./const')
@@ -13,9 +12,7 @@ const Result = require('./model/result')
 const SymmetricKey = require('./model/key.symmetric')
 
 const locale = new Locale()
-const paramInvalid = new Result({
-    message: locale.str.paramInvalid
-})
+const paramInvalid = new Result({message: locale.str.paramInvalid})
 const storage = require('./storage')(locale)
 
 /**
@@ -109,7 +106,8 @@ const Server = function(callback){
          */
         load: function(location){
             try{
-                _this.key.current = new AsymmetricKey(JSON.parse(FileSystem.readFileSync(typeof location === 'string' ? location : _.KEY.LOCATION, {encoding: 'utf-8'})))
+                let keyRead = storage.read(typeof location === 'string' ? location : _.KEY.LOCATION)
+                if(keyRead.success) _this.key.current = new AsymmetricKey(keyRead.data)
             }catch{
                 console.log('W -> Server.Create: It seems like you don\'t have any active key, creating a new one.')
                 _this.key.new()
@@ -123,9 +121,10 @@ const Server = function(callback){
         new: function(location, password){
             _this.key.current = new AsymmetricKey((typeof password === 'string') ? password : '')
             try{
-                FileSystem.writeFileSync(typeof location === 'string' ? location : _.KEY.LOCATION, JSON.stringify(_this.key.current.export()))
-            }catch(ee){
-                console.error('E -> Server.key.new: Can\'t save new key file, ' + ee)
+                let keyWrite = storage.write(typeof location === 'string' ? location : _.KEY.LOCATION, _this.key.current.export())
+                if(!keyWrite.success) throw keyWrite.message
+            }catch(e){
+                console.error('E -> Server.key.new: Can\'t save new key file, ' + e)
             }
         }
     }
