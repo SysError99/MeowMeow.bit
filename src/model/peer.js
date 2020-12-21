@@ -30,7 +30,12 @@ const Peer = function(data){
         if(typeof d.ip === 'string') _this.ip = d.ip
         if(typeof d.port === 'number') _this.port = d.port
         if(typeof d.pub === 'string') _this.pub = d.pub
-        if(typeof d.key === 'object') _this.key = new SymmetricKey(d.key)
+        if(typeof d.key === 'object') {
+            if(d.key instanceof SymmetricKey)
+                _this.key = d.key
+            else
+                _this.key = new SymmetricKey(d.key)
+        }
         if(typeof d.socket === 'object') _this.socket = d.socket
     }
     /**
