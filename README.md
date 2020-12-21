@@ -15,11 +15,11 @@ This project is still under development. Many core features are still missing.
 - Basic interactions (like, comment, and share)
 - Content filtering.
 - Direct Message.
-- Discover boards from trackers.
-- Personal board for your posts.
-- Public board for public posts, under your control.
+- Discover places from trackers.
+- Personal place for your posts.
+- Public place for public posts, under your control.
 
 ## Not-promised features, but maybe I will implement them later
-- Board reputation, to check board transparency.
 - Digital contract for transactions.
+- Reputation, to check place transparency.
 - Tor support for anonymity.
