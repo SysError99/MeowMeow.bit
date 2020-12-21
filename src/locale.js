@@ -5,6 +5,8 @@
 const Locale = function(f){
     /** This object */
     let _this = this
+    /** @type {string} Currently used locale*/
+    this.current = ''
     /**
      * Change locale with the function.
      * @param {function} fn 

@@ -4,6 +4,8 @@ const Locale = require('../locale')
  * @param {Locale} locale Locale object
  */
 module.exports = function(locale){
+    locale.current = 'en'
+
     locale.str.json.parseErr = 'Error while converting JSON to string: '
 
     locale.str.paramInvalid = 'Invalid parameter.'
