@@ -1,8 +1,7 @@
 const _ = require('./const')
-const Acc = require('./model/acc')
 /** Blocked lists*/
 const blocked = {
-    /** @type {Acc[]} Blocked account lists*/
+    /** @type {string[]} Blocked account lists*/
     acc: [],
     /** @type {string[]} Blocked words*/
     word: []
@@ -24,13 +23,7 @@ module.exports = {
      */
     import: function(d){
         if(typeof d.blocked === 'object'){
-            if(Array.isArray(d.blocked.acc)){
-                d.blocked.acc.forEach(function(el){
-                    if(typeof el !== 'object') return
-                    if(el.isAcc) blocked.acc.push(el)
-                    else blocked.acc.push(new Acc(el))
-                })
-            }
+            if(Array.isArray(d.blocked.acc)) blocked.acc = d.blocked.acc
             if(Array.isArray(d.blocked.word)) blocked.word = d.blocked.word
         }
         if(typeof d.limit === 'object'){
@@ -43,16 +36,8 @@ module.exports = {
      * @returns {Object} JSON
      */
     export: function(){
-        /** @type {Acc[]}*/
-        let accs = []
-        blocked.acc.forEach(function(el){
-            accs.push(el.export())
-        })
         return {
-            blocked: {
-                acc: accs,
-                word: blocked.word
-            },
+            blocked: blocked,
             limit: limit
         }
     }
