@@ -16,6 +16,7 @@ const locale = new Locale()
 const paramInvalid = new Result({
     message: locale.str.paramInvalid
 })
+const storage = require('./storage')(locale)
 
 /**
  * Send data to target
