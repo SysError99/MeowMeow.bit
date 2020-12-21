@@ -60,6 +60,14 @@ const AsymmetricKey = function(data){
             public: _this.public
         }
     }
+    /**
+     * Export only public key to JSON
+     */
+    this.exportPub = function(){
+        return {
+            public: _this.public
+        }
+    }
     if(typeof data === 'object') this.import(data)
     else if(typeof data === 'string') this.newKey(data)
     else this.newKey('')
