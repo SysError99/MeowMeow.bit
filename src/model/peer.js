@@ -31,7 +31,7 @@ const Peer = function(data){
         if(typeof d.port === 'number') _this.port = d.port
         if(typeof d.pub === 'string') _this.pub = d.pub
         if(typeof d.key === 'object') {
-            if(d.key instanceof SymmetricKey)
+            if(d.key.isSymmetricKey)
                 _this.key = d.key
             else
                 _this.key = new SymmetricKey(d.key)
