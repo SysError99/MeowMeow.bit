@@ -32,7 +32,7 @@ const Acc = function(data){
     /** @type {number} Number of posts*/
     this.posts = 0
     
-    /** @type {boolean} Is this a public place? (Anyone can write to this account)*/
+    /** @type {boolean} Is this a public account? (Anyone can write to this account)*/
     this.public = false
 
     /** @type {string[]} List of tag for searching*/
