@@ -1,9 +1,10 @@
 /**
- * Micro web server framework.
+ * Express.js-like micro web server framework.
  * 
  * By SysError99, Licensed with MIT
  */
 const HTTP = require('http')
+const { type } = require('os')
 
 /**
  * @callback RequestCallback
@@ -36,8 +37,8 @@ const WebRequest = function(req,d){
      * Import JSON
      */
     let _import = function(){
-        if(Array.isArray(d.params)) _this.params = d.params
-        if(Array.isArray(d.query)) _this.query = d.query
+        if(typeof d.params === 'object') _this.params = d.params
+        if(typeof d.query === 'object')  _this.query = d.query
     }
     if(typeof d === 'object') _import()
 }
@@ -116,29 +117,27 @@ const WebEvent = function(d){
     this.method = 'get'
     /** @type {string[]} URL parameters*/
     this.params = []
+
     /**
      * Import JSON
      */
     let _import = function(){
         if(typeof d.callback === 'function') _this.callback = d.callback
         if(typeof d.method === 'string') _this.method = d.method.toLowerCase()
-        if(typeof d.params === 'string') {
-            let paramExtract = d.params.split('/')
-            paramExtract.splice(0,1)
-            _this.params = paramExtract
-        }
+        if(typeof d.params === 'string') _this.params = d.params.split('/')
     }
-    if(typeof d === 'object') _import
+    if(typeof d === 'object') _import()
 }
 
 /**
  * Add event to stack
+ * @param {WebEvent[]} event Event array
  * @param {RequestCallback} callback Callback function for this event
  * @param {string} method HTTP method for this event
  * @param {string} params URL parameters for this event
  */
-let webEventAdd = function(callback, method, params){
-    _this.event.push(new WebEvent({
+let webEventAdd = function(event, callback, method, params){
+    event.push(new WebEvent({
         callback, callback,
         method: method,
         params: params
@@ -157,13 +156,29 @@ const Web = function(d){
     /** @type {boolean} This is 'Web' object*/
     this.isWeb = true
 
+    /** @type {WebEvent} 404 Error event*/
+    let ev404 = null
+
+    /** @type {WebEvent[]} List of app events*/
+    let event = []
+
+    /**
+     * Add 'GET' event handler
+     * @param {RequestCallback} callback Callback function for this request
+     */
+    this.ev404 = function(callback){
+        ev404 = new WebEvent({
+            callback, callback
+        })
+    }
+
     /**
      * Add 'GET' event handler
      * @param {string} params URL scheme for this request
      * @param {RequestCallback} callback Callback function for this request
      */
     this.get = function(params, callback){
-        webEventAdd(params,'get',callback)
+        webEventAdd(event,callback,'get',params)
     }
 
     /**
@@ -172,7 +187,7 @@ const Web = function(d){
      * @param {RequestCallback} callback Callback function for this request
      */
     this.post = function(params, callback){
-        webEventAdd(params,'post',callback)
+        webEventAdd(event,callback,'post',params)
     }
 
     /**
@@ -181,7 +196,7 @@ const Web = function(d){
      * @param {RequestCallback} callback Callback function for this request
      */
     this.put = function(params, callback){
-        webEventAdd(params,'put',callback)
+        webEventAdd(event,callback,'put',params)
     }
     /**
      * Add 'DELETE' event handler
@@ -189,14 +204,11 @@ const Web = function(d){
      * @param {RequestCallback} callback Callback function for this request
      */
     this.delete = function(params,callback){
-        webEventAdd(params,'delete',callback)
+        webEventAdd(event,callback,'delete',params)
     }
 
     /** @type {number} Server port*/
     this.port = 1024
-
-    /** @type {WebEvent[]} List of events*/
-    let event = []
 
     /**
      * Build a server
@@ -211,9 +223,10 @@ const Web = function(d){
             req.on('end', function(){
                 let url = req.url.split('?')
                 let params = url[0].split('/')
-                let query = url[1].split('&')
+                let query = null
+                if(url.length > 1) query = url[1].split('&')
                 for(let ev=0; ev<event.length; ev++){
-                    let notThis = false
+                    let notThisEvent = false
                     let webEvent = event[ev]
                     let webParams = {}
                     let webQuery = {}
@@ -221,27 +234,32 @@ const Web = function(d){
                     if(webEvent.params.length !== params.length) continue
                     for(let p=0; p<params.length; p++){
                         let webEventParam = webEvent.params[p]
-                        if(webEventParam[0] === ':'){
+                        if(webEventParam[0] === ':' && webEventParam.length > 1){
                             let webEventParamName = webEventParam.slice(1,webEventParam.length)
                             webParams[webEventParamName] = params[p]
-                        }else if(webEventParam !== params[p]){
-                            notThis = true
+                            continue
+                        }
+                        if(webEventParam !== params[p]){
+                            notThisEvent = true
                             continue
                         }
                     }
-                    if(notThis) continue
-                    for(let q=0; q<query.length; q++){
-                        let elQuery = query[q].split('=')
-                        webQuery[elQuery[0]] = webQuery[elQuery[1]]
-                    }
+                    if(notThisEvent) continue
+                    if(query !== null)
+                        for(let q=0; q<query.length; q++){
+                            let elQuery = query[q].split('=')
+                            if(elQuery.length === 1) webQuery[elQuery[0]] = true
+                            else webQuery[elQuery[0]] = elQuery[1]
+                        }
                     webEvent.callback(new WebRequest(req,{
-                        header: req.headers,
                         params: webParams,
                         query: webQuery,
                         body: body
                     }), new WebResponse(res))
-                    break
+                    return
                 }
+                if(ev404 !== null) ev404.callback(new WebRequest(req), new WebResponse(res))
+                else res.writeHead(404).end('Not found.')
             })
             req.on('error', function(err){
                 console.error('E -> http.on(\'error\'): ' + err.message)
@@ -257,5 +275,6 @@ const Web = function(d){
         _server()
     }
     if(typeof d === 'object') _import()
+    else _server()
 }
 module.exports = Web
