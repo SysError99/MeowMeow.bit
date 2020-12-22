@@ -83,7 +83,7 @@ const sendMessage = function(params){
 /**
  * @callback RequestFunction
  * @param {Peer} peer Peer object
- * @param {Object} data Data object
+ * @param {any[]} data Data object
  */
 /**
  * HTTP server object.
@@ -263,9 +263,8 @@ const Server = function(callback){
         let socketStr = ''
         try{
             if(typeof data === 'object') socketStr = JSON.stringify(data)
-            else if(typeof data === 'string') socketStr = data
             if(peer.key !== null) socketStr = peer.key.encrypt(socketStr)
-            else if(socketStr !== '') socketStr = ''
+            else socketStr = ''
         }catch(e){
             console.error('E -> Server.response: ' + e)
             socketStr = ''
@@ -307,7 +306,12 @@ const Server = function(callback){
                 return
             }
             try{
-                callback(peer, JSON.parse(peer.key.decrypt(body)))
+                body = JSON.parse(peer.key.decrypt(body))
+                if(!Array.isArray(body)){
+                    _this.response(peer)
+                    return
+                }
+                callback(peer, body)
             }catch{
                 _this.response(peer)
                 peer.key = null
