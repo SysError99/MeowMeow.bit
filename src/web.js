@@ -148,7 +148,7 @@ let webEventAdd = function(callback, method, params){
 /**
  * Micro web server
  * @param {{
- * 
+ * port:string
  * }} d JSON properties
  */
 const Web = function(d){
