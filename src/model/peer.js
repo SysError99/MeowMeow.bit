@@ -2,9 +2,9 @@ const Net = require('net')
 const SymmetricKey = require('./key.symmetric')
 /** 
  * Peer object
- * @param {{ip: string, port: number, pub: string, key: SymmetricKey, socket: Net.Socket}} data JSON
+ * @param {{ip: string, port: number, pub: string, key: SymmetricKey, socket: Net.Socket}} d JSON
  */
-const Peer = function(data){
+const Peer = function(d){
     /** This object */
     let _this = this
     /** @type {boolean} This is 'Peer' object*/
@@ -22,10 +22,9 @@ const Peer = function(data){
     /** @type {Net.Socket} Network socket*/
     this.socket = null
     /**
-     * Import from JSON
-     * @param {Object} d JSON object
+     * Import JSON
      */
-    this.import = function(d){
+    let _import = function(){
         if(typeof d !== 'object') return
         if(typeof d.ip === 'string') _this.ip = d.ip
         if(typeof d.port === 'number') _this.port = d.port
@@ -42,6 +41,6 @@ const Peer = function(data){
             pub: _this.pub,
         }
     }
-    if(typeof data === 'object') this.import(data)
+    if(typeof d === 'object') _import()
 }
 module.exports = Peer

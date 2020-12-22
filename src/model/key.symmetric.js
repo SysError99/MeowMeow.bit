@@ -1,9 +1,9 @@
 const Crypt = require('../crypt')
 /**
  * Symmetric key object
- * @param {string|Object} data JSON or string
+ * @param {string|Object} d JSON or string
  */
-const SymmetricKey = function(data){
+const SymmetricKey = function(d){
     /** This object*/
     let _this = this
     /** @type {boolean} This is 'SymmetricKey' object*/
@@ -12,14 +12,6 @@ const SymmetricKey = function(data){
     this.key = null
     /** @type {Buffer} IV buffer*/
     this.iv = null
-    /**
-     * Create a new key for this object
-     */
-    this.new = function(){
-        let newKey = Crypt.newKey.symmetric()
-        _this.key = newKey[0]
-        _this.iv = newKey[1]
-    }
     /**
      * Encrypt a string
      * @param {string} str String to be encrpyted
@@ -37,10 +29,17 @@ const SymmetricKey = function(data){
         return Crypt.symmetric.decrypt(str, _this.key, _this.iv)
     }
     /**
-     * Import JSON
-     * @param {string|Object} d JSON or string
+     * Create a new key for this object
      */
-    this.import = function(d){
+    let _new = function(){
+        let newKey = Crypt.newKey.symmetric()
+        _this.key = newKey[0]
+        _this.iv = newKey[1]
+    }
+    /**
+     * Import JSON
+     */
+    let _import = function(){
         if(typeof d === 'string'){
             let keyArr = d.split(',')
             if(keyArr.length === 2){
@@ -49,7 +48,7 @@ const SymmetricKey = function(data){
             }
             return
         }
-        else if(typeof d !== 'object') return
+        if(typeof d !== 'object') return
         if(typeof d.key === 'string'){
             try{
                 _this.key = Buffer.from(d.key, 'hex')
@@ -75,9 +74,7 @@ const SymmetricKey = function(data){
             iv: _this.iv.toString('hex')
         }
     }
-    if(typeof data === 'object')
-        this.import(data)
-    else
-        this.new()
+    if(typeof d === 'object') _import()
+    else _new()
 }
 module.exports = SymmetricKey

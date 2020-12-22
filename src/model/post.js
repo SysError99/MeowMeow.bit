@@ -1,9 +1,9 @@
 const Peer = require('./peer')
 /**
  * Post object
- * @param {Object} data JSON
+ * @param {Object} d JSON
  */
-const Post = function(data){
+const Post = function(d){
     /** This object*/
     let _this = this
     /** @type {boolean} This is 'Post' object*/
@@ -41,10 +41,9 @@ const Post = function(data){
     this.text = ''
 
     /**
-     * Import data to object
-     * @param {Object} d JSON
+     * Import d to object
      */
-    this.import = function(d){
+    let _import = function(){
         if(typeof d !== 'object') return
         if(Array.isArray(d.comment)){
             d.comment.forEach(function(el){
@@ -97,6 +96,6 @@ const Post = function(data){
             text: _this.text,
         }
     }
-    if(typeof data === 'object') this.import(data)
+    if(typeof d === 'object') _import()
 }
 module.exports = Post

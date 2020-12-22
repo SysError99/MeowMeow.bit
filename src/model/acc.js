@@ -1,9 +1,9 @@
 const AsymmetricKey = require("./key.asymmetric")
 /**
  * Account object
- * @param {Object} data JSON
+ * @param {Object} d JSON
  */
-const Acc = function(data){
+const Acc = function(d){
     /** This object*/
     let _this = this
     /** @type {boolean} This is 'Account' object*/
@@ -42,10 +42,9 @@ const Acc = function(data){
     this.tag = []
 
     /**
-     * Import data to object
-     * @param {Object} d JSON
+     * Import JSON
      */
-    this.import = function(d){
+    let _import = function(){
         if(typeof d !== 'object') return
         if(typeof d.description === 'string') _this.description = d.description
         if(Array.isArray(d.follower)) _this.follower = d.follower
@@ -64,14 +63,13 @@ const Acc = function(data){
         if(Array.isArray(d.tag)) _this.tag = d.tag
     }
     /**
-     * Export data to object
-     * @returns {Object} JSON
+     * Export base
      */
-    this.export = function(){
+    let exportBase = function(){
         return {
             description: _this.description,
             follower: _this.follower,
-            key: _this.key.export(),
+            key: null,
             name: _this.name,
             pic: _this.pic,
             posts: _this.posts,
@@ -80,6 +78,23 @@ const Acc = function(data){
             tag: _this.tag
         }
     }
-    if(typeof data === 'object') this.import(data)
+    /**
+     * Export to JSON
+     * @returns {Object} JSON
+     */
+    this.export = function(){
+        let e = exportBase()
+        e.key = _this.key.export()
+        return e
+    }
+    /**
+     * Export to JSON
+     */
+    this.exportPub = function(){
+        let e = exportBase()
+        e.key = _this.key.exportPub()
+        return e
+    }
+    if(typeof d === 'object') _import(d)
 }
 module.exports = Acc

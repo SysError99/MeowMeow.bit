@@ -1,9 +1,9 @@
 const Crypt = require('../crypt')
 /**
  * Asymmetric key object.
- * @param {Object|string} data JSON or string for new key (passphrase)
+ * @param {Object|string} d JSON or string for new key (passphrase)
  */
-const AsymmetricKey = function(data){
+const AsymmetricKey = function(d){
     /** This object*/
     let _this = this
     /** @type {boolean} This is 'AsymmetricKey' object*/
@@ -33,7 +33,7 @@ const AsymmetricKey = function(data){
      * Generate a new key
      * @param {string} password Passphrase for this key
      */
-    this.newKey = function(password){
+    let _newKey = function(password){
         let newKey = Crypt.newKey.asymmetric(password)
         _this.password = password
         _this.private = newKey.privateKey
@@ -41,9 +41,8 @@ const AsymmetricKey = function(data){
     }
     /**
      * Import JSON
-     * @param {Object} d JSON
      */
-    this.import = function(d){
+    let _import = function(){
         if(typeof d !== 'object') return
         if(typeof d.password === 'string') _this.password = d.password
         if(typeof d.private === 'string') _this.private = d.private
@@ -68,8 +67,8 @@ const AsymmetricKey = function(data){
             public: _this.public
         }
     }
-    if(typeof data === 'object') this.import(data)
-    else if(typeof data === 'string') this.newKey(data)
-    else this.newKey('')
+    if(typeof d === 'object') _import()
+    else if(typeof d === 'string') _newKey(d)
+    else _newKey('')
 }
 module.exports = AsymmetricKey

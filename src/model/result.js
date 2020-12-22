@@ -1,8 +1,8 @@
 /** 
  * Result object.
- * @param {{success: boolean, message: string, data:any}} data JSON
+ * @param {{success: boolean, message: string, data:any}} d JSON
  */
-const Result = function(data){
+const Result = function(d){
     /** This object */
     let _this = this
     /** @type {boolean} This is 'Result' object*/
@@ -14,17 +14,16 @@ const Result = function(data){
     /** @type {boolean} Is this result success?*/
     this.success = false
     /**
-     * Import data to result.
-     * @param {Object} d JSON
+     * Import JSON
      */
-    this.import = function(d){
+    let _import = function(){
         if(typeof d !== 'object') return
         if(typeof d.data !== 'undefined') _this.data = d.data
         if(typeof d.message === 'string') _this.message = d.message
         if(typeof d.success === 'boolean') _this.success = d.success
     }
     /**
-     * Export data to JSON object
+     * Export to JSON
      * @returns {Object} JSON
      */
     this.export = function(){
@@ -34,6 +33,6 @@ const Result = function(data){
             success: _this.success
         }
     }
-    if(typeof data === 'object') this.import(data)
+    if(typeof d === 'object') _import()
 }
 module.exports = Result
