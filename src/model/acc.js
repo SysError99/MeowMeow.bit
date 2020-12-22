@@ -15,6 +15,9 @@ const Acc = function(data){
     /** @type {string[]} List of followers (identified with a public key)*/
     this.follower = []
 
+    /** @type {string[]} List of following (identified by a public key)*/
+    this.following = []
+
     /** @type {AsymmetricKey} Asymmetric key to be used*/
     this.key = null
 
