@@ -31,9 +31,6 @@ const Acc = function(data){
 
     /** @type {number} Number of posts*/
     this.posts = 0
-
-    /** @type {boolean} Is this a private account? (Trackers and your followers will not accept unknown requests)*/
-    this.private = false
     
     /** @type {boolean} Is this a public place? (Anyone can write to this board with filtering)*/
     this.public = false
