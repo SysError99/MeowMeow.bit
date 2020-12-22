@@ -43,7 +43,6 @@ const AsymmetricKey = function(d){
      * Import JSON
      */
     let _import = function(){
-        if(typeof d !== 'object') return
         if(typeof d.password === 'string') _this.password = d.password
         if(typeof d.private === 'string') _this.private = d.private
         if(typeof d.public === 'string') _this.public = d.public

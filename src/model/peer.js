@@ -25,7 +25,6 @@ const Peer = function(d){
      * Import JSON
      */
     let _import = function(){
-        if(typeof d !== 'object') return
         if(typeof d.ip === 'string') _this.ip = d.ip
         if(typeof d.port === 'number') _this.port = d.port
         if(typeof d.pub === 'string') _this.pub = d.pub

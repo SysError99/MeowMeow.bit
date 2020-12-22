@@ -45,7 +45,6 @@ const Acc = function(d){
      * Import JSON
      */
     let _import = function(){
-        if(typeof d !== 'object') return
         if(typeof d.description === 'string') _this.description = d.description
         if(Array.isArray(d.follower)) _this.follower = d.follower
         if(typeof d.key === 'object'){

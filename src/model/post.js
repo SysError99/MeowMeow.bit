@@ -44,7 +44,6 @@ const Post = function(d){
      * Import d to object
      */
     let _import = function(){
-        if(typeof d !== 'object') return
         if(Array.isArray(d.comment)){
             d.comment.forEach(function(el){
                 if(typeof el !== 'object') return

@@ -40,15 +40,6 @@ const SymmetricKey = function(d){
      * Import JSON
      */
     let _import = function(){
-        if(typeof d === 'string'){
-            let keyArr = d.split(',')
-            if(keyArr.length === 2){
-                _this.iv = Buffer.from(keyArr[0], 'base64')
-                _this.key = Buffer.from(keyArr[1], 'base64')
-            }
-            return
-        }
-        if(typeof d !== 'object') return
         if(typeof d.key === 'string'){
             try{
                 _this.key = Buffer.from(d.key, 'hex')
