@@ -33,6 +33,8 @@ const WebRequest = function(req,d){
     this.params = {}
     /** @type {Object} Request URL queries*/
     this.query = {}
+    /** @type {string} Request URL String*/
+    this.url = req.url
     /**
      * Import JSON
      */
@@ -221,36 +223,44 @@ const Web = function(d){
                 body += chunk
             })
             req.on('end', function(){
+                /** @type {number} */
+                let ev
+                /** @type {number} */
+                let p
+                /** @type {boolean} */
+                let thisEvent
+                /** @type {WebEvent} */
+                let webEvent
+                /** @type {string[]} */
+                let webEventParam
+                let webParams
+                let webQuery = {}
                 let url = req.url.split('?')
                 let params = url[0].split('/')
-                let query = null
-                if(url.length > 1) query = url[1].split('&')
-                for(let ev=0; ev<event.length; ev++){
-                    let notThisEvent = false
-                    let webEvent = event[ev]
-                    let webParams = {}
-                    let webQuery = {}
+                if(url.length > 1) {
+                    let query = url[1].split('&')
+                    for(let q=0; q<query.length; q++){
+                        let elQuery = query[q].split('=')
+                        if(elQuery.length === 1) webQuery[elQuery[0]] = true
+                        else webQuery[elQuery[0]] = elQuery[1]
+                    }
+                }
+                for(ev=0; ev<event.length; ev++){
+                    thisEvent = true
+                    webEvent = event[ev]
+                    webEventParam = webEvent.params
+                    webParams = {}
                     if(webEvent.method !== req.method.toLowerCase()) continue
-                    if(webEvent.params.length !== params.length) continue
-                    for(let p=0; p<params.length; p++){
-                        let webEventParam = webEvent.params[p]
-                        if(webEventParam[0] === ':' && webEventParam.length > 1){
-                            let webEventParamName = webEventParam.slice(1,webEventParam.length)
-                            webParams[webEventParamName] = params[p]
-                            continue
-                        }
-                        if(webEventParam !== params[p]){
-                            notThisEvent = true
-                            continue
+                    if(webEventParam.length !== params.length) continue
+                    for(p=0; p<params.length; p++){
+                        if(webEventParam[p][0] === ':' && webEventParam[p].length > 1)
+                            webParams[webEventParam[p].slice(1,webEventParam[p].length)] = params[p]
+                        else if(webEventParam[p] !== params[p]){
+                            thisEvent = false
+                            break
                         }
                     }
-                    if(notThisEvent) continue
-                    if(query !== null)
-                        for(let q=0; q<query.length; q++){
-                            let elQuery = query[q].split('=')
-                            if(elQuery.length === 1) webQuery[elQuery[0]] = true
-                            else webQuery[elQuery[0]] = elQuery[1]
-                        }
+                    if(!thisEvent) continue
                     webEvent.callback(new WebRequest(req,{
                         params: webParams,
                         query: webQuery,
@@ -258,8 +268,9 @@ const Web = function(d){
                     }), new WebResponse(res))
                     return
                 }
-                if(ev404 !== null) ev404.callback(new WebRequest(req), new WebResponse(res))
-                else res.writeHead(404).end('Not found.')
+                if(typeof ev404 === 'object' && ev404 !== null){
+                    if(typeof ev404.callback === 'function') ev404.callback(new WebRequest(req), new WebResponse(res))
+                }else res.writeHead(404).end('Not found.')
             })
             req.on('error', function(err){
                 console.error('E -> http.on(\'error\'): ' + err.message)
