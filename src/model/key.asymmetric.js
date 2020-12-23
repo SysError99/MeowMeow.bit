@@ -14,6 +14,7 @@ const AsymmetricKey = function(d){
      * @returns {string} Decrypted string
      */
     this.decrypt = function(str){
+        if(_this.private === '') return ''
         return Crypt.private.decrypt(str, _this.private, _this.password)
     }
     /**
@@ -21,7 +22,27 @@ const AsymmetricKey = function(d){
      * @param {string} str String to be encrypted
      */
     this.encrypt = function(str){
+        if(_this.public === '') return ''
         return Crypt.public.encrpyt(str, _this.public)
+    }
+    /**
+     * Sign a key using private key
+     * @param {string} str String to be signed
+     * @returns {string} Base64-based signature
+     */
+    this.sign = function(str){
+        if(_this.private === '') return ''
+        return Crypt.private.sign(str, _this.private, _this.password)
+    }
+    /**
+     * Verify signature using public key
+     * @param {string} str String to be verified
+     * @param {string} signature Signature to be verified
+     * @returns {boolean} Is this legit?
+     */
+    this.verify = function(str, signature){
+        if(_this.public === '') return false
+        return Crypt.public.verify(str, _this.public, signature)
     }
     /** @type {string} Saved password*/
     this.password = ''

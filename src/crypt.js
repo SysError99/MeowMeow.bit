@@ -2,6 +2,8 @@
  * Encrpytion module, separeted from Crpyto for the case of encryption method changes.
  */
 const Crypto = require('crypto')
+/** @type {string} Asymmetric key signing method*/
+const signMethod = 'rsa-sha256'
 /** Key creator*/
 const keyCreator = {
     /**
@@ -43,7 +45,8 @@ const private = {
      * @returns {string} Encrpyted string.
      */
     encrpyt: function(str, key, password){
-        if(str === '') return ''
+        if(typeof str !== 'string' || typeof key !== 'string') return ''
+        if(str === '' || key === '') return ''
         return Crypto.privateEncrypt({
             key: key,
             passphrase: (typeof password === 'string') ? password : ''
@@ -57,11 +60,23 @@ const private = {
      * @returns {string} Decrpyted string.
      */
     decrypt: function(str, key, password){
-        if(str === '') return ''
+        if(typeof str !== 'string' || typeof key !== 'string') return ''
+        if(str === '' || key === '') return ''
         return Crypto.privateDecrypt({
             key: key,
             passphrase: (typeof password === 'string') ? password : ''
         }, Buffer.from(str, 'base64')).toString('utf8')
+    },
+    /**
+     * Sign a string with a private key
+     * @param {string} str String to be signed
+     * @param {string} key Private key to be signed
+     * @param {string} password Private key password (passphrase)
+     */
+    sign: function(str, key, password){
+        if(typeof str !== 'string' || typeof key !== 'string') return ''
+        if(str === '' || key === '') return ''
+        return Crypto.sign(signMethod, Buffer.from(str), {key: key, passphrase: password}).toString('base64')
     }
 }
 /** Public key encryption functions*/
@@ -73,7 +88,8 @@ const public = {
      * @returns {string} Encrpyted string.
      */
     encrpyt: function(str, key){
-        if(str === '') return ''
+        if(typeof str !== 'string' || typeof key !== 'string') return ''
+        if(str === '' || key === '') return ''
         return Crypto.publicEncrypt(key, Buffer.from(str,'utf8')).toString('base64')
     },
     /**
@@ -83,8 +99,21 @@ const public = {
      * @returns {string} Decrpyted string.
      */
     decrypt: function(str, key){
-        if(str === '') return ''
+        if(typeof str !== 'string' || typeof key !== 'string') return ''
+        if(str === '' || key === '') return ''
         return Crypto.publicDecrypt(key, Buffer.from(str, 'base64')).toString('utf8')
+    },
+    /**
+     * Verify signature of a string with a public key
+     * @param {string} str String of data to be verified
+     * @param {string} key Public key to be used for verification
+     * @param {string} signature Signature to be verified
+     * @returns {boolean} Is this a correct signature?
+     */
+    verify: function(str, key, signature){
+        if(typeof str !== 'string' || typeof key !== 'string' || typeof signature !== 'string') return false
+        if(str === '' || key === '' || signature === '') return false
+        return Crypto.verify(signMethod, Buffer.from(str), key, Buffer.from(signature, 'base64'))
     }
 }
 /** Symmetric encryption functions*/
@@ -97,7 +126,7 @@ const symmetric = {
      * @returns {string} Encrypted string
      */
     encrypt: function(str, key, iv){
-        if(str === '') return ''
+        if(typeof str !== 'string' || !Buffer.isBuffer(key) || !Buffer.isBuffer(iv)) return ''
         let cipherIv = Crypto.createCipheriv('aes-256-gcm', key, iv)
         let cipher = cipherIv.update(str)
         return Buffer.concat([cipher,cipherIv.final()]).toString('base64')
@@ -110,7 +139,7 @@ const symmetric = {
      * @returns {string} Decrypted string
      */
     decrypt: function(str, key, iv){
-        if(str === '') return ''
+        if(typeof str !== 'string' || !Buffer.isBuffer(key) || !Buffer.isBuffer(iv)) return ''
         let encrypted = Buffer.from(str, 'base64')
         return Crypto.createDecipheriv('aes-256-gcm', key, iv).update(encrypted).toString('utf-8')
     }
