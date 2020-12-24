@@ -108,8 +108,9 @@ const Server = function(callback){
             try{
                 let keyRead = storage.read(typeof location === 'string' ? location : _.KEY.LOCATION)
                 if(keyRead.success) _this.key.current = new AsymmetricKey(keyRead.data)
+                else _this.key.new()
             }catch{
-                console.log('W -> Server.Create: It seems like you don\'t have any active key, creating a new one.')
+                console.warn('W -> Server.Create: It seems like you don\'t have any active key, creating a new one.')
                 _this.key.new()
             }
         },
@@ -205,10 +206,10 @@ const Server = function(callback){
                         resolve(keyExchangeResult)
                         return
                     }if(newKey.decrypt(keyExchangeResult.data) !== 'nice2meetu'){
+                        peer.key = newKey
                         resolve(await _this.peer.send(peer,message))
                         return
                     }
-                    peer.key = newKey
                 }
                 try{
                     payload += peer.key.encrypt(JSON.stringify(message))
