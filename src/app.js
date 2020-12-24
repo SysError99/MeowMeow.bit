@@ -30,7 +30,7 @@ const server = new Server(async function(peer, data){
     }
     switch(data[0]){
         default:
-            server.response(peer ['what'])
+            server.response(peer, ['what'])
             break
     }
 })
