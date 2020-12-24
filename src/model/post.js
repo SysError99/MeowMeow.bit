@@ -25,8 +25,13 @@ const Post = function(d){
     /** @type {string[]} Base64-based media files*/
     this.media = []
 
-    /** @type {Post} Post mention*/
-    this.mention = null
+    /** Post mention*/
+    this.mention = {
+        /** @type {number} Post order*/
+        order: 0,
+        /** @type {string} Owner's public key*/
+        pub: ''
+    }
 
     /** @type {string} Post owner (identified with a public key)*/
     this.owner = ''
