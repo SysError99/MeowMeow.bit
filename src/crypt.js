@@ -45,8 +45,8 @@ const keyCreator = {
      * @returns {import('crypto').KeyPairSyncResult<string,string>} Key result
      */
     asymmetric: function(password){
-        let k = Crypto.generateKeyPairSync('rsa', {
-            modulusLength: 4096,
+        let k = Crypto.generateKeyPairSync('ed25519', {
+            modulusLength: 512,
             namedCurve: 'secp256k1', 
             publicKeyEncoding: {
                 type: 'spki',
