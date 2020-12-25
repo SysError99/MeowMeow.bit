@@ -19,7 +19,7 @@ Features:
 - Creating new accounts
 - Delete accounts from device
 
-## General Purpose Registry
+## General-Purpose Data Registry
 
 Contains:
  - Tracker List
@@ -31,10 +31,11 @@ Contains:
         - By timeline
 
 Features:
- - Querying data, using public key
-    - `Peer` also choose by order, or randomize
-    - `Post` also choose between from account, or timeline, and use post order
- - Updating data, using public key
+ - Querying data
+    - `Account`, using public key
+    - `Peer`, using public key, and peer order / randomize
+    - `Post`, using public key / timeline registry, and post order
+ - Updating data
 
 ## Networking (incoming)
 
