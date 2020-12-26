@@ -23,7 +23,7 @@ const AsymmetricKey = function(d){
      */
     this.encrypt = function(str){
         if(_this.public === '') return ''
-        return Crypt.public.encrpyt(str, _this.public)
+        return Crypt.public.encrypt(str, _this.public)
     }
     /**
      * Sign a key using private key
