@@ -103,7 +103,7 @@ const private = {
      * @param {string} password Password for decrypting private key
      * @returns {string} Encrpyted string.
      */
-    encrpyt: function(str, key, password){
+    encrypt: function(str, key, password){
         if(typeof str !== 'string' || typeof key !== 'string') return ''
         if(str === '' || key === '') return ''
         return Crypto.privateEncrypt({
@@ -137,7 +137,7 @@ const public = {
      * @param {string} key Public key that will be used to encrypt
      * @returns {string} Encrpyted string.
      */
-    encrpyt: function(str, key){
+    encrypt: function(str, key){
         if(typeof str !== 'string' || typeof key !== 'string') return ''
         if(str === '' || key === '') return ''
         return Crypto.publicEncrypt(long(key, public.header), Buffer.from(str,'utf8')).toString('base64')
@@ -216,6 +216,15 @@ module.exports = {
     newKey: keyCreator,
     private: private,
     public: public,
+    /**
+     * Generate a randomized buffer
+     * @param {number} size Buffer size
+     * @returns {Buffer} Randomized buffer
+     */
+    rand: function(size){
+        if(typeof size !== 'number') return Crypto.randomBytes(3)
+        return Crypto.randomBytes(Math.floor(size))
+    },
     sign: sign,
     symmetric: symmetric
 }
