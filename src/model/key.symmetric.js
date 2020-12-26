@@ -10,15 +10,13 @@ const SymmetricKey = function(d){
     this.isSymmetricKey = true
     /** @type {Buffer} Key buffer*/
     this.key = null
-    /** @type {Buffer} IV buffer*/
-    this.iv = null
     /**
      * Encrypt a string
      * @param {string} str String to be encrpyted
      * @returns {string} Encrypted string
      */
     this.encrypt = function(str){
-        return Crypt.symmetric.encrypt(str, _this.key, _this.iv)
+        return Crypt.symmetric.encrypt(str, _this.key)
     }
     /**
      * Decrypt a string
@@ -26,15 +24,13 @@ const SymmetricKey = function(d){
      * @returns {string} Decrypted string
      */
     this.decrypt = function(str){
-        return Crypt.symmetric.decrypt(str, _this.key, _this.iv)
+        return Crypt.symmetric.decrypt(str, _this.key)
     }
     /**
      * Create a new key for this object
      */
     let _new = function(){
-        let newKey = Crypt.newKey.symmetric()
-        _this.key = newKey[0]
-        _this.iv = newKey[1]
+        _this.key = Crypt.newKey.symmetric()
     }
     /**
      * Import JSON
@@ -42,16 +38,9 @@ const SymmetricKey = function(d){
     let _import = function(){
         if(typeof d.key === 'string'){
             try{
-                _this.key = Buffer.from(d.key, 'hex')
+                _this.key = Buffer.from(d.key, 'base64')
             }catch(e){
                 console.error('E -> SymmetricKey.import: importing key: ' + e)
-            }
-        }
-        if(typeof d.iv === 'string'){
-            try{
-                _this.iv = Buffer.from(d.iv, 'hex')
-            }catch(e){
-                console.error('E -> SymmetricKey.importing IV: ' + e)
             }
         }
     }
@@ -61,8 +50,7 @@ const SymmetricKey = function(d){
      */
     this.export = function(){
         return {
-            key: _this.key.toString('hex'),
-            iv: _this.iv.toString('hex')
+            key: _this.key.toString('base64')
         }
     }
     if(typeof d === 'object') _import()

@@ -86,10 +86,10 @@ const keyCreator = {
     },
     /**
      * Generate a new symmetric key
-     * @returns {[Buffer,Buffer]} Key and IV buffer
+     * @returns {Buffer} Key buffer
      */
     symmetric: function(){
-        return [Crypto.randomBytes(32), Crypto.randomBytes(16)]
+        return Crypto.randomBytes(32)
     }
 }
 /** Private key encryption functions*/
@@ -187,25 +187,27 @@ const symmetric = {
      * Encrypt a string
      * @param {string} str string to be encrypted
      * @param {Buffer} key Key that will be used
-     * @param {Buffer} iv IV that will be used
      * @returns {string} Encrypted string
      */
-    encrypt: function(str, key, iv){
-        if(typeof str !== 'string' || !Buffer.isBuffer(key) || !Buffer.isBuffer(iv)) return ''
+    encrypt: function(str, key){
+        if(typeof str !== 'string' || !Buffer.isBuffer(key)) return ''
+        let iv = Crypto.randomBytes(16)
         let cipherIv = Crypto.createCipheriv('aes-256-gcm', key, iv)
         let cipher = cipherIv.update(str)
-        return Buffer.concat([cipher,cipherIv.final()]).toString('base64')
+        return Buffer.concat([cipher,cipherIv.final()]).toString('base64') + '\\' + iv.toString('base64')
     },
     /**
      * Decrypt a string
      * @param {string} str String to be decrypted
      * @param {Buffer} key Key to be used
-     * @param {Buffer} iv IV to be used
      * @returns {string} Decrypted string
      */
-    decrypt: function(str, key, iv){
-        if(typeof str !== 'string' || !Buffer.isBuffer(key) || !Buffer.isBuffer(iv)) return ''
-        let encrypted = Buffer.from(str, 'base64')
+    decrypt: function(str, key){
+        if(typeof str !== 'string' || !Buffer.isBuffer(key)) return ''
+        str = str.split('\\')
+        if(str.length !== 2) return ''
+        let encrypted = Buffer.from(str[0], 'base64')
+        let iv = Buffer.from(str[1], 'base64')
         return Crypto.createDecipheriv('aes-256-gcm', key, iv).update(encrypted).toString('utf-8')
     }
 }
