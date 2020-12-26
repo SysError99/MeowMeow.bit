@@ -1,4 +1,5 @@
 const AsymmetricKey = require("./key.asymmetric")
+const SignKey = require("./key.sign")
 /**
  * Account object
  * @param {Object} d JSON
@@ -42,6 +43,13 @@ const Acc = function(d){
     this.tag = []
 
     /**
+     * Create a new account
+     */
+    let _new = function(){
+        _this.key = new SignKey()
+    }
+
+    /**
      * Import JSON
      */
     let _import = function(){
@@ -49,7 +57,7 @@ const Acc = function(d){
         if(Array.isArray(d.follower)) _this.follower = d.follower
         if(typeof d.key === 'object'){
             if(d.key.isKey) _this.key = d.key
-            else _this.key = new AsymmetricKey(d.key)
+            else _this.key = new SignKey(d.key)
         }
         if(typeof d.name === 'string') _this.name = d.name
         if(typeof d.pic === 'object'){
@@ -95,5 +103,6 @@ const Acc = function(d){
         return e
     }
     if(typeof d === 'object') _import(d)
+    else _new()
 }
 module.exports = Acc
