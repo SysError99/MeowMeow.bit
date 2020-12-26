@@ -200,16 +200,18 @@ const Server = function(callback){
                     let keyExchangeResult = await sendMessage({
                         ip: peer.ip,
                         port: peer.port,
-                        data: Crypt.public.encrpyt(JSON.stringify(newKey.export()), peer.pub)
+                        data: Crypt.public.encrypt(JSON.stringify(newKey.export()), peer.pub)
                     })
-                    if(!keyExchangeResult.success){
+                    if(!keyExchangeResult.success)
                         resolve(keyExchangeResult)
-                        return
-                    }if(newKey.decrypt(keyExchangeResult.data) !== 'nice2meetu'){
+                    else if(newKey.decrypt(keyExchangeResult.data) === 'nice2meetu'){
                         peer.key = newKey
                         resolve(await _this.peer.send(peer,message))
-                        return
-                    }
+                    }else
+                        resolve(new Result({
+                            message: locale.str.peer.bad
+                        }))
+                    return
                 }
                 try{
                     payload += peer.key.encrypt(JSON.stringify(message))
@@ -262,14 +264,15 @@ const Server = function(callback){
     this.response = function(peer, data){
         /** @type {string} */
         let socketStr = ''
-        try{
-            if(typeof data === 'object') socketStr = JSON.stringify(data)
-            if(peer.key !== null) socketStr = peer.key.encrypt(socketStr)
-            else socketStr = ''
-        }catch(e){
-            console.error('E -> Server.response: ' + e)
-            socketStr = ''
+        if(typeof data === 'string') socketStr = data
+        else if(typeof data === 'object'){
+            try{
+                socketStr = JSON.stringify(data)
+            }catch(e){
+                console.error('E -> Server.response: ' + e)
+            }
         }
+        if(peer.key !== null) socketStr = peer.key.encrypt(socketStr)
         peer.socket.end(socketStr, 'utf-8', function(){
             peer.socket.destroy()
         })
