@@ -299,6 +299,10 @@ const Server = function(callback){
             else peer.socket.destroy()
         })
         socket.on('end',function(){
+            if(body.length < 2){
+                _this.response(peer)
+                return
+            }
             if(peer.key === null){
                 try{
                     peer.key = new SymmetricKey(JSON.parse(_this.key.current.decrypt(body)))
