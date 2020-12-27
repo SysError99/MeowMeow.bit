@@ -1,11 +1,28 @@
-## Account Manager
+> $ means it is identified by public key.
 
+## Account Manager
 Contains:
  - All personal accounts, separted by folder
-
 Features:
  - Choose active account
- - Configure account
+ - Create a new account
+ - Delete accounts from device
+
+## General-Purpose Data Registry
+Contains:
+ - Tracker List [n]
+ - Account list [$]
+ - Peer list [$,n]
+ - Post list [$,n]
+ - Post timeline [n]
+Features:
+ - Creating & Updating data
+ - Querying data
+ - Removing data
+
+## Networking (incoming & outgoing)
+Receive & send requests [$]:
+ - Configure
     - Set account name
     - Manage followers
     - Manage following
@@ -16,29 +33,23 @@ Features:
         - Annouce account to trackers
         - Delete account from trackers
     - Manage account tags
-- Creating new accounts
-- Delete accounts from device
-
-## General-Purpose Data Registry
-
-Contains:
- - Tracker List
- - (Indexed by account's public key)
-    - Account list
+ - Download 
+    - Account (+follow)
     - Peer list
-    - Post list
-        - By account
-        - By timeline
-
-Features:
- - Querying data
-    - `Account`, using public key
-    - `Peer`, using public key, and peer order / randomize
-    - `Post`, using public key / timeline registry, and post order
- - Updating data
-
-## Networking (incoming)
-
-## Networking (outgoing)
+    - Post [n]
+ - Interact [post]
+    - Comment
+    - Post & Share
+       - with tag [$]
+    - Like
 
 ## Rendering (HTTP server)
+
+## Tracker 
+Contains [$]:
+ - Peer list
+Features:
+ - Check client alive
+Receive requests [$]:
+ - Download [random1/all]
+    - Peer list
