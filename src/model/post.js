@@ -1,4 +1,5 @@
 const Peer = require('./peer')
+const PostPointer = require('./post.pointer')
 /**
  * Post object
  * @param {Object} d JSON
@@ -9,7 +10,7 @@ const Post = function(d){
     /** @type {boolean} This is 'Post' object*/
     this.isPost = true
 
-    /** @type {Post[]} Post comments*/
+    /** @type {PostPointer[]} Post comments*/
     this.comment = []
 
     /** Like manager*/
@@ -25,13 +26,8 @@ const Post = function(d){
     /** @type {string[]} Base64-based media files*/
     this.media = []
 
-    /** Post mention*/
-    this.mention = {
-        /** @type {number} Post order*/
-        order: 0,
-        /** @type {string} Owner's public key*/
-        pub: ''
-    }
+    /** @type {PostPointer[]} Post mention*/
+    this.mention = 
 
     /** @type {string} Post owner (identified with a public key)*/
     this.owner = ''
@@ -81,7 +77,7 @@ const Post = function(d){
      * @returns {Object} JSON
      */
     this.export = function(){
-        /** @type {Post[]}*/
+        /** @type {PostPointer[]}*/
         let comments = []
         _this.comment.forEach(function(el){
             comments.push(el.export())
