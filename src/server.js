@@ -17,6 +17,16 @@ const locale = new Locale()
 const paramInvalid = new Result({message: locale.str.paramInvalid})
 const storage = require('./storage')(locale)
 
+process.on('uncaughtException',function(err){
+    switch(err.code){
+        case 'ECONNREFUSED':
+            console.log(err)
+            break
+        default:
+            throw err
+    }
+})
+
 /**
  * Send data to target
  * @param {{ip:string, port:number, data:string}} params Connection parameters
@@ -42,43 +52,48 @@ const sendMessage = function(params){
             }))
             return
         }
-        let socket = Net.createConnection({
-            host: params.ip,
-            port: params.port
-        }, function(){
-            let received = ''
-            socket.setEncoding('utf-8')
-            socket.on('data', function(chunk){
-                if(received.length <= _.MAX_PAYLOAD)
-                    received += chunk
-                else{
+        try{
+            let socket = Net.createConnection({
+                host: params.ip,
+                port: params.port
+            }, function(){
+                let received = ''
+                let connTimeout = setTimeout(function(){
+                    resolve(new Result({
+                        message: locale.str.server.timeOut
+                    }))
+                    socket.destroy()
+                },30000)
+                socket.setEncoding('utf-8')
+                socket.on('data', function(chunk){
+                    if(received.length <= _.MAX_PAYLOAD)
+                        received += chunk
+                    else{
+                        socket.destroy()
+                        clearTimeout(connTimeout)
+                        resolve(new Result({
+                            message: locale.str.server.strTooLarge
+                        }))
+                    }
+                })
+                socket.on('end', function(){
                     socket.destroy()
                     resolve(new Result({
-                        message: locale.str.server.strTooLarge
+                        success: true,
+                        data: received
                     }))
-                }
+                })
+                socket.on('error', function(err){
+                    console.error('E -> <Module:Server>.send: Error during connection: ' + err.message)
+                    resolve(new Result({
+                        message: locale.str.server.conErr + err.message
+                    }))
+                })
+                socket.end(params.data)
             })
-            socket.on('end', function(){
-                socket.destroy()
-                resolve(new Result({
-                    success: true,
-                    data: received
-                }))
-            })
-            socket.on('error', function(err){
-                console.error('E -> <Module:Server>.send: Error during connection: ' + err.message)
-                resolve(new Result({
-                    message: locale.str.server.conErr + err.message
-                }))
-            })
-            socket.end(params.data)
-        })
-        setTimeout(function(){
-            resolve(new Result({
-                message: locale.str.server.timeOut
-            }))
-            socket.destroy()
-        },30000)
+        }catch(e){
+            console.error('E -> <Module:Server>.send: Error during connection: ' + err)
+        }
     })
 }
 
