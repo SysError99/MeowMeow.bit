@@ -27,7 +27,7 @@ const Post = function(d){
     this.media = []
 
     /** @type {PostPointer[]} Post mention*/
-    this.mention = 
+    this.mention = null
 
     /** @type {string} Post owner (identified with a public key)*/
     this.owner = ''
@@ -47,9 +47,7 @@ const Post = function(d){
     let _import = function(){
         if(Array.isArray(d.comment)){
             d.comment.forEach(function(el){
-                if(typeof el !== 'object') return
-                if(el.isPost) _this.comment.push(el)
-                else _this.comment.push(new Post(el))
+                if(Array.isArray(el)) _this.comment.push(new PostPointer(el))
             })
         }
         if(typeof d.like === 'object'){
@@ -63,10 +61,7 @@ const Post = function(d){
             }
         }
         if(Array.isArray(d.media)) _this.media = d.media
-        if(typeof d.mention === 'object'){
-            if(d.mention.isPost) _this.mention = d.mention
-            else _this.mention = new Post(d.mention)
-        }
+        if(Array.isArray(d.mention)) _this.mention = new PostPointer(d.mention)
         if(typeof d.owner === 'string') _this.owner = d.owner
         if(typeof d.signature === 'string') _this.signature = d.signature
         if(Array.isArray(d.tag)) _this.tag = d.tag
