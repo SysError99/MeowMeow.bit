@@ -52,48 +52,44 @@ const sendMessage = function(params){
             }))
             return
         }
-        try{
-            let socket = Net.createConnection({
-                host: params.ip,
-                port: params.port
-            }, function(){
-                let received = ''
-                let connTimeout = setTimeout(function(){
-                    resolve(new Result({
-                        message: locale.str.server.timeOut
-                    }))
+        let socket = Net.createConnection({
+            host: params.ip,
+            port: params.port
+        }, function(){
+            let received = ''
+            let connTimeout = setTimeout(function(){
+                resolve(new Result({
+                    message: locale.str.server.timeOut
+                }))
+                socket.destroy()
+            },30000)
+            socket.setEncoding('utf-8')
+            socket.on('data', function(chunk){
+                if(received.length <= _.MAX_PAYLOAD)
+                    received += chunk
+                else{
                     socket.destroy()
-                },30000)
-                socket.setEncoding('utf-8')
-                socket.on('data', function(chunk){
-                    if(received.length <= _.MAX_PAYLOAD)
-                        received += chunk
-                    else{
-                        socket.destroy()
-                        clearTimeout(connTimeout)
-                        resolve(new Result({
-                            message: locale.str.server.strTooLarge
-                        }))
-                    }
-                })
-                socket.on('end', function(){
-                    socket.destroy()
+                    clearTimeout(connTimeout)
                     resolve(new Result({
-                        success: true,
-                        data: received
+                        message: locale.str.server.strTooLarge
                     }))
-                })
-                socket.on('error', function(err){
-                    console.error('E -> <Module:Server>.send: Error during connection: ' + err.message)
-                    resolve(new Result({
-                        message: locale.str.server.conErr + err.message
-                    }))
-                })
-                socket.end(params.data)
+                }
             })
-        }catch(e){
-            console.error('E -> <Module:Server>.send: Error during connection: ' + err)
-        }
+            socket.on('end', function(){
+                socket.destroy()
+                resolve(new Result({
+                    success: true,
+                    data: received
+                }))
+            })
+            socket.on('error', function(err){
+                console.error('E -> <Module:Server>.send: Error during connection: ' + err.message)
+                resolve(new Result({
+                    message: locale.str.server.conErr + err.message
+                }))
+            })
+            socket.end(params.data)
+        })
     })
 }
 
@@ -122,14 +118,9 @@ const Server = function(callback){
          * @param {string} location Key location
          */
         load: function(location){
-            try{
-                let keyRead = storage.read(typeof location === 'string' ? location : _.KEY.LOCATION)
-                if(keyRead.success) _this.key.current = new AsymmetricKey(keyRead.data)
-                else _this.key.new()
-            }catch{
-                console.warn('W -> Server.Create: It seems like you don\'t have any active key, creating a new one.')
-                _this.key.new()
-            }
+            let keyRead = storage.read(typeof location === 'string' ? location : _.KEY.LOCATION)
+            if(keyRead.success) _this.key.current = new AsymmetricKey(keyRead.data)
+            else _this.key.new()
         },
         /**
          * Create a new key for this server
@@ -138,12 +129,8 @@ const Server = function(callback){
          */
         new: function(location, password){
             _this.key.current = new AsymmetricKey((typeof password === 'string') ? password : '')
-            try{
-                let keyWrite = storage.write(typeof location === 'string' ? location : _.KEY.LOCATION, _this.key.current.export())
-                if(!keyWrite.success) throw keyWrite.message
-            }catch(e){
-                console.error('E -> Server.key.new: Can\'t save new key file, ' + e)
-            }
+            let keyWrite = storage.write(typeof location === 'string' ? location : _.KEY.LOCATION, _this.key.current.export())
+            if(!keyWrite.success) throw keyWrite.message
         }
     }
 
