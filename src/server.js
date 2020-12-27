@@ -3,6 +3,8 @@
  */
 const Net = require('net')
 
+const isAny = require('./type.any.check')
+
 const _ = require('./const')
 const AsymmetricKey = require('./model/key.asymmetric')
 const Crypt = require('./crypt')
@@ -204,13 +206,9 @@ const Server = function(callback){
                     })
                     if(!keyExchangeResult.success)
                         resolve(keyExchangeResult)
-                    else if(newKey.decrypt(keyExchangeResult.data) === 'nice2meetu'){
+                    else if(newKey.decrypt(keyExchangeResult.data) === 'nice2meetu')
                         peer.key = newKey
-                        resolve(await _this.peer.send(peer,message))
-                    }else
-                        resolve(new Result({
-                            message: locale.str.peer.bad
-                        }))
+                    resolve(await _this.peer.send(peer,message))
                     return
                 }
                 try{
@@ -265,7 +263,7 @@ const Server = function(callback){
         /** @type {string} */
         let socketStr = ''
         if(typeof data === 'string') socketStr = data
-        else if(typeof data === 'object'){
+        else if(Array.isArray(data)){
             try{
                 socketStr = JSON.stringify(data)
             }catch(e){

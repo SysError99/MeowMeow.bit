@@ -1,3 +1,4 @@
+const isAny = require('../type.any.check')
 /** 
  * Result object.
  * @param {{success: boolean, message: string, data:any}} d JSON
@@ -32,6 +33,6 @@ const Result = function(d){
             success: _this.success
         }
     }
-    if(typeof d === 'object') _import()
+    if(isAny(d)) _import()
 }
 module.exports = Result

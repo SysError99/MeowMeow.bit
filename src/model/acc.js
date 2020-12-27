@@ -1,3 +1,4 @@
+const isAny = require('../type.any.check')
 const AsymmetricKey = require("./key.asymmetric")
 const SignKey = require("./key.sign")
 /**
@@ -55,12 +56,12 @@ const Acc = function(d){
     let _import = function(){
         if(typeof d.description === 'string') _this.description = d.description
         if(Array.isArray(d.follower)) _this.follower = d.follower
-        if(typeof d.key === 'object'){
+        if(isAny(d.key)){
             if(d.key.isKey) _this.key = d.key
             else _this.key = new SignKey(d.key)
         }
         if(typeof d.name === 'string') _this.name = d.name
-        if(typeof d.pic === 'object'){
+        if(isAny(d.pic)){
             if(typeof d.pic.cover === 'string') _this.pic.cover = d.pic.cover
             if(typeof d.pic.profile === 'string') _this.pic.profile = d.pic.profile
         }
@@ -102,7 +103,7 @@ const Acc = function(d){
         e.key = _this.key.exportPub()
         return e
     }
-    if(typeof d === 'object') _import(d)
+    if(isAny(d)) _import(d)
     else _new()
 }
 module.exports = Acc

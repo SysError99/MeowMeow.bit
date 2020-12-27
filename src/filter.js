@@ -1,4 +1,5 @@
 const _ = require('./const')
+const isAny = require('./type.any.check')
 /** Blocked lists*/
 const blocked = {
     /** @type {string[]} Blocked account lists*/
@@ -22,11 +23,11 @@ module.exports = {
      * @param {Object} d JSON
      */
     import: function(d){
-        if(typeof d.blocked === 'object'){
+        if(isAny(d.blocked)){
             if(Array.isArray(d.blocked.acc)) blocked.acc = d.blocked.acc
             if(Array.isArray(d.blocked.word)) blocked.word = d.blocked.word
         }
-        if(typeof d.limit === 'object'){
+        if(isAny(d.limit)){
             if(Array.isArray(d.limit.range)) limit.range = d.limit.range
             if(typeof d.limit.size === 'number') limit.size = d.limit.size
         }

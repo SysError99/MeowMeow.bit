@@ -4,7 +4,8 @@
  * By SysError99, Licensed with MIT
  */
 const HTTP = require('http')
-const { type } = require('os')
+
+const isAny = require('./type.any.check')
 
 /**
  * @callback RequestCallback
@@ -39,10 +40,10 @@ const WebRequest = function(req,d){
      * Import JSON
      */
     let _import = function(){
-        if(typeof d.params === 'object') _this.params = d.params
-        if(typeof d.query === 'object')  _this.query = d.query
+        if(isAny(d.params)) _this.params = d.params
+        if(isAny(d.query))  _this.query = d.query
     }
-    if(typeof d === 'object') _import()
+    if(isAny(d)) _import()
 }
 
 /**
@@ -128,7 +129,7 @@ const WebEvent = function(d){
         if(typeof d.method === 'string') _this.method = d.method.toLowerCase()
         if(typeof d.params === 'string') _this.params = d.params.split('/')
     }
-    if(typeof d === 'object') _import()
+    if(isAny(d)) _import()
 }
 
 /**
@@ -268,9 +269,13 @@ const Web = function(d){
                     }), new WebResponse(res))
                     return
                 }
-                if(typeof ev404 === 'object' && ev404 !== null){
-                    if(typeof ev404.callback === 'function') ev404.callback(new WebRequest(req), new WebResponse(res))
-                }else res.writeHead(404).end('Not found.')
+                if(isAny(ev404)){
+                    if(typeof ev404.callback === 'function') {
+                        ev404.callback(new WebRequest(req), new WebResponse(res))
+                        return
+                    }
+                }
+                res.writeHead(404).end('Not found.')
             })
             req.on('error', function(err){
                 console.error('E -> http.on(\'error\'): ' + err.message)
@@ -285,7 +290,7 @@ const Web = function(d){
         if(typeof d.port === 'number') _this.port = d.port
         _server()
     }
-    if(typeof d === 'object') _import()
+    if(isAny(d)) _import()
     else _server()
 }
 module.exports = Web

@@ -1,3 +1,4 @@
+const isAny = require('../type.any.check')
 const Net = require('net')
 const SymmetricKey = require('./key.symmetric')
 /** 
@@ -40,6 +41,6 @@ const Peer = function(d){
             pub: _this.pub,
         }
     }
-    if(typeof d === 'object') _import()
+    if(isAny(d)) _import()
 }
 module.exports = Peer

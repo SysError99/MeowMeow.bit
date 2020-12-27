@@ -1,3 +1,4 @@
+const isAny = require('../type.any.check')
 const Crypt = require('../crypt')
 /**
  * Symmetric key object
@@ -53,7 +54,7 @@ const SymmetricKey = function(d){
             key: _this.key.toString('base64')
         }
     }
-    if(typeof d === 'object') _import()
+    if(isAny(d)) _import()
     else _new()
 }
 module.exports = SymmetricKey

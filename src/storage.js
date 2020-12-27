@@ -1,3 +1,4 @@
+const isAny = require('./type.any.check')
 const FileSystem = require('fs')
 const Locale = require('./locale')
 const Result = require('./model/result')
@@ -113,10 +114,10 @@ const storage = {
  * @param {Locale} locale Locale object from a server
  */
 module.exports = function(locale){
-    if(typeof locale === 'object')
-        storage.locale = locale
-    else
-        storage.locale = new Locale()
+    if(isAny(locale)){
+        if(locale.isLocale) storage.locale = locale
+    }
+    if(storage.locale === null) storage.locale = new Locale()
     paramInvalid.message = storage.locale.str.paramInvalid
     return storage
 }

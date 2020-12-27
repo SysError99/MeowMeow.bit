@@ -1,3 +1,4 @@
+const isAny = require('../type.any.check')
 const Peer = require('./peer')
 const PostPointer = require('./post.pointer')
 /**
@@ -50,10 +51,10 @@ const Post = function(d){
                 if(Array.isArray(el)) _this.comment.push(new PostPointer(el))
             })
         }
-        if(typeof d.like === 'object'){
+        if(isAny(d)){
             if(typeof d.like.amount === 'number') _this.like.amount = d.like.amount
             if(typeof d.like.signature === 'string') _this.like.signature = d.like.signature
-            if(typeof d.like.verifier === 'object'){
+            if(isAny(d.like.verifier)){
                 if(d.like.verifier.isPeer)
                     _this.like.verifier = d.like.verifier
                 else
@@ -91,6 +92,6 @@ const Post = function(d){
             text: _this.text,
         }
     }
-    if(typeof d === 'object') _import()
+    if(isAny(d)) _import()
 }
 module.exports = Post

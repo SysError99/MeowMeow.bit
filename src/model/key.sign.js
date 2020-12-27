@@ -1,3 +1,4 @@
+const isAny = require('../type.any.check')
 const Crypt = require('../crypt')
 /**
  * Sign key object.
@@ -70,7 +71,7 @@ const SignKey = function(d){
             public: _this.public
         }
     }
-    if(typeof d === 'object') _import()
+    if(isAny(d)) _import()
     else if(typeof d === 'string') _newKey(d)
     else _newKey('')
 }

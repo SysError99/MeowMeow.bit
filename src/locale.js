@@ -5,6 +5,9 @@
 const Locale = function(f){
     /** This object */
     let _this = this
+    /** @type {boolean} This is a 'Locale' object*/
+    this.isLocale = true
+    
     /** @type {string} Currently used locale*/
     this.current = ''
     /**

@@ -1,3 +1,4 @@
+const isAny = require('../type.any.check')
 const Crypt = require('../crypt')
 /**
  * Asymmetric key object.
@@ -87,8 +88,8 @@ const AsymmetricKey = function(d){
             public: _this.public
         }
     }
-    if(typeof d === 'object') _import()
-    else if(typeof d === 'string') _newKey(d)
+    if(typeof d === 'string') _newKey(d)
+    else if(isAny(d)) _import()
     else _newKey('')
 }
 module.exports = AsymmetricKey
