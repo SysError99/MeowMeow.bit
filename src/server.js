@@ -2,7 +2,6 @@
  * Micro HTTP server, with basic stuffs.
  */
 const Net = require('net')
-
 const isAny = require('./type.any.check')
 
 const _ = require('./const')
@@ -77,6 +76,7 @@ const sendMessage = function(params){
             })
             socket.on('end', function(){
                 socket.destroy()
+                clearTimeout(connTimeout)
                 resolve(new Result({
                     success: true,
                     data: received
@@ -163,25 +163,23 @@ const Server = function(callback){
             let thisPeer
             for(let f=0; f < _this.peer.list.length; f++){
                 thisPeer = _this.peer.list[f]
-                if(
-                    key.ip === thisPeer.ip ||
-                    key.port === thisPeer.port
-                )
-                    return thisPeer
+                if(key.ip === thisPeer.ip || key.port === thisPeer.port) return thisPeer
             }
             return null
         },
         /**
          * Send message to peer
          * @param {Peer} peer Target peer
-         * @param {Object} message Message to be sent
+         * @param {Array} message Message to be sent
          * @returns {Promise<Result>} Result object
          */
         send: function(peer, message){
             return new Promise(async function(resolve){
-                let payload = ''
-                let received = null
-                if(typeof message !== 'object'){
+                if(isAny(peer)){
+                    resolve(paramInvalid)
+                    return
+                }
+                if(!Array.isArray(message)){
                     resolve(paramInvalid)
                     return
                 }
@@ -213,6 +211,7 @@ const Server = function(callback){
                     resolve(await _this.peer.send(peer,message))
                     return
                 }
+                let payload = ''
                 try{
                     payload += peer.key.encrypt(JSON.stringify(message))
                 }catch(e){
@@ -222,7 +221,7 @@ const Server = function(callback){
                     }))
                     return
                 }
-                received = await sendMessage({
+                let received = await sendMessage({
                     ip: peer.ip,
                     port: peer.port,
                     data: payload

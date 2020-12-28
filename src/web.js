@@ -4,7 +4,6 @@
  * By SysError99, Licensed with MIT
  */
 const HTTP = require('http')
-
 const isAny = require('./type.any.check')
 
 /**

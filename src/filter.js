@@ -1,5 +1,5 @@
-const _ = require('./const')
 const isAny = require('./type.any.check')
+const _ = require('./const')
 /** Blocked lists*/
 const blocked = {
     /** @type {string[]} Blocked account lists*/
