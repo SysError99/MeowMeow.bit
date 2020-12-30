@@ -4,18 +4,13 @@
  * Github: https://github.com/45678/Base58
  */
 let ALPHABET, ALPHABET_MAP, i;
-
 ALPHABET = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
-
 ALPHABET_MAP = {};
-
 i = 0;
-
 while (i < ALPHABET.length) {
     ALPHABET_MAP[ALPHABET.charAt(i)] = i;
     i++;
 }
-
 /** Base58 module*/
 module.exports = {
     /**
@@ -38,21 +33,21 @@ module.exports = {
         while (i < buffer.length) {
             j = 0;
             while (j < digits.length) {
-            digits[j] <<= 8;
-            j++;
+                digits[j] <<= 8;
+                j++;
             }
             digits[0] += buffer[i];
             carry = 0;
             j = 0;
             while (j < digits.length) {
-            digits[j] += carry;
-            carry = (digits[j] / 58) | 0;
-            digits[j] %= 58;
-            ++j;
+                digits[j] += carry;
+                carry = (digits[j] / 58) | 0;
+                digits[j] %= 58;
+                ++j;
             }
             while (carry) {
-            digits.push(carry % 58);
-            carry = (carry / 58) | 0;
+                digits.push(carry % 58);
+                carry = (carry / 58) | 0;
             }
             i++;
         }
@@ -82,25 +77,25 @@ module.exports = {
         while (i < string.length) {
             c = string[i];
             if (!(c in ALPHABET_MAP)) {
-            throw "Base58.decode received unacceptable input. Character '" + c + "' is not in the Base58 alphabet.";
+                throw "Base58.decode received unacceptable input. Character '" + c + "' is not in the Base58 alphabet.";
             }
             j = 0;
             while (j < bytes.length) {
-            bytes[j] *= 58;
-            j++;
+                bytes[j] *= 58;
+                j++;
             }
             bytes[0] += ALPHABET_MAP[c];
             carry = 0;
             j = 0;
             while (j < bytes.length) {
-            bytes[j] += carry;
-            carry = bytes[j] >> 8;
-            bytes[j] &= 0xff;
-            ++j;
+                bytes[j] += carry;
+                carry = bytes[j] >> 8;
+                bytes[j] &= 0xff;
+                ++j;
             }
             while (carry) {
-            bytes.push(carry & 0xff);
-            carry >>= 8;
+                bytes.push(carry & 0xff);
+                carry >>= 8;
             }
             i++;
         }
