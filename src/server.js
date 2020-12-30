@@ -77,10 +77,13 @@ const sendMessage = function(params){
             socket.on('end', function(){
                 socket.destroy()
                 clearTimeout(connTimeout)
-                resolve(new Result({
-                    success: true,
-                    data: received
-                }))
+                if(received.length < 2)
+                    resolve(new Result())
+                else
+                    resolve(new Result({
+                        success: true,
+                        data: received
+                    }))
             })
             socket.on('error', function(err){
                 console.error('E -> <Module:Server>.send: Error during connection: ' + err.message)
@@ -234,11 +237,7 @@ const Server = function(callback){
                     port: peer.port,
                     data: payload
                 })
-                if(!received.success){
-                    resolve(received)
-                    return
-                }
-                if(received.data === ''){
+                if(received.data === null){
                     peer.key = null
                     resolve(await _this.peer.send(peer,message))
                     return
