@@ -240,7 +240,7 @@ const Server = function(callback){
                     data: message
                 })
                 if(received.data === null){
-                    resolve(await _this.peer.send(peer,payload))
+                    resolve(await _this.peer.send(peer,message))
                     return
                 }
                 try{
