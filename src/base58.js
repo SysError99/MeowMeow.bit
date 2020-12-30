@@ -63,7 +63,7 @@ module.exports = {
     /**
      * Decode back to string
      * @param {string} string Encoded string
-     * @returns {string} Decoded string
+     * @returns {Buffer} Decoded buffer
      */
     decode: function(string) {
         let bytes, c, carry, j;
@@ -104,6 +104,6 @@ module.exports = {
             bytes.push(0);
             i++;
         }
-        return Buffer.from(bytes.reverse()).toString('utf-8');
+        return Buffer.from(bytes.reverse());
     }
 }
