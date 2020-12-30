@@ -106,7 +106,7 @@ const private = {
      */
     encrypt: function(str, key, password){
         if(typeof str !== 'string' || typeof key !== 'string') return ''
-        if(str === '' || key === '') return ''
+        if(str.length === 0 || key.length === 0) return ''
         return Base58.encode(Crypto.privateEncrypt({
             key: long(key, private.header),
             passphrase: (typeof password === 'string') ? password : ''
@@ -121,7 +121,7 @@ const private = {
      */
     decrypt: function(str, key, password){
         if(typeof str !== 'string' || typeof key !== 'string') return ''
-        if(str === '' || key === '') return ''
+        if(str.length === 0 || key.length === 0) return ''
         return Crypto.privateDecrypt({
             key: long(key, private.header),
             passphrase: (typeof password === 'string') ? password : ''
@@ -140,7 +140,7 @@ const public = {
      */
     encrypt: function(str, key){
         if(typeof str !== 'string' || typeof key !== 'string') return ''
-        if(str === '' || key === '') return ''
+        if(str.length === 0 || key.length === 0) return ''
         return Base58.encode(Crypto.publicEncrypt(long(key, public.header), Buffer.from(str,'utf8')))
     },
     /**
@@ -151,7 +151,7 @@ const public = {
      */
     decrypt: function(str, key){
         if(typeof str !== 'string' || typeof key !== 'string') return ''
-        if(str === '' || key === '') return ''
+        if(str.length === 0 || key.length === 0) return ''
         return Crypto.publicDecrypt(long(key, public.header), Base58.decode(str)).toString('utf8')
     }
 }
@@ -166,7 +166,7 @@ const sign = {
      */
     perform: function(str,key,password){
         if(typeof str !== 'string' || typeof key !== 'string') return ''
-        if(str === '' || key === '') return ''
+        if(str.length === 0 || key.length === 0) return ''
         return Crypto.sign(null, Buffer.from(str), {key: long(key, private.header), passphrase: password}).toString('base64')
     },
     /**
@@ -178,7 +178,7 @@ const sign = {
      */
     verify: function(str,key,signature){
         if(typeof str !== 'string' || typeof key !== 'string' || typeof signature !== 'string') return false
-        if(str === '' || key === '' || signature === '') return false
+        if(str.length === 0 || key.length === 0 || signature.length === 0) return false
         return Crypto.verify(null, Buffer.from(str), long(key, public.header), Buffer.from(signature, 'base64'))
     }
 }

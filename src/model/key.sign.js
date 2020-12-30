@@ -15,7 +15,7 @@ const SignKey = function(d){
      * @returns {string} Base64-based signature
      */
     this.sign = function(str){
-        if(_this.private === '') return ''
+        if(_this.private.length === 0) return ''
         return Crypt.sign.perform(str, _this.private, _this.password)
     }
     /**
@@ -25,7 +25,7 @@ const SignKey = function(d){
      * @returns {boolean} Is this legit?
      */
     this.verify = function(str, signature){
-        if(_this.public === '') return false
+        if(_this.public.length === 0) return false
         return Crypt.sign.verify(str, _this.public, signature)
     }
     /** @type {string} Saved password*/

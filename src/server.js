@@ -77,7 +77,7 @@ const sendMessage = function(params){
             socket.on('end', function(){
                 socket.destroy()
                 clearTimeout(connTimeout)
-                if(received.length < 2)
+                if(received.length === 0)
                     resolve(new Result())
                 else
                     resolve(new Result({
@@ -187,7 +187,7 @@ const Server = function(callback){
                     resolve(paramInvalid)
                     return
                 }
-                if(peer.pub === ''){
+                if(peer.pub.length === 0){
                     resolve(new Result({
                         message: locale.str.server.noPub
                     }))
@@ -305,7 +305,7 @@ const Server = function(callback){
             else peer.socket.destroy()
         })
         socket.on('end',function(){
-            if(body.length < 2){
+            if(body.length === 0){
                 _this.response(peer)
                 return
             }
