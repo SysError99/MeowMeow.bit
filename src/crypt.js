@@ -107,10 +107,10 @@ const private = {
     encrypt: function(str, key, password){
         if(typeof str !== 'string' || typeof key !== 'string') return ''
         if(str === '' || key === '') return ''
-        return Crypto.privateEncrypt({
+        return Base58.encode(Crypto.privateEncrypt({
             key: long(key, private.header),
             passphrase: (typeof password === 'string') ? password : ''
-        }, Buffer.from(str, 'utf-8')).toString('base64')
+        }, Buffer.from(str, 'utf-8')))
     },
     /**
      * Decrypt with private key
@@ -125,7 +125,7 @@ const private = {
         return Crypto.privateDecrypt({
             key: long(key, private.header),
             passphrase: (typeof password === 'string') ? password : ''
-        }, Buffer.from(str, 'base64')).toString('utf8')
+        }, Base58.decode(str)).toString('utf-8')
     }
 }
 /** Public key encryption functions*/
@@ -141,7 +141,7 @@ const public = {
     encrypt: function(str, key){
         if(typeof str !== 'string' || typeof key !== 'string') return ''
         if(str === '' || key === '') return ''
-        return Crypto.publicEncrypt(long(key, public.header), Buffer.from(str,'utf8')).toString('base64')
+        return Base58.encode(Crypto.publicEncrypt(long(key, public.header), Buffer.from(str,'utf8')))
     },
     /**
      * Decrypt with public key
@@ -152,7 +152,7 @@ const public = {
     decrypt: function(str, key){
         if(typeof str !== 'string' || typeof key !== 'string') return ''
         if(str === '' || key === '') return ''
-        return Crypto.publicDecrypt(long(key, public.header), Buffer.from(str, 'base64')).toString('utf8')
+        return Crypto.publicDecrypt(long(key, public.header), Base58.decode(str)).toString('utf8')
     }
 }
 /** Key signing functions*/
@@ -206,7 +206,7 @@ const symmetric = {
     decrypt: function(str, key){
         if(typeof str !== 'string' || !Buffer.isBuffer(key)) return ''
         try{
-            str = Base58.decode(str).split(',')
+            str = Base58.decode(str).toString('utf-8').split(',')
         }catch{
             return ''
         }
