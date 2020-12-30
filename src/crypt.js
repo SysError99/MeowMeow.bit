@@ -2,6 +2,7 @@
  * Encrpytion module, separeted from Crpyto for the case of encryption method changes.
  */
 const Crypto = require('crypto')
+const Base58 = require('./base58')
 /** @type {number} Public key length per row*/
 const len = 64
 /**
@@ -194,7 +195,7 @@ const symmetric = {
         let iv = Crypto.randomBytes(16)
         let cipherIv = Crypto.createCipheriv('aes-256-gcm', key, iv)
         let cipher = cipherIv.update(str)
-        return Buffer.concat([cipher,cipherIv.final()]).toString('base64') + '\\' + iv.toString('base64')
+        return Base58.encode(Buffer.concat([cipher,cipherIv.final()]).toString('base64') + ',' + iv.toString('base64'), 'utf-8')
     },
     /**
      * Decrypt a string
@@ -204,7 +205,11 @@ const symmetric = {
      */
     decrypt: function(str, key){
         if(typeof str !== 'string' || !Buffer.isBuffer(key)) return ''
-        str = str.split('\\')
+        try{
+            str = Base58.decode(str).split(',')
+        }catch{
+            return ''
+        }
         if(str.length !== 2) return ''
         let encrypted = Buffer.from(str[0], 'base64')
         let iv = Buffer.from(str[1], 'base64')
