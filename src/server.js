@@ -230,7 +230,7 @@ const Server = function(callback){
                         return
                     }
                 }
-                if(typeof message !== 'string'){
+                else if(typeof message !== 'string'){
                     resolve(paramInvalid)
                     return
                 }
