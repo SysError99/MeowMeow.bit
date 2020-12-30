@@ -173,17 +173,13 @@ const Server = function(callback){
         /**
          * Send message to peer
          * @param {Peer} peer Target peer
-         * @param {Array} message Message to be sent
-         * @param {Object} [_keyExchange] (Internal parameter) Key exchange properties, no need to use this manually.
+         * @param {Array|string} message Message to be sent
+         * @param {boolean|Object} [_keyExchange] (Internal parameter) Key exchange properties, no need to use this manually.
          * @returns {Promise<Result>} Result object
          */
         send: function(peer, message, _keyExchange){
             return new Promise(async function(resolve){
                 if(!isAny(peer)){
-                    resolve(paramInvalid)
-                    return
-                }
-                if(!Array.isArray(message)){
                     resolve(paramInvalid)
                     return
                 }
@@ -194,6 +190,7 @@ const Server = function(callback){
                     return
                 }
                 if(peer.quality <= 0){
+                    peer.key = null
                     peer.quality = 5
                     resolve(new Result({
                         message: locale.str.peer.bad
@@ -222,24 +219,28 @@ const Server = function(callback){
                     resolve(await _this.peer.send(peer,message,keyExchange))
                     return
                 }
-                let payload = ''
-                try{
-                    payload += peer.key.encrypt(JSON.stringify(message))
-                }catch(e){
-                    console.error('E -> Server.peer.send: error while encrypting: ' + e)
-                    resolve(new Result({
-                        message: locale.str.json.parseErr + e
-                    }))
+                if(Array.isArray(message)){
+                    try{
+                        message = peer.key.encrypt(JSON.stringify(message))
+                    }catch(e){
+                        console.error('E -> Server.peer.send: error while encrypting: ' + e)
+                        resolve(new Result({
+                            message: locale.str.json.parseErr + e
+                        }))
+                        return
+                    }
+                }
+                if(typeof message !== 'string'){
+                    resolve(paramInvalid)
                     return
                 }
                 let received = await sendMessage({
                     ip: peer.ip,
                     port: peer.port,
-                    data: payload
+                    data: message
                 })
                 if(received.data === null){
-                    peer.key = null
-                    resolve(await _this.peer.send(peer,message))
+                    resolve(await _this.peer.send(peer,payload))
                     return
                 }
                 try{
