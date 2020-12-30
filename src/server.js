@@ -205,12 +205,11 @@ const Server = function(callback){
                         port: peer.port,
                         data: Crypt.public.encrypt(JSON.stringify(newKey.export()), peer.pub)
                     } : _keyExchange
-                    console.log(keyExchange)
                     let keyExchangeResult = await sendMessage(keyExchange)
-                    if(!keyExchangeResult.success)
-                        resolve(keyExchangeResult)
-                    else if(newKey.decrypt(keyExchangeResult.data) === 'nice2meetu')
-                        peer.key = newKey
+                    if(keyExchangeResult.success){
+                        if(newKey.decrypt(keyExchangeResult.data) === 'nice2meetu')
+                            peer.key = newKey
+                    }
                     resolve(await _this.peer.send(peer,message,keyExchange))
                     return
                 }
