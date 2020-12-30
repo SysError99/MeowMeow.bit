@@ -175,7 +175,7 @@ const Server = function(callback){
          */
         send: function(peer, message){
             return new Promise(async function(resolve){
-                if(isAny(peer)){
+                if(!isAny(peer)){
                     resolve(paramInvalid)
                     return
                 }
