@@ -171,9 +171,10 @@ const Server = function(callback){
          * Send message to peer
          * @param {Peer} peer Target peer
          * @param {Array} message Message to be sent
+         * @param {Object} [_exchange] (Internal parameter) Key exchange properties, no need to use this manually.
          * @returns {Promise<Result>} Result object
          */
-        send: function(peer, message){
+        send: function(peer, message, _exchange){
             return new Promise(async function(resolve){
                 if(!isAny(peer)){
                     resolve(paramInvalid)
@@ -199,16 +200,17 @@ const Server = function(callback){
                 peer.quality--
                 if(peer.key === null){
                     let newKey = new SymmetricKey()
-                    let keyExchangeResult = await sendMessage({
+                    let keyExchange = !isAny(_exchange) ? {
                         ip: peer.ip,
                         port: peer.port,
                         data: Crypt.public.encrypt(JSON.stringify(newKey.export()), peer.pub)
-                    })
+                    } : _exchange
+                    let keyExchangeResult = await sendMessage(keyExchange)
                     if(!keyExchangeResult.success)
                         resolve(keyExchangeResult)
                     else if(newKey.decrypt(keyExchangeResult.data) === 'nice2meetu')
                         peer.key = newKey
-                    resolve(await _this.peer.send(peer,message))
+                    resolve(await _this.peer.send(peer,message), keyExchange)
                     return
                 }
                 let payload = ''
