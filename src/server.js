@@ -199,16 +199,22 @@ const Server = function(callback){
                 }
                 peer.quality--
                 if(peer.key === null){
-                    let newKey = new SymmetricKey()
-                    let keyExchange = !isAny(_keyExchange) ? {
-                        ip: peer.ip,
-                        port: peer.port,
-                        data: Crypt.public.encrypt(JSON.stringify(newKey.export()), peer.pub)
-                    } : _keyExchange
-                    let keyExchangeResult = await sendMessage(keyExchange)
+                    /** @type {[SymmetricKey,any]}*/
+                    let keyExchange
+                    if(Array.isArray(_keyExchange))
+                        keyExchange = _keyExchange
+                    else{
+                        let newKey = new SymmetricKey()
+                        keyExchange = [newKey,{
+                            ip: peer.ip,
+                            port: peer.port,
+                            data: Crypt.public.encrypt(JSON.stringify(newKey.export()), peer.pub)
+                        }]
+                    }
+                    let keyExchangeResult = await sendMessage(keyExchange[1])
                     if(keyExchangeResult.success){
-                        if(newKey.decrypt(keyExchangeResult.data) === 'nice2meetu')
-                            peer.key = newKey
+                        if(keyExchange[0].decrypt(keyExchangeResult.data) === 'nice2meetu')
+                            peer.key = keyExchange[0]
                     }
                     resolve(await _this.peer.send(peer,message,keyExchange))
                     return
