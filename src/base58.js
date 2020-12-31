@@ -4,7 +4,7 @@
  * Github: https://github.com/45678/Base58
  */
 let ALPHABET, ALPHABET_MAP, i;
-ALPHABET = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
+ALPHABET = "013579ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 ALPHABET_MAP = {};
 i = 0;
 while (i < ALPHABET.length) {
@@ -57,6 +57,14 @@ module.exports = {
             i++;
         }
         return digits.reverse().map(function(digit) {
+            if(digit === 1)
+                return Math.random() > 0.5 ? '1' : '2';
+            if(digit === 2)
+                return Math.random() > 0.5 ? '3' : '4';
+            if(digit === 3)
+                return Math.random() > 0.5 ? '5' : '6';
+            if(digit === 4)
+                return Math.random() > 0.5 ? '7' : '8';
             return ALPHABET[digit];
         }).join("");
     },
@@ -75,7 +83,13 @@ module.exports = {
         bytes = [0];
         i = 0;
         while (i < string.length) {
-            c = string[i];
+            switch(string[i]){
+                case '2': c = '1'; break;
+                case '4': c = '3'; break;
+                case '6': c = '5'; break;
+                case '8': c = '7'; break;
+                default: c = string[i]; break;
+            }
             if (!(c in ALPHABET_MAP)) {
                 throw "Base58.decode received unacceptable input. Character '" + c + "' is not in the Base58 alphabet.";
             }
@@ -100,7 +114,7 @@ module.exports = {
             i++;
         }
         i = 0;
-        while (string[i] === "1" && i < string.length - 1) {
+        while (string[i] === "0" && i < string.length - 1) {
             bytes.push(0);
             i++;
         }
