@@ -12,6 +12,7 @@ const len = 64
  * @returns {string} Restored string
  */
 const long = function(str,prefix){
+    str = Base58.decode(str).toString('utf-8')
     let s
     let strRows = Math.ceil(str.length / len)
     let strArr = Array(strRows + 2)
@@ -33,7 +34,7 @@ const short = function(str){
     let strExtract = str.split('\n')
     strExtract.splice(strExtract.length - 2, 2)
     strExtract.splice(0,1)
-    return strExtract.join('')
+    return Base58.encode(strExtract.join(''))
 }
 
 /** Key creator*/
@@ -110,7 +111,7 @@ const private = {
         return Base58.encode(Crypto.privateEncrypt({
             key: long(key, private.header),
             passphrase: (typeof password === 'string') ? password : ''
-        }, Buffer.from(str, 'utf-8')))
+        }, Buffer.from(str, 'utf-8')), true)
     },
     /**
      * Decrypt with private key
@@ -125,7 +126,7 @@ const private = {
         return Crypto.privateDecrypt({
             key: long(key, private.header),
             passphrase: (typeof password === 'string') ? password : ''
-        }, Base58.decode(str)).toString('utf-8')
+        }, Base58.decode(str, true)).toString('utf-8')
     }
 }
 /** Public key encryption functions*/
@@ -141,7 +142,7 @@ const public = {
     encrypt: function(str, key){
         if(typeof str !== 'string' || typeof key !== 'string') return ''
         if(str.length === 0 || key.length === 0) return ''
-        return Base58.encode(Crypto.publicEncrypt(long(key, public.header), Buffer.from(str,'utf8')))
+        return Base58.encode(Crypto.publicEncrypt(long(key, public.header), Buffer.from(str,'utf8')), true)
     },
     /**
      * Decrypt with public key
@@ -152,7 +153,7 @@ const public = {
     decrypt: function(str, key){
         if(typeof str !== 'string' || typeof key !== 'string') return ''
         if(str.length === 0 || key.length === 0) return ''
-        return Crypto.publicDecrypt(long(key, public.header), Base58.decode(str)).toString('utf8')
+        return Crypto.publicDecrypt(long(key, public.header), Base58.decode(str, true)).toString('utf8')
     }
 }
 /** Key signing functions*/
@@ -195,7 +196,7 @@ const symmetric = {
         let iv = Crypto.randomBytes(16)
         let cipherIv = Crypto.createCipheriv('aes-256-gcm', key, iv)
         let cipher = cipherIv.update(str)
-        return Base58.encode(Buffer.concat([cipher,cipherIv.final()]).toString('base64') + ',' + iv.toString('base64'), 'utf-8')
+        return Base58.encode(Buffer.concat([cipher,cipherIv.final()]).toString('base64') + ',' + iv.toString('base64'), true)
     },
     /**
      * Decrypt a string
@@ -206,7 +207,7 @@ const symmetric = {
     decrypt: function(str, key){
         if(typeof str !== 'string' || !Buffer.isBuffer(key)) return ''
         try{
-            str = Base58.decode(str).toString('utf-8').split(',')
+            str = Base58.decode(str, true).toString('utf-8').split(',')
         }catch{
             return ''
         }
