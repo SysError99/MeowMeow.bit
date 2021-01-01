@@ -3,18 +3,15 @@
  * 
  * Github: https://github.com/45678/Base58
  */
-let ALPHABET, ALPHABET_62, ALPHABET_SCRAMBLED, MAP_ALPHABET, MAP_ALPHABET_62, MAP_ALPHABET_SCRAMBLED, i;
+let ALPHABET, ALPHABET_62, MAP_ALPHABET, MAP_ALPHABET_62, i;
 ALPHABET = "0123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz"; 
 ALPHABET_62 = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
-ALPHABET_SCRAMBLED = "013579ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 MAP_ALPHABET = {};
 MAP_ALPHABET_62 = {};
-MAP_ALPHABET_SCRAMBLED = {};
 i = 0;
 while(i < ALPHABET_62.length){
     if(i < ALPHABET.length){
         MAP_ALPHABET[ALPHABET.charAt(i)] = i;
-        MAP_ALPHABET_SCRAMBLED[ALPHABET_SCRAMBLED.charAt(i)] = i;
     }
     MAP_ALPHABET_62[ALPHABET_62.charAt(i)] = i;
     i++;
@@ -34,18 +31,6 @@ const convertToText = function(digit){
  */
 const convertToText62 = function(digit){
     return ALPHABET_62[digit];
-}
-/**
- * Convert to text, and scramble
- * @param {number} digit 
- * @returns {string[]} Array of string
- */
-const convertToTextScramble = function(digit){
-    if(digit === 1) return Math.random() > 0.5 ? "1" : "2";
-    if(digit === 2) return Math.random() > 0.5 ? "3" : "4";
-    if(digit === 3) return Math.random() > 0.5 ? "5" : "6";
-    if(digit === 4) return Math.random() > 0.5 ? "7" : "8";
-    return ALPHABET_SCRAMBLED[digit];
 }
 /** BaseN module*/
 module.exports = {
@@ -95,8 +80,7 @@ module.exports = {
             i++;
         }
         digits = digits.reverse()
-        if(type === "scramble") digits = digits.map(convertToTextScramble);
-        else if(type === "62") digits = digits.map(convertToText62);
+        if(type === "62") digits = digits.map(convertToText62);
         else digits = digits.map(convertToText);
         return digits.join("");
     },
@@ -107,41 +91,24 @@ module.exports = {
      * @returns {Buffer} Decoded buffer
      */
     decode: function(string, type){
-        let bytes, c, cc, d, carry, j, s;
+        let bytes, c, cc, d, carry, j;
         if(string.length === 0){
             return "";
-        }
-        if(type === "scramble"){
-            cc = MAP_ALPHABET_SCRAMBLED;
-            d = 58;
-            s = true;
         }
         else if(type === "62"){
             cc = MAP_ALPHABET_62;
             d = 62;
-            s = false;
         }
         else {
             cc = MAP_ALPHABET;
             d = 58;
-            s = false
         }
         i = void 0;
         j = void 0;
         bytes = [0];
         i = 0;
         while(i < string.length){
-            if(s){
-                switch(string[i]){
-                    case "2": c = "1"; break;
-                    case "4": c = "3"; break;
-                    case "6": c = "5"; break;
-                    case "8": c = "7"; break;
-                    default: c = string[i]; break;
-                }
-            }else{
-                c = string[i];
-            }
+            c = string[i];
             if(!(c in cc)){
                 throw Error("BaseN.decode received unacceptable input. Character '" + c + "' is not in the BaseN alphabet.");
             }

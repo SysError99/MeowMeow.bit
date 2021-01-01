@@ -111,7 +111,7 @@ const private = {
         return BaseN.encode(Crypto.privateEncrypt({
             key: long(key, private.header),
             passphrase: (typeof password === 'string') ? password : ''
-        }, Buffer.from(str, 'utf-8')), 'scramble')
+        }, Buffer.from(str, 'utf-8')), '62')
     },
     /**
      * Decrypt with private key
@@ -126,7 +126,7 @@ const private = {
         return Crypto.privateDecrypt({
             key: long(key, private.header),
             passphrase: (typeof password === 'string') ? password : ''
-        }, BaseN.decode(str, 'scramble')).toString('utf-8')
+        }, BaseN.decode(str, '62')).toString('utf-8')
     }
 }
 /** Public key encryption functions*/
@@ -142,7 +142,7 @@ const public = {
     encrypt: function(str, key){
         if(typeof str !== 'string' || typeof key !== 'string') return ''
         if(str.length === 0 || key.length === 0) return ''
-        return BaseN.encode(Crypto.publicEncrypt(long(key, public.header), Buffer.from(str,'utf8')), 'scramble')
+        return BaseN.encode(Crypto.publicEncrypt(long(key, public.header), Buffer.from(str,'utf8')), '62')
     },
     /**
      * Decrypt with public key
@@ -154,7 +154,7 @@ const public = {
         if(typeof str !== 'string' || typeof key !== 'string') return ''
         if(str.length === 0 || key.length === 0) return ''
         try{
-            return Crypto.publicDecrypt(long(key, public.header), BaseN.decode(str, 'scramble')).toString('utf8')
+            return Crypto.publicDecrypt(long(key, public.header), BaseN.decode(str, '62')).toString('utf8')
         }catch(e){
             console.error('E -> Crypt.public.decrypt: ' + e)
             return ''
