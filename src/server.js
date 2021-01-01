@@ -19,7 +19,7 @@ const storage = require('./storage')(locale)
 process.on('uncaughtException',function(err){
     switch(err.code){
         case 'ECONNREFUSED':
-            console.log(err)
+            console.error(err)
             break
         default:
             throw err
