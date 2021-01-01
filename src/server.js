@@ -327,7 +327,7 @@ const Server = function(callback){
                     return
                 }
                 callback(peer, body)
-            }catch{
+            }catch(e){
                 _this.response(peer)
                 peer.key = null
             }
