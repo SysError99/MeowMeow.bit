@@ -186,7 +186,7 @@ const sign = {
         if(typeof str !== 'string' || typeof key !== 'string' || typeof signature !== 'string') return false
         if(str.length === 0 || key.length === 0 || signature.length === 0) return false
         try{
-            return Crypto.verify(null, str, long(key, public.header), BaseN.decode(signature, '62'))
+            return Crypto.verify(null, Buffer.from(str), long(key, public.header), BaseN.decode(signature, '62'))
         }catch(e){
             console.error('E -> Crypt.sign.verify: ' + e)
             return false
