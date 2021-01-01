@@ -2,7 +2,7 @@
  * Encrpytion module, separeted from Crpyto for the case of encryption method changes.
  */
 const Crypto = require('crypto')
-const Base58 = require('./base58')
+const BaseN = require('./base.n')
 /** @type {number} Public key length per row*/
 const len = 64
 /**
@@ -12,7 +12,7 @@ const len = 64
  * @returns {string} Restored string
  */
 const long = function(str,prefix){
-    str = Base58.decode(str).toString('utf-8')
+    str = BaseN.decode(str).toString('utf-8')
     let s
     let strRows = Math.ceil(str.length / len)
     let strArr = Array(strRows + 2)
@@ -31,10 +31,10 @@ const long = function(str,prefix){
  * @returns {string} 
  */
 const short = function(str){
-    let strExtract = str.split('\n')
-    strExtract.splice(strExtract.length - 2, 2)
-    strExtract.splice(0,1)
-    return Base58.encode(strExtract.join(''))
+    str = str.split('\n')
+    str.splice(str.length - 2, 2)
+    str.splice(0,1)
+    return BaseN.encode(str.join(''))
 }
 
 /** Key creator*/
@@ -108,10 +108,10 @@ const private = {
     encrypt: function(str, key, password){
         if(typeof str !== 'string' || typeof key !== 'string') return ''
         if(str.length === 0 || key.length === 0) return ''
-        return Base58.encode(Crypto.privateEncrypt({
+        return BaseN.encode(Crypto.privateEncrypt({
             key: long(key, private.header),
             passphrase: (typeof password === 'string') ? password : ''
-        }, Buffer.from(str, 'utf-8')), true)
+        }, Buffer.from(str, 'utf-8')), 'scramble')
     },
     /**
      * Decrypt with private key
@@ -126,7 +126,7 @@ const private = {
         return Crypto.privateDecrypt({
             key: long(key, private.header),
             passphrase: (typeof password === 'string') ? password : ''
-        }, Base58.decode(str, true)).toString('utf-8')
+        }, BaseN.decode(str, 'scramble')).toString('utf-8')
     }
 }
 /** Public key encryption functions*/
@@ -142,7 +142,7 @@ const public = {
     encrypt: function(str, key){
         if(typeof str !== 'string' || typeof key !== 'string') return ''
         if(str.length === 0 || key.length === 0) return ''
-        return Base58.encode(Crypto.publicEncrypt(long(key, public.header), Buffer.from(str,'utf8')), true)
+        return BaseN.encode(Crypto.publicEncrypt(long(key, public.header), Buffer.from(str,'utf8')), 'scramble')
     },
     /**
      * Decrypt with public key
@@ -153,7 +153,12 @@ const public = {
     decrypt: function(str, key){
         if(typeof str !== 'string' || typeof key !== 'string') return ''
         if(str.length === 0 || key.length === 0) return ''
-        return Crypto.publicDecrypt(long(key, public.header), Base58.decode(str, true)).toString('utf8')
+        try{
+            return Crypto.publicDecrypt(long(key, public.header), BaseN.decode(str, 'scramble')).toString('utf8')
+        }catch(e){
+            console.error('E -> Crypt.public.decrypt: ' + e)
+            return ''
+        }
     }
 }
 /** Key signing functions*/
@@ -168,7 +173,7 @@ const sign = {
     perform: function(str,key,password){
         if(typeof str !== 'string' || typeof key !== 'string') return ''
         if(str.length === 0 || key.length === 0) return ''
-        return Crypto.sign(null, Buffer.from(str), {key: long(key, private.header), passphrase: password}).toString('base64')
+        return BaseN.encode(Crypto.sign(null, Buffer.from(str), {key: long(key, private.header), passphrase: password}), '62')
     },
     /**
      * Perform key verification
@@ -180,7 +185,12 @@ const sign = {
     verify: function(str,key,signature){
         if(typeof str !== 'string' || typeof key !== 'string' || typeof signature !== 'string') return false
         if(str.length === 0 || key.length === 0 || signature.length === 0) return false
-        return Crypto.verify(null, Buffer.from(str), long(key, public.header), Buffer.from(signature, 'base64'))
+        try{
+            return Crypto.verify(null, str, long(key, public.header), BaseN.decode(signature, '62'))
+        }catch(e){
+            console.error('E -> Crypt.sign.verify: ' + e)
+            return false
+        }
     }
 }
 /** Symmetric encryption functions*/
@@ -196,7 +206,7 @@ const symmetric = {
         let iv = Crypto.randomBytes(16)
         let cipherIv = Crypto.createCipheriv('aes-256-gcm', key, iv)
         let cipher = cipherIv.update(str)
-        return Base58.encode(Buffer.concat([cipher,cipherIv.final()]).toString('base64') + ',' + iv.toString('base64'), true)
+        return BaseN.encode(Buffer.concat([cipher,cipherIv.final()]).toString('base64') + ',' + iv.toString('base64'), '62')
     },
     /**
      * Decrypt a string
@@ -207,8 +217,9 @@ const symmetric = {
     decrypt: function(str, key){
         if(typeof str !== 'string' || !Buffer.isBuffer(key)) return ''
         try{
-            str = Base58.decode(str, true).toString('utf-8').split(',')
-        }catch{
+            str = BaseN.decode(str, '62').toString('utf-8').split(',')
+        }catch(e){
+            console.error('E -> Crypt.public.decrypt: ' + e)
             return ''
         }
         if(str.length !== 2) return ''
