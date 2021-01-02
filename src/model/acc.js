@@ -1,5 +1,4 @@
 const isAny = require('../type.any.check')
-const AsymmetricKey = require("./key.asymmetric")
 const SignKey = require("./key.sign")
 /**
  * Account object
@@ -20,7 +19,7 @@ const Acc = function(d){
     /** @type {string[]} List of following (identified by a public key)*/
     this.following = []
 
-    /** @type {AsymmetricKey} Asymmetric key to be used*/
+    /** @type {SignKey} Asymmetric key to be used*/
     this.key = null
 
     /** @type {string} Name to be called*/
@@ -66,7 +65,6 @@ const Acc = function(d){
             if(typeof d.pic.profile === 'string') _this.pic.profile = d.pic.profile
         }
         if(typeof d.posts === 'number') _this.posts = d.posts
-        if(typeof d.private === 'boolean') _this.private = d.private
         if(typeof d.public === 'boolean') _this.public = d.public
         if(Array.isArray(d.tag)) _this.tag = d.tag
     }
@@ -81,7 +79,6 @@ const Acc = function(d){
             name: _this.name,
             pic: _this.pic,
             posts: _this.posts,
-            private: _this.private,
             public: _this.public,
             tag: _this.tag
         }
