@@ -1,22 +1,27 @@
 const isAny = require('../type.any.check')
+const BaseN = require('../base.n')
 const Crypt = require('../crypt')
 /**
  * Sign key object.
  * @param {Object|string} d JSON or string for new key (passphrase)
  */
 const SignKey = function(d){
-    /** This object*/
-    let _this = this
     /** @type {boolean} This is 'SignKey' object*/
     this.isSignKey = true
+    /** @type {string} Saved password*/
+    let password = ''
+    /** @type {string} Private key*/
+    let private = ''
+    /** @type {string} Public key*/
+    let public = ''
     /**
      * Sign a key using private key
      * @param {string} str String to be signed
      * @returns {string} Base64-based signature
      */
     this.sign = function(str){
-        if(_this.private.length === 0) return ''
-        return Crypt.sign.perform(str, _this.private, _this.password)
+        if(private.length === 0) return ''
+        return Crypt.sign.perform(str, private, password)
     }
     /**
      * Verify signature using public key
@@ -25,32 +30,43 @@ const SignKey = function(d){
      * @returns {boolean} Is this legit?
      */
     this.verify = function(str, signature){
-        if(_this.public.length === 0) return false
-        return Crypt.sign.verify(str, _this.public, signature)
+        if(public.length === 0) return false
+        return Crypt.sign.verify(str, public, signature)
     }
-    /** @type {string} Saved password*/
-    this.password = ''
-    /** @type {string} Private key*/
-    this.private = ''
-    /** @type {string} Public key*/
-    this.public = ''
+    /** Key retrieving functions*/
+    this.get = {
+        /**
+         * Get private key in Base58 form
+         * @returns {string} Base58-encoded string
+         */
+        private: function(){
+            return BaseN.encode(Buffer.from(private, 'base64'))
+        },
+        /**
+         * Get public key in Base58 form
+         * @returns {string} Base58-encoded string
+         */
+        public: function(){
+            return BaseN.encode(Buffer.from(public, 'base64'))
+        }
+    }
     /**
      * Generate a new key
      * @param {string} password Passphrase for this key
      */
     let _newKey = function(password){
         let newKey = Crypt.newKey.sign(password)
-        _this.password = password
-        _this.private = newKey.privateKey
-        _this.public = newKey.publicKey
+        password = password
+        private = newKey.privateKey
+        public = newKey.publicKey
     }
     /**
      * Import JSON
      */
     let _import = function(){
-        if(typeof d.password === 'string') _this.password = d.password
-        if(typeof d.private === 'string') _this.private = d.private
-        if(typeof d.public === 'string') _this.public = d.public
+        if(typeof d.password === 'string') password = d.password
+        if(typeof d.private === 'string') private = d.private
+        if(typeof d.public === 'string') public = d.public
     }
     /**
      * Export to JSON
@@ -58,9 +74,9 @@ const SignKey = function(d){
      */
     this.export = function(){
         return {
-            password: _this.password,
-            private: _this.private,
-            public: _this.public
+            password: password,
+            private: private,
+            public: public
         }
     }
     /**
@@ -68,7 +84,7 @@ const SignKey = function(d){
      */
     this.exportPub = function(){
         return {
-            public: _this.public
+            public: public
         }
     }
     if(isAny(d)) _import()

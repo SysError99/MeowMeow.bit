@@ -1,73 +1,70 @@
 const isAny = require('../type.any.check')
+const BaseN = require('../base.n')
 const Crypt = require('../crypt')
 /**
  * Asymmetric key object.
  * @param {Object|string} d JSON or string for new key (passphrase)
  */
 const AsymmetricKey = function(d){
-    /** This object*/
-    let _this = this
     /** @type {boolean} This is 'AsymmetricKey' object*/
     this.isAsymmetricKey = true
+    /** @type {string} Saved password*/
+    let password = ''
+    /** @type {string} Private key*/
+    let private = ''
+    /** @type {string} Public key*/
+    let public = ''
     /**
      * Decrypt base64 using private key
      * @param {string} str String to be decrypted
      * @returns {string} Decrypted string
      */
     this.decrypt = function(str){
-        if(_this.private.length === 0) return ''
-        return Crypt.private.decrypt(str, _this.private, _this.password)
+        if(private.length === 0) return ''
+        return Crypt.private.decrypt(str, private, password)
     }
     /**
      * Encrypt using public key
      * @param {string} str String to be encrypted
      */
     this.encrypt = function(str){
-        if(_this.public.length === 0) return ''
-        return Crypt.public.encrypt(str, _this.public)
+        if(public.length === 0) return ''
+        return Crypt.public.encrypt(str, public)
     }
-    /**
-     * Sign a key using private key
-     * @param {string} str String to be signed
-     * @returns {string} Base64-based signature
-     */
-    this.sign = function(str){
-        if(_this.private.length === 0) return ''
-        return Crypt.private.sign(str, _this.private, _this.password)
+    /** Key retrieving functions*/
+    this.get = {
+        /**
+         * Get private key in Base58 form
+         * @returns {string} Base58-encoded string
+         */
+        private: function(){
+            return BaseN.encode(Buffer.from(private, 'base64'))
+        },
+        /**
+         * Get public key in Base58 form
+         * @returns {string} Base58-encoded string
+         */
+        public: function(){
+            return BaseN.encode(Buffer.from(public, 'base64'))
+        }
     }
-    /**
-     * Verify signature using public key
-     * @param {string} str String to be verified
-     * @param {string} signature Signature to be verified
-     * @returns {boolean} Is this legit?
-     */
-    this.verify = function(str, signature){
-        if(_this.public.length === 0) return false
-        return Crypt.public.verify(str, _this.public, signature)
-    }
-    /** @type {string} Saved password*/
-    this.password = ''
-    /** @type {string} Private key*/
-    this.private = ''
-    /** @type {string} Public key*/
-    this.public = ''
     /**
      * Generate a new key
      * @param {string} password Passphrase for this key
      */
     let _newKey = function(password){
         let newKey = Crypt.newKey.asymmetric(password)
-        _this.password = password
-        _this.private = newKey.privateKey
-        _this.public = newKey.publicKey
+        password = password
+        private = newKey.privateKey
+        public = newKey.publicKey
     }
     /**
      * Import JSON
      */
     let _import = function(){
-        if(typeof d.password === 'string') _this.password = d.password
-        if(typeof d.private === 'string') _this.private = d.private
-        if(typeof d.public === 'string') _this.public = d.public
+        if(typeof d.password === 'string') password = d.password
+        if(typeof d.private === 'string') private = d.private
+        if(typeof d.public === 'string') public = d.public
     }
     /**
      * Export to JSON
@@ -75,9 +72,9 @@ const AsymmetricKey = function(d){
      */
     this.export = function(){
         return {
-            password: _this.password,
-            private: _this.private,
-            public: _this.public
+            password: password,
+            private: private,
+            public: public
         }
     }
     /**
@@ -85,7 +82,7 @@ const AsymmetricKey = function(d){
      */
     this.exportPub = function(){
         return {
-            public: _this.public
+            public: public
         }
     }
     if(typeof d === 'string') _newKey(d)
