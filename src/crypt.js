@@ -12,7 +12,6 @@ const len = 64
  * @returns {string} Restored string
  */
 const long = function(str,prefix){
-    str = BaseN.decode(str).toString('utf-8')
     let s
     let strRows = Math.ceil(str.length / len)
     let strArr = Array(strRows + 2)
@@ -32,9 +31,10 @@ const long = function(str,prefix){
  */
 const short = function(str){
     str = str.split('\n')
+    if(str.length < 3) return str.join('\n')
     str.splice(str.length - 2, 2)
     str.splice(0,1)
-    return BaseN.encode(str.join(''))
+    return str.join('')
 }
 
 /** Key creator*/
