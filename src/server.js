@@ -315,7 +315,7 @@ const Server = function(callback){
                     peer.key = new SymmetricKey(JSON.parse(_this.key.current.decrypt(body)))
                     _this.response(peer, 'nice2meetu')
                 }catch(e){
-                    console.error('E -> Server.on(\'end\'): while decrypting [0]: ' + e)
+                    console.error('E -> Server.on(\'end\'): get peer.key' + e)
                     _this.response(peer)
                 }
                 return
@@ -333,7 +333,7 @@ const Server = function(callback){
             }
         })
         socket.on('error',function(err){
-            console.error('E -> Server.on(\'error\'): Error on socket: ' + err.message)
+            console.error('E -> Server.on(\'error\'): ' + err.message)
         })
     })
 
