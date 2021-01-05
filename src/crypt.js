@@ -47,7 +47,6 @@ const keyCreator = {
     asymmetric: function(password){
         let k = Crypto.generateKeyPairSync('rsa', {
             modulusLength: 4096,
-            namedCurve: 'secp521r1', 
             publicKeyEncoding: {
                 type: 'spki',
                 format: 'pem'     
