@@ -2,7 +2,7 @@ const isAny = require('../type.any.check')
 const Crypt = require('../crypt')
 /**
  * Symmetric key object
- * @param {string|Object} d JSON or string
+ * @param {Buffer|string} d Data to be imported
  */
 const SymmetricKey = function(d){
     /** @type {boolean} This is 'SymmetricKey' object*/
@@ -26,33 +26,20 @@ const SymmetricKey = function(d){
         return Crypt.symmetric.decrypt(str, key)
     }
     /**
-     * Create a new key for this object
-     */
-    let _new = function(){
-        key = Crypt.newKey.symmetric()
-    }
-    /**
-     * Import JSON
-     */
-    let _import = function(){
-        if(typeof d.key === 'string'){
-            try{
-                key = Buffer.from(d.key, 'base64')
-            }catch(e){
-                console.error('E -> SymmetricKey.import: importing key: ' + e)
-            }
-        }
-    }
-    /**
      * Export to JSON
      * @returns {Object} JSON object
      */
     this.export = function(){
-        return {
-            key: key.toString('base64')
+        return key.toString('base64')
+    }
+    if(typeof d === 'string'){
+        try{
+            key = Buffer.from(d, 'base64')
+        }catch(e){
+            console.error('E -> SymmetricKey.import: importing key: ' + e)
         }
     }
-    if(isAny(d)) _import()
-    else _new()
+    else if(Buffer.isBuffer(d)) key = d
+    else key = Crypt.newKey.symmetric()
 }
 module.exports = SymmetricKey
