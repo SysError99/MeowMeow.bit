@@ -312,7 +312,7 @@ const Server = function(callback){
             }
             if(peer.key === null){
                 try{
-                    peer.key = new SymmetricKey(JSON.parse(_this.key.current.decrypt(body)))
+                    peer.key = new SymmetricKey(_this.key.current.decrypt(body))
                     _this.response(peer, 'nice2meetu')
                 }catch(e){
                     console.error('E -> Server.on(\'end\'): get peer.key' + e)
