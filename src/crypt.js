@@ -3,6 +3,8 @@
  */
 const Crypto = require('crypto')
 const BaseN = require('./base.n')
+/** @type {string} Currently used EC*/
+const curve = 'sect571k1'
 /** @type {number} Public key length per row*/
 const len = 64
 /**
@@ -63,13 +65,25 @@ const keyCreator = {
         return k
     },
     /**
+     * Create Elliptic Curve Diffie-Hellman object
+     * @param {Buffer|string} key Buffer to be used as private key
+     * @returns {Crypto.ECDH} ECDH key object
+     */
+    ecdh: function(key){
+        let ecdh =  Crypto.createECDH(curve)
+        if(Buffer.isBuffer(key)) ecdh.setPrivateKey(key)
+        else if(typeof key === 'string') ecdh.setPrivateKey(BaseN.decode(key, '62'))
+        else ecdh.generateKeys()
+        return ecdh
+    },
+    /**
      * Generate a new signing key
      * @returns {import('crypto').KeyPairSyncResult<string,string>} Key result
      */
     sign: function(password){
         let k = Crypto.generateKeyPairSync('ed25519', {
             modulusLength: 512,
-            namedCurve: 'secp521r1', 
+            namedCurve: curve, 
             publicKeyEncoding: {
                 type: 'spki',
                 format: 'pem'     
@@ -93,6 +107,17 @@ const keyCreator = {
         return Crypto.randomBytes(32)
     }
 }
+const ecdh = {
+    /**
+     * Compute a secret key
+     * @param {Crypto.ECDH} ecdh ECDH Key object
+     * @param {Buffer} public Public key
+     * @returns {Buffer} Secret key
+     */
+    computeSecret: function(ecdh, public){
+        return ecdh.computeSecret(public)
+    }
+}
 /** Private key encryption functions*/
 const private = {
     /** @type {[string,string]} Header to be used for long()*/
@@ -105,8 +130,6 @@ const private = {
      * @returns {string} Encrpyted string.
      */
     encrypt: function(str, key, password){
-        if(typeof str !== 'string' || typeof key !== 'string') return ''
-        if(str.length === 0 || key.length === 0) return ''
         return BaseN.encode(Crypto.privateEncrypt({
             key: long(key, private.header),
             passphrase: (typeof password === 'string') ? password : ''
@@ -120,8 +143,6 @@ const private = {
      * @returns {string} Decrpyted string.
      */
     decrypt: function(str, key, password){
-        if(typeof str !== 'string' || typeof key !== 'string') return ''
-        if(str.length === 0 || key.length === 0) return ''
         return Crypto.privateDecrypt({
             key: long(key, private.header),
             passphrase: (typeof password === 'string') ? password : ''
@@ -139,8 +160,6 @@ const public = {
      * @returns {string} Encrpyted string.
      */
     encrypt: function(str, key){
-        if(typeof str !== 'string' || typeof key !== 'string') return ''
-        if(str.length === 0 || key.length === 0) return ''
         return BaseN.encode(Crypto.publicEncrypt(long(key, public.header), Buffer.from(str,'utf8')), '62')
     },
     /**
@@ -150,14 +169,7 @@ const public = {
      * @returns {string} Decrpyted string.
      */
     decrypt: function(str, key){
-        if(typeof str !== 'string' || typeof key !== 'string') return ''
-        if(str.length === 0 || key.length === 0) return ''
-        try{
-            return Crypto.publicDecrypt(long(key, public.header), BaseN.decode(str, '62')).toString('utf8')
-        }catch(e){
-            console.error('E -> Crypt.public.decrypt: ' + e)
-            return ''
-        }
+        return Crypto.publicDecrypt(long(key, public.header), BaseN.decode(str, '62')).toString('utf8')
     }
 }
 /** Key signing functions*/
@@ -170,8 +182,6 @@ const sign = {
      * @returns {string} Signature
      */
     perform: function(str,key,password){
-        if(typeof str !== 'string' || typeof key !== 'string') return ''
-        if(str.length === 0 || key.length === 0) return ''
         return BaseN.encode(Crypto.sign(null, Buffer.from(str), {key: long(key, private.header), passphrase: password}), '62')
     },
     /**
@@ -182,14 +192,7 @@ const sign = {
      * @returns {boolean} Is this legit?
      */
     verify: function(str,key,signature){
-        if(typeof str !== 'string' || typeof key !== 'string' || typeof signature !== 'string') return false
-        if(str.length === 0 || key.length === 0 || signature.length === 0) return false
-        try{
-            return Crypto.verify(null, Buffer.from(str), long(key, public.header), BaseN.decode(signature, '62'))
-        }catch(e){
-            console.error('E -> Crypt.sign.verify: ' + e)
-            return false
-        }
+        return Crypto.verify(null, Buffer.from(str), long(key, public.header), BaseN.decode(signature, '62'))
     }
 }
 /** Symmetric encryption functions*/
@@ -201,7 +204,6 @@ const symmetric = {
      * @returns {string} Encrypted string
      */
     encrypt: function(str, key){
-        if(typeof str !== 'string' || !Buffer.isBuffer(key)) return ''
         let iv = Crypto.randomBytes(16)
         let cipherIv = Crypto.createCipheriv('aes-256-gcm', key, iv)
         str = cipherIv.update(str)
@@ -214,22 +216,17 @@ const symmetric = {
      * @returns {string} Decrypted string
      */
     decrypt: function(str, key){
-        if(typeof str !== 'string' || !Buffer.isBuffer(key)) return ''
-        try{
-            str = BaseN.decode(str, '62')
-            let iv  = str.slice(0,16)
-            str = str.slice(16, str.length)
-            return Crypto.createDecipheriv('aes-256-gcm', key, iv).update(str).toString('utf-8')
-        }catch(e){
-            console.error('E -> Crypt.public.decrypt: ' + e)
-            return ''
-        }
+        str = BaseN.decode(str, '62')
+        let iv  = str.slice(0,16)
+        str = str.slice(16, str.length)
+        return Crypto.createDecipheriv('aes-256-gcm', key, iv).update(str).toString('utf-8')
     }
 }
 /**
  * Encryption module
  */
 module.exports = {
+    ecdh: ecdh,
     newKey: keyCreator,
     private: private,
     public: public,
