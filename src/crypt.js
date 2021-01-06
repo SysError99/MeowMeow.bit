@@ -204,8 +204,8 @@ const symmetric = {
         if(typeof str !== 'string' || !Buffer.isBuffer(key)) return ''
         let iv = Crypto.randomBytes(16)
         let cipherIv = Crypto.createCipheriv('aes-256-gcm', key, iv)
-        let cipher = cipherIv.update(str)
-        return BaseN.encode(Buffer.concat([cipher,cipherIv.final()]).toString('base64') + ',' + iv.toString('base64'), '62')
+        str = cipherIv.update(str)
+        return BaseN.encode(Buffer.concat([iv,str,cipherIv.final()]), '62')
     },
     /**
      * Decrypt a string
@@ -216,15 +216,14 @@ const symmetric = {
     decrypt: function(str, key){
         if(typeof str !== 'string' || !Buffer.isBuffer(key)) return ''
         try{
-            str = BaseN.decode(str, '62').toString('utf-8').split(',')
+            str = BaseN.decode(str, '62')
+            let iv  = str.slice(0,16)
+            str = str.slice(16, str.length)
+            return Crypto.createDecipheriv('aes-256-gcm', key, iv).update(str).toString('utf-8')
         }catch(e){
             console.error('E -> Crypt.public.decrypt: ' + e)
             return ''
         }
-        if(str.length !== 2) return ''
-        let encrypted = Buffer.from(str[0], 'base64')
-        let iv = Buffer.from(str[1], 'base64')
-        return Crypto.createDecipheriv('aes-256-gcm', key, iv).update(encrypted).toString('utf-8')
     }
 }
 /**
