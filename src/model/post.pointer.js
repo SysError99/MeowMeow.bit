@@ -4,7 +4,7 @@
  */
 const PostPointer = function(d){
     /** This Object*/
-    let _this = this
+    let _ = this
     /** This is a 'PostPointer' Object*/
     this.isPostPointer = true
 
@@ -20,17 +20,17 @@ const PostPointer = function(d){
     /**
      * Import from JSON.
      */
-    let _import = function(){
+    let _import = () => {
         if(d.length !== 2) return
-        if(typeof d[0] === 'number') _this.pos = d[0]
-        if(typeof d[1] === 'string') _this.pub = d[1]
-        if(typeof d[2] === 'string') _this.signature = d[2] 
+        if(typeof d[0] === 'number') _.pos = d[0]
+        if(typeof d[1] === 'string') _.pub = d[1]
+        if(typeof d[2] === 'string') _.signature = d[2] 
     }
     /**
      * Export to JSON
      */
-    this.export = function(){
-        return [_this.pos, _this.pub, _this.signature]
+    this.export = () => {
+        return [_.pos, _.pub, _.signature]
     }
     if(Array.isArray(d)) _import()
 }

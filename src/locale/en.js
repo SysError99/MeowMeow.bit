@@ -3,7 +3,7 @@ const Locale = require('../locale')
  * Translate to english.
  * @param {Locale} locale Locale object
  */
-module.exports = function(locale){
+module.exports = locale => {
     locale.current = 'en'
 
     locale.str.file.readErr = 'Error while reading a file: '

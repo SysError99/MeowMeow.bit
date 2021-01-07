@@ -13,7 +13,7 @@ const len = 64
  * @param {[string,string]} prefix What to be inserted 
  * @returns {string} Restored string
  */
-const long = function(str,prefix){
+const long = (str,prefix) => {
     let s
     let strRows = Math.ceil(str.length / len)
     let strArr = Array(strRows + 2)
@@ -31,7 +31,7 @@ const long = function(str,prefix){
  * @param {string} str String to be shortened
  * @returns {string} 
  */
-const short = function(str){
+const short = str => {
     str = str.split('\n')
     if(str.length < 3) return str.join('\n')
     str.splice(str.length - 2, 2)
@@ -46,7 +46,7 @@ const keyCreator = {
      * @param {string} password Passphrase for this key
      * @returns {import('crypto').KeyPairSyncResult<string,string>} Key result
      */
-    asymmetric: function(password){
+    asymmetric: password => {
         let k = Crypto.generateKeyPairSync('rsa', {
             modulusLength: 4096,
             publicKeyEncoding: {
@@ -69,7 +69,7 @@ const keyCreator = {
      * @param {Buffer|string} key Buffer to be used as private key
      * @returns {Crypto.ECDH} ECDH key object
      */
-    ecdh: function(key){
+    ecdh: key => {
         let ecdh =  Crypto.createECDH(curve)
         if(Buffer.isBuffer(key)) ecdh.setPrivateKey(key)
         else if(typeof key === 'string') ecdh.setPrivateKey(BaseN.decode(key, '62'))
@@ -80,7 +80,7 @@ const keyCreator = {
      * Generate a new signing key
      * @returns {import('crypto').KeyPairSyncResult<string,string>} Key result
      */
-    sign: function(password){
+    sign: password => {
         let k = Crypto.generateKeyPairSync('ed25519', {
             modulusLength: 512,
             namedCurve: curve, 
@@ -103,7 +103,7 @@ const keyCreator = {
      * Generate a new symmetric key
      * @returns {Buffer} Key buffer
      */
-    symmetric: function(){
+    symmetric: () => {
         return Crypto.randomBytes(32)
     }
 }
@@ -114,7 +114,7 @@ const ecdh = {
      * @param {Buffer} public Public key
      * @returns {Buffer} Secret key
      */
-    computeSecret: function(ecdh, public){
+    computeSecret: (ecdh, public) => {
         return ecdh.computeSecret(public)
     }
 }
@@ -129,7 +129,7 @@ const private = {
      * @param {string} password Password for decrypting private key
      * @returns {string} Encrpyted string.
      */
-    encrypt: function(str, key, password){
+    encrypt: (str, key, password) => {
         return BaseN.encode(Crypto.privateEncrypt({
             key: long(key, private.header),
             passphrase: (typeof password === 'string') ? password : ''
@@ -142,7 +142,7 @@ const private = {
      * @param {string} password Password for decrypting private key
      * @returns {string} Decrpyted string.
      */
-    decrypt: function(str, key, password){
+    decrypt: (str, key, password) => {
         return Crypto.privateDecrypt({
             key: long(key, private.header),
             passphrase: (typeof password === 'string') ? password : ''
@@ -159,7 +159,7 @@ const public = {
      * @param {string} key Public key that will be used to encrypt
      * @returns {string} Encrpyted string.
      */
-    encrypt: function(str, key){
+    encrypt: (str, key) => {
         return BaseN.encode(Crypto.publicEncrypt(long(key, public.header), Buffer.from(str,'utf8')), '62')
     },
     /**
@@ -168,7 +168,7 @@ const public = {
      * @param {string} key Public key that will be used to decrypt
      * @returns {string} Decrpyted string.
      */
-    decrypt: function(str, key){
+    decrypt: (str, key) => {
         return Crypto.publicDecrypt(long(key, public.header), BaseN.decode(str, '62')).toString('utf8')
     }
 }
@@ -181,7 +181,7 @@ const sign = {
      * @param {string} password Password (passphrase) to be used
      * @returns {string} Signature
      */
-    perform: function(str,key,password){
+    perform: (str,key,password) => {
         return BaseN.encode(Crypto.sign(null, Buffer.from(str), {key: long(key, private.header), passphrase: password}), '62')
     },
     /**
@@ -191,7 +191,7 @@ const sign = {
      * @param {string} signature Signature to be verified
      * @returns {boolean} Is this legit?
      */
-    verify: function(str,key,signature){
+    verify: (str,key,signature) => {
         return Crypto.verify(null, Buffer.from(str), long(key, public.header), BaseN.decode(signature, '62'))
     }
 }
@@ -203,7 +203,7 @@ const symmetric = {
      * @param {Buffer} key Key that will be used
      * @returns {string} Encrypted string
      */
-    encrypt: function(str, key){
+    encrypt: (str, key) => {
         let iv = Crypto.randomBytes(16)
         let cipherIv = Crypto.createCipheriv('aes-256-gcm', key, iv)
         str = cipherIv.update(str)
@@ -215,7 +215,7 @@ const symmetric = {
      * @param {Buffer} key Key to be used
      * @returns {string} Decrypted string
      */
-    decrypt: function(str, key){
+    decrypt: (str, key) => {
         str = BaseN.decode(str, '62')
         let iv  = str.slice(0,16)
         str = str.slice(16, str.length)
@@ -235,7 +235,7 @@ module.exports = {
      * @param {number} size Buffer size
      * @returns {Buffer} Randomized buffer
      */
-    rand: function(size){
+    rand: size => {
         if(typeof size !== 'number') return Crypto.randomBytes(3)
         return Crypto.randomBytes(Math.floor(size))
     },

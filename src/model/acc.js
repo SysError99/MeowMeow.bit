@@ -6,7 +6,7 @@ const SignKey = require("./key.sign")
  */
 const Acc = function(d){
     /** This object*/
-    let _this = this
+    let _ = this
     /** @type {boolean} This is 'Account' object*/
     this.isAcc = true
 
@@ -45,59 +45,59 @@ const Acc = function(d){
     /**
      * Create a new account
      */
-    let _new = function(){
-        _this.key = new SignKey()
+    let _new = () => {
+        _.key = new SignKey()
     }
 
     /**
      * Import JSON
      */
-    let _import = function(){
-        if(typeof d.description === 'string') _this.description = d.description
-        if(Array.isArray(d.follower)) _this.follower = d.follower
+    let _import = () => {
+        if(typeof d.description === 'string') _.description = d.description
+        if(Array.isArray(d.follower)) _.follower = d.follower
         if(isAny(d.key)){
-            if(d.key.isKey) _this.key = d.key
-            else _this.key = new SignKey(d.key)
-        }
-        if(typeof d.name === 'string') _this.name = d.name
+            if(d.key.isKey) _.key = d.key
+            else _.key = new SignKey(d.key)
+        }else _.key = new SignKey()
+        if(typeof d.name === 'string') _.name = d.name
         if(isAny(d.pic)){
-            if(typeof d.pic.cover === 'string') _this.pic.cover = d.pic.cover
-            if(typeof d.pic.profile === 'string') _this.pic.profile = d.pic.profile
+            if(typeof d.pic.cover === 'string') _.pic.cover = d.pic.cover
+            if(typeof d.pic.profile === 'string') _.pic.profile = d.pic.profile
         }
-        if(typeof d.posts === 'number') _this.posts = d.posts
-        if(typeof d.public === 'boolean') _this.public = d.public
-        if(Array.isArray(d.tag)) _this.tag = d.tag
+        if(typeof d.posts === 'number') _.posts = d.posts
+        if(typeof d.public === 'boolean') _.public = d.public
+        if(Array.isArray(d.tag)) _.tag = d.tag
     }
     /**
      * Export base
      */
-    let exportBase = function(){
+    let exportBase = () => {
         return {
-            description: _this.description,
-            follower: _this.follower,
+            description: _.description,
+            follower: _.follower,
             key: null,
-            name: _this.name,
-            pic: _this.pic,
-            posts: _this.posts,
-            public: _this.public,
-            tag: _this.tag
+            name: _.name,
+            pic: _.pic,
+            posts: _.posts,
+            public: _.public,
+            tag: _.tag
         }
     }
     /**
      * Export to JSON
      * @returns {Object} JSON
      */
-    this.export = function(){
+    this.export = () => {
         let e = exportBase()
-        e.key = _this.key.export()
+        e.key = _.key.export()
         return e
     }
     /**
      * Export to JSON
      */
-    this.exportPub = function(){
+    this.exportPub = () => {
         let e = exportBase()
-        e.key = _this.key.exportPub()
+        e.key = _.key.exportPub()
         return e
     }
     if(isAny(d)) _import(d)

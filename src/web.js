@@ -22,7 +22,7 @@ const isAny = require('./type.any.check')
  */
 const WebRequest = function(req,d){
     /** This object*/
-    let _this = this
+    let _ = this
     /** @type {boolean} This is 'WebRequest' object*/
     this.isWebRequest = true
     /** @type {HTTP.IncomingMessage} Unimplemented features live here*/
@@ -38,9 +38,9 @@ const WebRequest = function(req,d){
     /**
      * Import JSON
      */
-    let _import = function(){
-        if(isAny(d.params)) _this.params = d.params
-        if(isAny(d.query))  _this.query = d.query
+    let _import = () => {
+        if(isAny(d.params)) _.params = d.params
+        if(isAny(d.query))  _.query = d.query
     }
     if(isAny(d)) _import()
 }
@@ -51,7 +51,7 @@ const WebRequest = function(req,d){
  */
 const WebResponse = function(res){
     /** This object*/
-    let _this = this
+    let _ = this
     /** This is 'WebResponse' object*/
     this.isWebResponse = true
     /** @type {HTTP.ServerResponse} Unimplemented features live here*/
@@ -61,16 +61,16 @@ const WebResponse = function(res){
      * @param {string} contentType parameter for content type
      * @returns {WebResponse} 
      */
-    this.contentType = function(contentType){
+    this.contentType = contentType => {
         res.setHeader('content-type', contentType)
-        return _this
+        return _
     }
     /**
      * Send data back to client
      * @param {any} data Data to be sent back to client
      * @returns {WebResponse} 
      */
-    this.send = function(data){
+    this.send = data => {
         let payload = ''
         switch(typeof data){
             case 'object':
@@ -91,16 +91,16 @@ const WebResponse = function(res){
                 break
         }
         res.end(payload)
-        return _this
+        return _
     }
     /**
      * Set HTTP status
      * @param {number} status Status
      * @returns {WebResponse} 
      */
-    this.status = function(){
+    this.status = () => {
         res.writeHead(status)
-        return _this
+        return _
     }
 }
 
@@ -110,11 +110,11 @@ const WebResponse = function(res){
  */
 const WebEvent = function(d){
     /** This object*/
-    let _this = this
+    let _ = this
     /** @type {boolean} This is 'WebEvent' object*/
     this.isWebEvent = true
     /** @type {RequestCallback} Callback function*/
-    this.callback = function(){}
+    this.callback = () => {}
     /** @type {string} HTTP method*/
     this.method = 'get'
     /** @type {string[]} URL parameters*/
@@ -123,10 +123,10 @@ const WebEvent = function(d){
     /**
      * Import JSON
      */
-    let _import = function(){
-        if(typeof d.callback === 'function') _this.callback = d.callback
-        if(typeof d.method === 'string') _this.method = d.method.toLowerCase()
-        if(typeof d.params === 'string') _this.params = d.params.split('/')
+    let _import = () => {
+        if(typeof d.callback === 'function') _.callback = d.callback
+        if(typeof d.method === 'string') _.method = d.method.toLowerCase()
+        if(typeof d.params === 'string') _.params = d.params.split('/')
     }
     if(isAny(d)) _import()
 }
@@ -138,7 +138,7 @@ const WebEvent = function(d){
  * @param {string} method HTTP method for this event
  * @param {string} params URL parameters for this event
  */
-let webEventAdd = function(event, callback, method, params){
+let webEventAdd = (event, callback, method, params) => {
     event.push(new WebEvent({
         callback, callback,
         method: method,
@@ -154,7 +154,7 @@ let webEventAdd = function(event, callback, method, params){
  */
 const Web = function(d){
     /** This object*/
-    let _this = this
+    let _ = this
     /** @type {boolean} This is 'Web' object*/
     this.isWeb = true
 
@@ -168,7 +168,7 @@ const Web = function(d){
      * Add 'GET' event handler
      * @param {RequestCallback} callback Callback function for this request
      */
-    this.ev404 = function(callback){
+    this.ev404 = callback => {
         ev404 = new WebEvent({
             callback, callback
         })
@@ -179,7 +179,7 @@ const Web = function(d){
      * @param {string} params URL scheme for this request
      * @param {RequestCallback} callback Callback function for this request
      */
-    this.get = function(params, callback){
+    this.get = (params, callback) => {
         webEventAdd(event,callback,'get',params)
     }
 
@@ -188,7 +188,7 @@ const Web = function(d){
      * @param {string} params URL scheme for this request
      * @param {RequestCallback} callback Callback function for this request
      */
-    this.post = function(params, callback){
+    this.post = (params, callback) => {
         webEventAdd(event,callback,'post',params)
     }
 
@@ -197,7 +197,7 @@ const Web = function(d){
      * @param {string} params URL scheme for this request
      * @param {RequestCallback} callback Callback function for this request
      */
-    this.put = function(params, callback){
+    this.put = (params, callback) => {
         webEventAdd(event,callback,'put',params)
     }
     /**
@@ -205,7 +205,7 @@ const Web = function(d){
      * @param {string} params URL scheme for this request
      * @param {RequestCallback} callback Callback function for this request
      */
-    this.delete = function(params,callback){
+    this.delete = (params,callback) => {
         webEventAdd(event,callback,'delete',params)
     }
 
@@ -215,14 +215,14 @@ const Web = function(d){
     /**
      * Build a server
      */
-    let _server = function(){
-        HTTP.createServer(function(req,res){
+    let _server = () => {
+        HTTP.createServer((req,res) => {
             let body = ''
             req.setEncoding('utf-8')
-            req.on('data', function(chunk){
+            req.on('data', chunk => {
                 body += chunk
             })
-            req.on('end', function(){
+            req.on('end', () => {
                 /** @type {number} */
                 let ev
                 /** @type {number} */
@@ -276,17 +276,17 @@ const Web = function(d){
                 }
                 res.writeHead(404).end('Not found.')
             })
-            req.on('error', function(err){
+            req.on('error', err => {
                 console.error('E -> http.on(\'error\'): ' + err.message)
             })
-        }).listen(_this.port)
+        }).listen(_.port)
     }
     
     /**
      * Import JSON
      */
-    let _import = function(){
-        if(typeof d.port === 'number') _this.port = d.port
+    let _import = () => {
+        if(typeof d.port === 'number') _.port = d.port
         _server()
     }
     if(isAny(d)) _import()

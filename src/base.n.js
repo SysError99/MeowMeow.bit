@@ -21,7 +21,7 @@ while(i < ALPHABET_62.length){
  * @param {number} digit 
  * @returns {string[]} Array of string
  */
-const convertToText = function(digit){
+const convertToText = digit => {
     return ALPHABET[digit];
 }
 /**
@@ -29,7 +29,7 @@ const convertToText = function(digit){
  * @param {number} digit 
  * @returns {string[]} Array of string
  */
-const convertToText62 = function(digit){
+const convertToText62 = digit => {
     return ALPHABET_62[digit];
 }
 /** BaseN module*/
@@ -40,7 +40,7 @@ module.exports = {
      * @param {string} type Encoding type
      * @returns {string} Encoded string
      */
-    encode: function(buffer, type){
+    encode: (buffer, type) => {
         let carry, digits, j;
         let d = type === "62" ? 62 : 58
         if(typeof buffer === "string"){
@@ -90,7 +90,7 @@ module.exports = {
      * @param {string} type Encoding type
      * @returns {Buffer} Decoded buffer
      */
-    decode: function(string, type){
+    decode: (string, type) => {
         let bytes, c, cc, d, carry, j;
         if(string.length === 0){
             return "";

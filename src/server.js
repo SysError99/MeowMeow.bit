@@ -2,7 +2,6 @@
  * Micro HTTP server, with basic stuffs.
  */
 const Net = require('net')
-const isAny = require('./type.any.check')
 
 const _ = require('./const')
 const AsymmetricKey = require('./model/key.asymmetric')
@@ -16,7 +15,7 @@ const locale = new Locale()
 const paramInvalid = new Result({message: locale.str.paramInvalid})
 const storage = require('./storage')(locale)
 
-process.on('uncaughtException',function(err){
+process.on('uncaughtException', err => {
     switch(err.code){
         case 'ECONNREFUSED':
             console.error(err)
@@ -31,20 +30,8 @@ process.on('uncaughtException',function(err){
  * @param {{ip:string, port:number, data:string}} params Connection parameters
  * @returns {Promise<Result>} Data result
  */
-const sendMessage = function(params){
-    return new Promise(function(resolve){
-        if(typeof params !== 'object'){
-            resolve(paramInvalid)
-            return
-        }
-        if(
-            typeof params.ip !== 'string' ||
-            typeof params.port !== 'number' ||
-            typeof params.data !== 'string'
-        ){
-            resolve(paramInvalid)
-            return
-        }
+const sendMessage = params => {
+    return new Promise(resolve => {
         if(params.data.length === 0){
             resolve(new Result({
                 message: locale.str.server.strEmpty
@@ -54,16 +41,16 @@ const sendMessage = function(params){
         let socket = Net.createConnection({
             host: params.ip,
             port: params.port
-        }, function(){
+        }, () => {
             let received = ''
-            let connTimeout = setTimeout(function(){
+            let connTimeout = setTimeout(() => {
                 resolve(new Result({
                     message: locale.str.server.timeOut
                 }))
                 socket.destroy()
             },30000)
             socket.setEncoding('utf-8')
-            socket.on('data', function(chunk){
+            socket.on('data', chunk => {
                 if(received.length <= _.MAX_PAYLOAD)
                     received += chunk
                 else{
@@ -74,7 +61,7 @@ const sendMessage = function(params){
                     }))
                 }
             })
-            socket.on('end', function(){
+            socket.on('end', () => {
                 socket.destroy()
                 clearTimeout(connTimeout)
                 if(received.length === 0)
@@ -85,7 +72,7 @@ const sendMessage = function(params){
                         data: received
                     }))
             })
-            socket.on('error', function(err){
+            socket.on('error', err => {
                 console.error('E -> <Module:Server>.send: Error during connection: ' + err.message)
                 resolve(new Result({
                     message: locale.str.server.conErr + err.message
@@ -107,7 +94,7 @@ const sendMessage = function(params){
  */
 const Server = function(callback){
     /** This object.*/
-    let _this = this
+    let _ = this
 
     /** @type {boolean} This is 'Server' object*/
     this.isServer = true
@@ -120,19 +107,19 @@ const Server = function(callback){
          * Load key from specific location, if can't, build a new one.
          * @param {string} location Key location
          */
-        load: function(location){
+        load: location => {
             let keyRead = storage.read(typeof location === 'string' ? location : _.KEY.LOCATION)
-            if(keyRead.success) _this.key.current = new AsymmetricKey(keyRead.data)
-            else _this.key.new()
+            if(keyRead.success) _.key.current = new AsymmetricKey(keyRead.data)
+            else _.key.new()
         },
         /**
          * Create a new key for this server
          * @param {string} location Asymmetric key location to be saved
          * @param {string} password Passphrase for this key
          */
-        new: function(location, password){
-            _this.key.current = new AsymmetricKey((typeof password === 'string') ? password : '')
-            let keyWrite = storage.write(typeof location === 'string' ? location : _.KEY.LOCATION, _this.key.current.export())
+        new: (location, password) => {
+            _.key.current = new AsymmetricKey((typeof password === 'string') ? password : '')
+            let keyWrite = storage.write(typeof location === 'string' ? location : _.KEY.LOCATION, _.key.current.export())
             if(!keyWrite.success) throw keyWrite.message
         }
     }
@@ -151,9 +138,9 @@ const Server = function(callback){
          * Add peer to list
          * @param {{ip: string, port: number}} options Peer parameters
          */
-        add: function(options){
+        add: options => {
             let newPeer = new Peer(options)
-            _this.peer.list.push(newPeer)
+            _.peer.list.push(newPeer)
             return newPeer
         },
         /**
@@ -161,11 +148,11 @@ const Server = function(callback){
          * @param {{ip: string, port: number, socket: Net.Socket}} key Key to search
          * @returns {Peer} Found peer
          */
-        find: function(key){
+        find: key => {
             /** @type {Peer} Current peer*/
             let thisPeer
-            for(let f=0; f < _this.peer.list.length; f++){
-                thisPeer = _this.peer.list[f]
+            for(let f=0; f < _.peer.list.length; f++){
+                thisPeer = _.peer.list[f]
                 if(key.ip === thisPeer.ip || key.port === thisPeer.port) return thisPeer
             }
             return null
@@ -177,12 +164,8 @@ const Server = function(callback){
          * @param {boolean|Object} [_keyExchange] (Internal parameter) Key exchange properties, no need to use this manually.
          * @returns {Promise<Result>} Result object
          */
-        send: function(peer, message, _keyExchange){
-            return new Promise(async function(resolve){
-                if(!isAny(peer)){
-                    resolve(paramInvalid)
-                    return
-                }
+        send: (peer, message, _keyExchange) => {
+            return new Promise(async resolve => {
                 if(peer.pub.length === 0){
                     resolve(new Result({
                         message: locale.str.server.noPub
@@ -216,22 +199,21 @@ const Server = function(callback){
                         if(keyExchange[0].decrypt(keyExchangeResult.data) === 'nice2meetu')
                             peer.key = keyExchange[0]
                     }
-                    resolve(await _this.peer.send(peer,message,keyExchange))
+                    resolve(await _.peer.send(peer,message,keyExchange))
                     return
                 }
-                if(Array.isArray(message)){
-                    try{
-                        message = peer.key.encrypt(JSON.stringify(message))
-                    }catch(e){
-                        console.error('E -> Server.peer.send: error while encrypting: ' + e)
-                        resolve(new Result({
-                            message: locale.str.json.parseErr + e
-                        }))
+                try{
+                    if(Array.isArray(message)) message = JSON.stringify(message)
+                    else if(typeof message !== 'string'){
+                        resolve(paramInvalid)
                         return
                     }
-                }
-                else if(typeof message !== 'string'){
-                    resolve(paramInvalid)
+                    message = peer.key.encrypt(message)
+                }catch(e){
+                    console.error('E -> Server.peer.send: while encrypting: ' + e)
+                    resolve(new Result({
+                        message: locale.str.json.parseErr + e
+                    }))
                     return
                 }
                 let received = await sendMessage({
@@ -240,7 +222,7 @@ const Server = function(callback){
                     data: message
                 })
                 if(received.data === null){
-                    resolve(await _this.peer.send(peer,message))
+                    resolve(await _.peer.send(peer,message))
                     return
                 }
                 try{
@@ -250,7 +232,7 @@ const Server = function(callback){
                     }))
                     peer.quality = 5
                 }catch(e){
-                    console.error('E -> Server.peer.send: Received: While parse: ' + e)
+                    console.error('E -> Server.peer.send: received: ' + e)
                     resolve(new Result({
                         message: locale.str.server.dataCorrupt
                     }))
@@ -268,19 +250,21 @@ const Server = function(callback){
      * @param {Peer} peer Peer object
      * @param {string|any} data JSON object or string
      */
-    this.response = function(peer, data){
+    this.response = (peer, data) => {
         /** @type {string} */
         let socketStr = ''
-        if(typeof data === 'string') socketStr = data
-        else if(Array.isArray(data)){
-            try{
-                socketStr = JSON.stringify(data)
-            }catch(e){
-                console.error('E -> Server.response: ' + e)
+        if(peer.key !== null){
+            if(typeof data === 'string') socketStr = data
+            else if(Array.isArray(data)){
+                try{
+                    socketStr = JSON.stringify(data)
+                }catch(e){
+                    console.error('E -> Server.response: ' + e)
+                }
             }
+            if(socketStr.length !== 0) socketStr = peer.key.encrypt(socketStr)
         }
-        if(peer.key !== null) socketStr = peer.key.encrypt(socketStr)
-        peer.socket.end(socketStr, 'utf-8', function(){
+        peer.socket.end(socketStr, 'utf-8', () => {
             peer.socket.destroy()
         })
     }
@@ -288,51 +272,52 @@ const Server = function(callback){
     /** @type {Net.Server} TCP server*/
     let server = Net.createServer({
         allowHalfOpen:true
-    }, function(socket){
+    }, socket => {
         let addr = socket.address()
         let peerProperties = {
             ip: addr.address,
             port: addr.port
         }
-        let peer = _this.peer.find(peerProperties)
+        let peer = _.peer.find(peerProperties)
         if(peer === null)
-            peer = _this.peer.add(peerProperties)
+            peer = _.peer.add(peerProperties)
         peer.socket = socket
         /** @type {string|string[]} Data received */
         let body = ''
         socket.setEncoding('utf-8')
-        socket.on('data', function(chunk){
+        socket.on('data', chunk => {
             if(body.length <= _.MAX_PAYLOAD) body += chunk
             else peer.socket.destroy()
         })
-        socket.on('end',function(){
+        socket.on('end',() => {
             if(body.length === 0){
-                _this.response(peer)
+                _.response(peer)
                 return
             }
             if(peer.key === null){
                 try{
-                    peer.key = new SymmetricKey(_this.key.current.decrypt(body))
-                    _this.response(peer, 'nice2meetu')
+                    peer.key = new SymmetricKey(_.key.current.decrypt(body))
+                    _.response(peer, 'nice2meetu')
                 }catch(e){
                     console.error('E -> Server.on(\'end\'): get peer.key' + e)
-                    _this.response(peer)
+                    _.response(peer)
                 }
                 return
             }
             try{
                 body = JSON.parse(peer.key.decrypt(body))
                 if(!Array.isArray(body)){
-                    _this.response(peer)
+                    _.response(peer)
                     return
                 }
-                callback(peer, body)
             }catch(e){
-                _this.response(peer)
+                _.response(peer)
                 peer.key = null
+                return
             }
+            callback(peer, body)
         })
-        socket.on('error',function(err){
+        socket.on('error', err => {
             console.error('E -> Server.on(\'error\'): ' + err.message)
         })
     })
@@ -340,21 +325,21 @@ const Server = function(callback){
     /**
      * Start a server.
      */
-    this.start = function(){
-        _this.port = 1024 + Math.floor(Math.random() * 64510)
+    this.start = () => {
+        _.port = 1024 + Math.floor(Math.random() * 64510)
         try{
-            server.listen(_this.port)
-            _this.online = true
-            console.log('Server is now listening on port '+String(_this.port))
+            server.listen(_.port)
+            _.online = true
+            console.log('Server is now listening on port '+String(_.port))
         }catch(err){
-            console.error('E -> Port '+String(_this.port)+' can\'t be established due to: ' + err + ', trying other port.')
-            setTimeout(_this.start,1000)
+            console.error('E -> Port '+String(_.port)+' can\'t be established due to: ' + err + ', trying other port.')
+            setTimeout(_.start,1000)
         }
     }
 
     if(typeof callback === 'function') {
-        _this.key.load()
-        _this.start()
+        _.key.load()
+        _.start()
     }
 }
 

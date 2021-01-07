@@ -15,12 +15,8 @@ const promise = {
      * @param {string} location File location
      * @returns {Promise<Result>} JSON of a file.
      */
-    read: function(location){
-        return new Promise(async function(resolve){
-            if(typeof location !== 'string'){
-                resolve(paramInvalid)
-                return
-            }
+    read: location => {
+        return new Promise(async resolve => {
             try{
                 resolve(new Result({
                     success: true,
@@ -39,12 +35,8 @@ const promise = {
      * @param {Object} data JSON data object
      * @returns {Promise<Result>}
      */
-    write: function(location, data){
-        return new Promise(async function(resolve){
-            if(typeof location !== 'string' || typeof data !== 'object'){
-                resolve(paramInvalid)
-                return
-            }
+    write: (location, data) => {
+        return new Promise(async resolve => {
             try{
                 await FileSystem.promises.writeFile(P.a + location + P.b, JSON.stringify(data), {encoding:'utf-8'})
                 resolve(new Result({
@@ -64,9 +56,7 @@ const promise = {
  * @param {string} location File location
  * @returns {Result} Result of a read JSON
  */
-const read = function(location){
-    if(typeof location !== 'string')
-        return paramInvalid
+const read = location => {
     try{
         return new Result({
             success: true,
@@ -85,9 +75,7 @@ const read = function(location){
  * @param {Object} data JSON data object
  * @returns {Result} Result of a read JSON
  */
-const write = function(location, data){
-    if(typeof location !== 'string' || typeof data !== 'object')
-        return paramInvalid
+const write = (location, data) => {
     try{
         FileSystem.writeFileSync(P.a + location + P.b, JSON.stringify(data), {encoding:'utf-8'})
         return new Result({
@@ -113,7 +101,7 @@ const storage = {
  * Get a shared storage module. 
  * @param {Locale} locale Locale object from a server
  */
-module.exports = function(locale){
+module.exports = locale => {
     if(isAny(locale)){
         if(locale.isLocale) storage.locale = locale
     }

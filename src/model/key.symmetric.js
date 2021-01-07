@@ -8,13 +8,13 @@ const SymmetricKey = function(d){
     /** @type {boolean} This is 'SymmetricKey' object*/
     this.isSymmetricKey = true
     /** @type {Buffer} Key buffer*/
-    let key = null
+    let key = Crypt.newKey.symmetric()
     /**
      * Encrypt a string
      * @param {string} str String to be encrpyted
      * @returns {string} Encrypted string
      */
-    this.encrypt = function(str){
+    this.encrypt = str => {
         return Crypt.symmetric.encrypt(str, key)
     }
     /**
@@ -22,14 +22,14 @@ const SymmetricKey = function(d){
      * @param {string} str String to be decrypted
      * @returns {string} Decrypted string
      */
-    this.decrypt = function(str){
+    this.decrypt = str => {
         return Crypt.symmetric.decrypt(str, key)
     }
     /**
      * Export to JSON
      * @returns {Object} JSON object
      */
-    this.export = function(){
+    this.export = () => {
         return key.toString('base64')
     }
     if(typeof d === 'string'){
@@ -40,6 +40,5 @@ const SymmetricKey = function(d){
         }
     }
     else if(Buffer.isBuffer(d)) key = d
-    else key = Crypt.newKey.symmetric()
 }
 module.exports = SymmetricKey

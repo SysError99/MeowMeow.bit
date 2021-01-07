@@ -7,7 +7,7 @@ const PostPointer = require('./post.pointer')
  */
 const Post = function(d){
     /** This object*/
-    let _this = this
+    let _ = this
     /** @type {boolean} This is 'Post' object*/
     this.isPost = true
 
@@ -45,51 +45,51 @@ const Post = function(d){
     /**
      * Import d to object
      */
-    let _import = function(){
+    let _import = () => {
         if(Array.isArray(d.comment)){
-            d.comment.forEach(function(el){
-                if(Array.isArray(el)) _this.comment.push(new PostPointer(el))
+            d.comment.forEach(el => {
+                if(Array.isArray(el)) _.comment.push(new PostPointer(el))
             })
         }
         if(isAny(d)){
-            if(typeof d.like.amount === 'number') _this.like.amount = d.like.amount
-            if(typeof d.like.signature === 'string') _this.like.signature = d.like.signature
+            if(typeof d.like.amount === 'number') _.like.amount = d.like.amount
+            if(typeof d.like.signature === 'string') _.like.signature = d.like.signature
             if(isAny(d.like.verifier)){
                 if(d.like.verifier.isPeer)
-                    _this.like.verifier = d.like.verifier
+                    _.like.verifier = d.like.verifier
                 else
-                    _this.like.verifier = new Peer(d.like.verifier)
+                    _.like.verifier = new Peer(d.like.verifier)
             }
         }
-        if(Array.isArray(d.media)) _this.media = d.media
-        if(Array.isArray(d.mention)) _this.mention = new PostPointer(d.mention)
-        if(typeof d.owner === 'string') _this.owner = d.owner
-        if(typeof d.signature === 'string') _this.signature = d.signature
-        if(Array.isArray(d.tag)) _this.tag = d.tag
-        if(typeof d.text === 'string') _this.text = d.text
+        if(Array.isArray(d.media)) _.media = d.media
+        if(Array.isArray(d.mention)) _.mention = new PostPointer(d.mention)
+        if(typeof d.owner === 'string') _.owner = d.owner
+        if(typeof d.signature === 'string') _.signature = d.signature
+        if(Array.isArray(d.tag)) _.tag = d.tag
+        if(typeof d.text === 'string') _.text = d.text
     }
     /**
      * Export to JSON
      * @returns {Object} JSON
      */
-    this.export = function(){
+    this.export = () => {
         /** @type {PostPointer[]}*/
         let comments = []
-        _this.comment.forEach(function(el){
+        _.comment.forEach(el => {
             comments.push(el.export())
         })
         return {
             comment: comments,
             like: {
-                amount: _this.like.amount,
-                signature: _this.like.signature,
-                verifier: _this.like.verifier.export()
+                amount: _.like.amount,
+                signature: _.like.signature,
+                verifier: _.like.verifier.export()
             },
-            media: _this.media,
-            mention: _this.mention.export(),
-            owner: _this.owner,
-            tag: _this.tag,
-            text: _this.text,
+            media: _.media,
+            mention: _.mention.export(),
+            owner: _.owner,
+            tag: _.tag,
+            text: _.text,
         }
     }
     if(isAny(d)) _import()

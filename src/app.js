@@ -8,22 +8,22 @@ const Web = require('./web')
 
 /** HTTP web front-end app object*/
 const app = new Web()
-app.get('/', function(req,res){
+app.get('/', (req,res) => {
     res.send('Hello world!')
 })
-app.get('/:var', function(req,res){
+app.get('/:var', (req,res) => {
     let txt = ''
     if(typeof req.query.name === 'string'){
         txt = ', and your name is ' + req.query.name
     }
     res.send('Your paramter is ' + req.params.var+txt)
 })
-app.get('/find/:id',function(req,res){
+app.get('/find/:id', (req,res) => {
     res.send('You request for: '+req.params.id)
 })
 
 /** Server Object*/
-const server = new Server(async function(peer, data){
+const server = new Server((peer, data) => {
     if(typeof data[0] !== 'string'){
         server.response(peer)
         return

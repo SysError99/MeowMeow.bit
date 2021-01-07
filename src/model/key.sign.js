@@ -19,7 +19,7 @@ const SignKey = function(d){
      * @param {string} str String to be signed
      * @returns {string} Base64-based signature
      */
-    this.sign = function(str){
+    this.sign = str => {
         if(private.length === 0) return ''
         return Crypt.sign.perform(str, private, password)
     }
@@ -29,7 +29,7 @@ const SignKey = function(d){
      * @param {string} signature Signature to be verified
      * @returns {boolean} Is this legit?
      */
-    this.verify = function(str, signature){
+    this.verify = (str, signature) => {
         if(public.length === 0) return false
         return Crypt.sign.verify(str, public, signature)
     }
@@ -39,14 +39,14 @@ const SignKey = function(d){
          * Get private key in Base58 form
          * @returns {string} Base58-encoded string
          */
-        private: function(){
+        private: () => {
             return BaseN.encode(Buffer.from(private, 'base64'))
         },
         /**
          * Get public key in Base58 form
          * @returns {string} Base58-encoded string
          */
-        public: function(){
+        public: () => {
             return BaseN.encode(Buffer.from(public, 'base64'))
         }
     }
@@ -54,7 +54,7 @@ const SignKey = function(d){
      * Generate a new key
      * @param {string} password Passphrase for this key
      */
-    let _newKey = function(password){
+    let _newKey = password => {
         let newKey = Crypt.newKey.sign(password)
         password = password
         private = newKey.privateKey
@@ -63,7 +63,7 @@ const SignKey = function(d){
     /**
      * Import JSON
      */
-    let _import = function(){
+    let _import = () => {
         if(typeof d.password === 'string') password = d.password
         if(typeof d.private === 'string') private = d.private
         if(typeof d.public === 'string') public = d.public
@@ -72,7 +72,7 @@ const SignKey = function(d){
      * Export to JSON
      * @returns {Object} JSON
      */
-    this.export = function(){
+    this.export = () => {
         return {
             password: password,
             private: private,
@@ -82,7 +82,7 @@ const SignKey = function(d){
     /**
      * Export only public key to JSON
      */
-    this.exportPub = function(){
+    this.exportPub = () => {
         return {
             public: public
         }

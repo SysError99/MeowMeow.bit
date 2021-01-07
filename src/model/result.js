@@ -5,7 +5,7 @@ const isAny = require('../type.any.check')
  */
 const Result = function(d){
     /** This object */
-    let _this = this
+    let _ = this
     /** @type {boolean} This is 'Result' object*/
     this.isResult = true
     /** @type {Object} Data received*/
@@ -17,20 +17,20 @@ const Result = function(d){
     /**
      * Import JSON
      */
-    let _import = function(){
-        if(typeof d.data !== 'undefined') _this.data = d.data
-        if(typeof d.message === 'string') _this.message = d.message
-        if(typeof d.success === 'boolean') _this.success = d.success
+    let _import = () => {
+        if(typeof d.data !== 'undefined') _.data = d.data
+        if(typeof d.message === 'string') _.message = d.message
+        if(typeof d.success === 'boolean') _.success = d.success
     }
     /**
      * Export to JSON
      * @returns {Object} JSON
      */
-    this.export = function(){
+    this.export = () => {
         return {
-            data: _this.data,
-            message: _this.message,
-            success: _this.success
+            data: _.data,
+            message: _.message,
+            success: _.success
         }
     }
     if(isAny(d)) _import()

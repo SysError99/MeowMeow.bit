@@ -7,7 +7,7 @@ const SymmetricKey = require('./key.symmetric')
  */
 const Peer = function(d){
     /** This object */
-    let _this = this
+    let _ = this
     /** @type {boolean} This is 'Peer' object*/
     this.isPeer = true
     /** @type {string} Peer IP address*/
@@ -25,20 +25,20 @@ const Peer = function(d){
     /**
      * Import JSON
      */
-    let _import = function(){
-        if(typeof d.ip === 'string') _this.ip = d.ip
-        if(typeof d.port === 'number') _this.port = d.port
-        if(typeof d.pub === 'string') _this.pub = d.pub
+    let _import = () => {
+        if(typeof d.ip === 'string') _.ip = d.ip
+        if(typeof d.port === 'number') _.port = d.port
+        if(typeof d.pub === 'string') _.pub = d.pub
     }
     /**
      * Export to JSON
      * @returns {Object} JSON
      */
-    this.export = function(){
+    this.export = () => {
         return {
-            ip: _this.ip,
-            port: _this.port,
-            pub: _this.pub,
+            ip: _.ip,
+            port: _.port,
+            pub: _.pub,
         }
     }
     if(isAny(d)) _import()

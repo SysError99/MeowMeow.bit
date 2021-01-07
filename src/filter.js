@@ -22,7 +22,7 @@ module.exports = {
      * Import data to object
      * @param {Object} d JSON
      */
-    import: function(d){
+    import: d => {
         if(isAny(d.blocked)){
             if(Array.isArray(d.blocked.acc)) blocked.acc = d.blocked.acc
             if(Array.isArray(d.blocked.word)) blocked.word = d.blocked.word
@@ -36,7 +36,7 @@ module.exports = {
      * Export block list to JSON
      * @returns {Object} JSON
      */
-    export: function(){
+    export: () => {
         return {
             blocked: blocked,
             limit: limit
