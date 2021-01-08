@@ -3,7 +3,7 @@ const Net = require('net')
 const SymmetricKey = require('./key.symmetric')
 /** 
  * Peer object
- * @param {{ip: string, port: number, pub: string, key: SymmetricKey, socket: Net.Socket}} d JSON
+ * @param {{ip: string, port: number, pub: Buffer, key: SymmetricKey, socket: Net.Socket}} d JSON
  */
 const Peer = function(d){
     /** This object */
@@ -14,8 +14,8 @@ const Peer = function(d){
     this.ip = ''
     /** @type {number} Peer connected port*/
     this.port = 8080
-    /** @type {string} Peer public key.*/
-    this.pub = ''
+    /** @type {Buffer} Peer public key.*/
+    this.pub = Buffer.from([])
     /** @type {SymmetricKey} Peer Symmetric key*/
     this.key = null
     /** @type {number} Peer quality indicator*/
@@ -28,7 +28,7 @@ const Peer = function(d){
     let _import = () => {
         if(typeof d.ip === 'string') _.ip = d.ip
         if(typeof d.port === 'number') _.port = d.port
-        if(typeof d.pub === 'string') _.pub = d.pub
+        if(typeof d.pub === 'string') _.pub = Buffer.from(d.pub, 'base64')
     }
     /**
      * Export to JSON
@@ -38,7 +38,7 @@ const Peer = function(d){
         return {
             ip: _.ip,
             port: _.port,
-            pub: _.pub,
+            pub: _.pub.toString('base64'),
         }
     }
     if(isAny(d)) _import()

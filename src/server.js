@@ -3,11 +3,11 @@
  */
 const Net = require('net')
 
+const BaseN = require('./base.n')
 const Try = require('./try.catch')
 
 const __ = require('./const')
-const AsymmetricKey = require('./model/key.asymmetric')
-const Crypt = require('./crypt')
+const ECDHKey = require('./model/key.ecdh')
 const Locale = require('./locale')
 const Peer = require('./model/peer')
 const Result = require('./model/result')
@@ -103,7 +103,7 @@ const Server = function(callback){
 
     /** Key manager*/
     this.key = {
-        /** @type {AsymmetricKey} Currently used asymmetric key*/
+        /** @type {ECDHKey} Currently used key*/
         current: null,
         /**
          * Load key from specific location, if can't, build a new one.
@@ -111,7 +111,7 @@ const Server = function(callback){
          */
         load: location => {
             let keyRead = storage.read(typeof location === 'string' ? location : __.KEY.LOCATION)
-            if(keyRead.success) _.key.current = new AsymmetricKey(keyRead.data)
+            if(keyRead.success) _.key.current = new ECDHKey(keyRead.data)
             else _.key.new()
         },
         /**
@@ -119,8 +119,8 @@ const Server = function(callback){
          * @param {string} location Asymmetric key location to be saved
          * @param {string} password Passphrase for this key
          */
-        new: (location, password) => {
-            _.key.current = new AsymmetricKey(typeof password === 'string' ? password : '')
+        new: location => {
+            _.key.current = new ECDHKey()
             let keyWrite = storage.write(typeof location === 'string' ? location : __.KEY.LOCATION, _.key.current.export())
             if(!keyWrite.success) throw keyWrite.message
         }
@@ -189,11 +189,12 @@ const Server = function(callback){
                     if(Array.isArray(_keyExchange))
                         keyExchange = _keyExchange
                     else{
-                        let newKey = new SymmetricKey()
+                        let newEC = new ECDHKey()
+                        let newKey = newEC.computeSecret(peer.pub)
                         keyExchange = [newKey,{
                             ip: peer.ip,
                             port: peer.port,
-                            data: Crypt.public.encrypt(JSON.stringify(newKey.export()), peer.pub)
+                            data: newEC.get.pub()
                         }]
                     }
                     let keyExchangeResult = await sendMessage(keyExchange[1])
@@ -274,7 +275,7 @@ const Server = function(callback){
         if(peer === null)
             peer = _.peer.add(peerProperties)
         peer.socket = socket
-        /** @type {string|string[]} Data received */
+        /** @type {string} Data received */
         let body = ''
         socket.setEncoding('utf-8')
         socket.on('data', chunk => {
@@ -288,19 +289,20 @@ const Server = function(callback){
             }
             if(peer.key === null){
                 if(Try(() => {
-                    peer.key = new SymmetricKey(_.key.current.decrypt(body))
+                    if(!body.length === 194) throw 'Illegal key length.'
+                    peer.key = _.key.current.computeSecret(BaseN.decode(body, '62'))
                     _.response(peer, 'nice2meetu')
                 })) _.response(peer)
                 return
             }
-            Try(() => {
+            if(Try(() => {
                 body = JSON.parse(peer.key.decrypt(body))
-            })
-            if(Array.isArray(body)) callback(peer, body)
-            else{
+            })){
                 _.response(peer)
                 peer.key = null
+                return
             }
+            if(Array.isArray(body)) callback(peer, body)
         })
         socket.on('error', err => {
             console.error('E -> Server.on(\'error\'): ' + err.message)
