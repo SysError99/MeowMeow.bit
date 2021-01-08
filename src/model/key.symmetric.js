@@ -28,8 +28,8 @@ const SymmetricKey = function(d){
         return Try(() => Crypt.symmetric.decrypt(str, key), '')
     }
     /**
-     * Export to JSON
-     * @returns {Object} JSON object
+     * Export to string
+     * @returns {string} Secret key
      */
     this.export = () => {
         return key.toString('base64')
