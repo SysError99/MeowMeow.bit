@@ -7,7 +7,7 @@ const tryCatch = (fn, errreturn) => {
     if(typeof fn === 'function'){
         try{
             let result = fn()
-            return typeof result === 'undefined' ? true : result
+            return typeof result === 'undefined' ? false : result
         }catch(e){
             let err = new Error(e)
             let errTime = new Date()
@@ -25,7 +25,7 @@ const tryCatch = (fn, errreturn) => {
                  + '] '
                  + err.stack
             )
-            return typeof errreturn === 'undefined' ? false : errreturn
+            return typeof errreturn === 'undefined' ? true : errreturn
         }
     }else
         throw Error('tryCatch() expects funtion!')

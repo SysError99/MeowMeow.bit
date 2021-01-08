@@ -204,15 +204,14 @@ const Server = function(callback){
                     resolve(await _.peer.send(peer,message,keyExchange))
                     return
                 }
-                let encryptMessage = Try(() => {
+                if(Try(() => {
                     if(Array.isArray(message)) message = JSON.stringify(message)
                     else if(typeof message !== 'string'){
                         resolve(paramInvalid)
                         return
                     }
                     message = peer.key.encrypt(message)
-                })
-                if(!encryptMessage){
+                })){
                     resolve(new Result({
                         message: locale.str.json.parseErr
                     }))
@@ -227,17 +226,16 @@ const Server = function(callback){
                     resolve(await _.peer.send(peer,message))
                     return
                 }
-                let decryptReceived = Try(() => {
-                    resolve(new Result({
+                resolve(Try(() => 
+                    new Result({
                         success: true,
                         data: JSON.parse(peer.key.decrypt(received.data))
-                    }))
-                    peer.quality = 5
-                })
-                if(!decryptReceived)
-                    resolve(new Result({
+                    }),
+                    new Result({
                         message: locale.str.server.dataCorrupt
-                    }))
+                    })
+                ))
+                peer.quality = 5
             })
         }
     }
@@ -289,10 +287,10 @@ const Server = function(callback){
                 return
             }
             if(peer.key === null){
-                Try(() => {
+                if(Try(() => {
                     peer.key = new SymmetricKey(_.key.current.decrypt(body))
                     _.response(peer, 'nice2meetu')
-                })
+                })) _.response(peer)
                 return
             }
             Try(() => {
@@ -314,12 +312,11 @@ const Server = function(callback){
      */
     this.start = () => {
         _.port = 1024 + Math.floor(Math.random() * 64510)
-        let findPort = Try(() => {
+        if(Try(() => {
             server.listen(_.port)
             _.online = true
             console.log('Server is now listening on port '+String(_.port))
-        })
-        if(!findPort){
+        })){
             console.error('Port '+String(_.port)+' can\'t be established, trying other port.')
             setTimeout(_.start,1000)
         }
