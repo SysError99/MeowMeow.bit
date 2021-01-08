@@ -3,7 +3,7 @@
  */
 const Net = require('net')
 
-const _ = require('./const')
+const __ = require('./const')
 const AsymmetricKey = require('./model/key.asymmetric')
 const Crypt = require('./crypt')
 const Locale = require('./locale')
@@ -108,7 +108,7 @@ const Server = function(callback){
          * @param {string} location Key location
          */
         load: location => {
-            let keyRead = storage.read(typeof location === 'string' ? location : _.KEY.LOCATION)
+            let keyRead = storage.read(typeof location === 'string' ? location : __.KEY.LOCATION)
             if(keyRead.success) _.key.current = new AsymmetricKey(keyRead.data)
             else _.key.new()
         },
@@ -118,8 +118,8 @@ const Server = function(callback){
          * @param {string} password Passphrase for this key
          */
         new: (location, password) => {
-            _.key.current = new AsymmetricKey((typeof password === 'string') ? password : '')
-            let keyWrite = storage.write(typeof location === 'string' ? location : _.KEY.LOCATION, _.key.current.export())
+            _.key.current = new AsymmetricKey(typeof password === 'string' ? password : '')
+            let keyWrite = storage.write(typeof location === 'string' ? location : __.KEY.LOCATION, _.key.current.export())
             if(!keyWrite.success) throw keyWrite.message
         }
     }
@@ -286,7 +286,7 @@ const Server = function(callback){
         let body = ''
         socket.setEncoding('utf-8')
         socket.on('data', chunk => {
-            if(body.length <= _.MAX_PAYLOAD) body += chunk
+            if(body.length <= __.MAX_PAYLOAD) body += chunk
             else peer.socket.destroy()
         })
         socket.on('end',() => {

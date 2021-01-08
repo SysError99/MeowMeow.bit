@@ -12,7 +12,7 @@ const limit = {
     /** @type {number[][]} Allowed UTF-8 character range, can be multiple*/
     range: [],
     /** @type {number} Max size of each post (default: a four of max payload, that is 8 MB)*/
-    size: _.MAX_PAYLOAD / 4
+    size: __.MAX_PAYLOAD / 4
 }
 /** Content filtering module*/
 module.exports = {
