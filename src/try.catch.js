@@ -1,3 +1,5 @@
+/** @type {string} Ignored errors */
+const ignore = ['JSON']
 /**
  * Try to execute this function, and handle error automatically
  * @param {function} fn A function
@@ -10,6 +12,11 @@ const tryCatch = (fn, errreturn) => {
             return typeof result === 'undefined' ? false : result
         }catch(e){
             let err = new Error(e)
+            errreturn = typeof errreturn === 'undefined' ? true : errreturn
+            for(let i = 0; i < ignore.length; i++){
+                if(err.stack.indexOf(ignore[i]) >= 0)
+                    return errreturn
+            }
             let errTime = new Date()
             let errMonth = errTime.getUTCMonth()
             let errDate = errTime.getUTCDate()
@@ -25,9 +32,9 @@ const tryCatch = (fn, errreturn) => {
                  + '] '
                  + err.stack
             )
-            return typeof errreturn === 'undefined' ? true : errreturn
+            return erreturn
         }
     }else
-        throw Error('tryCatch() expects funtion!')
+        throw Error('tryCatch() expects function!')
 }
 module.exports = tryCatch
