@@ -1,4 +1,5 @@
 const isAny = require('./type.any.check')
+const Try = require('./try.catch')
 const FileSystem = require('fs')
 const Locale = require('./locale')
 const Result = require('./model/result')
@@ -16,17 +17,16 @@ const promise = {
      * @returns {Promise<Result>} JSON of a file.
      */
     read: location => {
-        return new Promise(async resolve => {
-            try{
-                resolve(new Result({
+        return new Promise(resolve => {
+            resolve(Try(async () => 
+                new Result({
                     success: true,
                     data: JSON.parse(await FileSystem.promises.readFile(P.a + location + P.b, {encoding:'utf-8'}))
-                }))
-            }catch(e){
-                resolve(new Result({
-                    message: storage.locale.str.file.readErr + e
-                }))
-            }
+                }),
+                new Result({
+                    message: storage.locale.str.file.readErr
+                })
+            ))
         })
     },
     /**
@@ -36,17 +36,16 @@ const promise = {
      * @returns {Promise<Result>}
      */
     write: (location, data) => {
-        return new Promise(async resolve => {
-            try{
-                await FileSystem.promises.writeFile(P.a + location + P.b, JSON.stringify(data), {encoding:'utf-8'})
-                resolve(new Result({
-                    success: true
-                }))
-            }catch(e){
-                resolve(new Result({
-                    message: storage.locale.str.file.writeErr + e
-                }))
-            }
+        return new Promise(resolve => {
+            resolve(Try(async () => 
+                new Result({
+                    success: true, 
+                    data: await FileSystem.promises.writeFile(P.a + location + P.b, JSON.stringify(data), {encoding:'utf-8'})
+                }),
+                new Result({
+                    message: storage.locale.str.file.writeErr
+                })
+            ))
         })
     }
 }
@@ -57,16 +56,14 @@ const promise = {
  * @returns {Result} Result of a read JSON
  */
 const read = location => {
-    try{
-        return new Result({
+    return Try(() =>
+        new Result({
             success: true,
             data: JSON.parse(FileSystem.readFileSync(P.a + location + P.b, {encoding:'utf-8'}))
-        })
-    }catch(e){
-        return new Result({
-            message: storage.locale.str.file.readErr + e
-        })
-    }
+        }),
+    new Result({
+        message: storage.locale.str.file.readErr
+    }))
 }
 
 /**
@@ -76,16 +73,15 @@ const read = location => {
  * @returns {Result} Result of a read JSON
  */
 const write = (location, data) => {
-    try{
+    return Try(() => {
         FileSystem.writeFileSync(P.a + location + P.b, JSON.stringify(data), {encoding:'utf-8'})
         return new Result({
             success: true
         })
-    }catch(e){
-        return new Result({
-            message: storage.locale.str.file.writeErr + e
-        })
-    }
+    },
+    new Result({
+        message: storage.locale.str.file.writeErr
+    }))
 }
 
 /** Shared storage module*/

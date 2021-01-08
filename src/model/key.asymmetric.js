@@ -1,5 +1,5 @@
-const $ = require('../try.catch')
 const isAny = require('../type.any.check')
+const Try = require('../try.catch')
 const BaseN = require('../base.n')
 const Crypt = require('../crypt')
 /**
@@ -21,14 +21,14 @@ const AsymmetricKey = function(d){
      * @returns {string} Decrypted string
      */
     this.decrypt = str => {
-        return Crypt.private.decrypt(str, private, password)
+        return Try(() => Crypt.private.decrypt(str, private, password))
     }
     /**
      * Encrypt using public key
      * @param {string} str String to be encrypted
      */
     this.encrypt = str => {
-        return Crypt.public.encrypt(str, public)
+        return Try(() => Crypt.public.encrypt(str, public), '')
     }
     /** Key retrieving functions*/
     this.get = {
@@ -37,14 +37,14 @@ const AsymmetricKey = function(d){
          * @returns {string} Base58-encoded string
          */
         private: () => {
-            return BaseN.encode(Buffer.from(private, 'base64'))
+            return Try(() => BaseN.encode(Buffer.from(private, 'base64')), '')
         },
         /**
          * Get public key in Base58 form
          * @returns {string} Base58-encoded string
          */
         public: () => {
-            return BaseN.encode(Buffer.from(public, 'base64'))
+            return Try(() => BaseN.encode(Buffer.from(public, 'base64')), '')
         }
     }
     /**

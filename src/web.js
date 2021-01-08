@@ -5,6 +5,7 @@
  */
 const HTTP = require('http')
 const isAny = require('./type.any.check')
+const Try = require('./try.catch')
 
 /**
  * @callback RequestCallback
@@ -74,11 +75,7 @@ const WebResponse = function(res){
         let payload = ''
         switch(typeof data){
             case 'object':
-                try{
-                    payload = JSON.stringify(data)
-                }catch(e){
-                    console.error('E -> Web.WebResponse.send: ' + e)
-                }
+                Try(() => payload = JSON.stringify(data))
                 break
             case 'string':
                 payload = data
@@ -237,13 +234,16 @@ const Web = function(d){
                 let webQuery = {}
                 let url = req.url.split('?')
                 let params = url[0].split('/')
-                if(url.length > 1) {
+                if(url.length === 2) {
                     let query = url[1].split('&')
                     for(let q=0; q<query.length; q++){
                         let elQuery = query[q].split('=')
                         if(elQuery.length === 1) webQuery[elQuery[0]] = true
                         else webQuery[elQuery[0]] = elQuery[1]
                     }
+                }else if(url.length > 2){
+                    res.writeHead(400).end('Bad request.')
+                    return
                 }
                 for(ev=0; ev<event.length; ev++){
                     thisEvent = true

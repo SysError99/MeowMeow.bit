@@ -1,4 +1,5 @@
 const isAny = require('../type.any.check')
+const Try = require('../try.catch')
 const BaseN = require('../base.n')
 const Crypt = require('../crypt')
 /**
@@ -20,8 +21,8 @@ const SignKey = function(d){
      * @returns {string} Base64-based signature
      */
     this.sign = str => {
-        if(private.length === 0) return ''
-        return Crypt.sign.perform(str, private, password)
+        if(private.length === 0 || str.length === 0) return ''
+        return Try(() => Crypt.sign.perform(str, private, password), '')
     }
     /**
      * Verify signature using public key
@@ -30,8 +31,8 @@ const SignKey = function(d){
      * @returns {boolean} Is this legit?
      */
     this.verify = (str, signature) => {
-        if(public.length === 0) return false
-        return Crypt.sign.verify(str, public, signature)
+        if(public.length === 0 || str.length === 0) return false
+        return Try(() => Crypt.sign.verify(str, public, signature), '')
     }
     /** Key retrieving functions*/
     this.get = {
@@ -40,14 +41,14 @@ const SignKey = function(d){
          * @returns {string} Base58-encoded string
          */
         private: () => {
-            return BaseN.encode(Buffer.from(private, 'base64'))
+            return Try(() => BaseN.encode(Buffer.from(private, 'base64')), '')
         },
         /**
          * Get public key in Base58 form
          * @returns {string} Base58-encoded string
          */
         public: () => {
-            return BaseN.encode(Buffer.from(public, 'base64'))
+            return Try(() => BaseN.encode(Buffer.from(public, 'base64')), '')
         }
     }
     /**
