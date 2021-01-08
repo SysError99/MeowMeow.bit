@@ -71,8 +71,8 @@ const keyCreator = {
      */
     ecdh: key => {
         let ecdh =  Crypto.createECDH(curve)
-        if(Buffer.isBuffer(key)) ecdh.setPrivateKey(key)
-        else if(typeof key === 'string') ecdh.setPrivateKey(BaseN.decode(key, '62'))
+        if(typeof key === 'string') ecdh.setPrivateKey(Buffer.from(key, 'base64'))
+        else if(Buffer.isBuffer(key)) ecdh.setPrivateKey(key)
         else ecdh.generateKeys()
         return ecdh
     },
@@ -115,7 +115,7 @@ const ecdh = {
      * @returns {Buffer} Secret key
      */
     computeSecret: (ecdh, public) => {
-        return ecdh.computeSecret(public)
+        return ecdh.computeSecret(public).slice(32,64)
     }
 }
 /** Private key encryption functions*/
