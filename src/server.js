@@ -141,7 +141,10 @@ const Server = function(callback){
          * @param {{ip: string, port: number}} options Peer parameters
          */
         add: options => {
-            let newPeer = new Peer(options)
+            let newPeer = new Peer([
+                options.ip,
+                options.port
+            ])
             _.peer.list.push(newPeer)
             return newPeer
         },
@@ -175,20 +178,18 @@ const Server = function(callback){
                     return
                 }
                 if(peer.quality <= 0){
-                    peer.key = null
-                    peer.quality = 5
                     resolve(new Result({
                         message: locale.str.peer.bad
                     }))
+                    peer.quality = 5
                     return
                 }
                 peer.quality--
-                if(peer.key === null){
+                if(peer.key === null || _keyExchange === true){
                     /** @type {[SymmetricKey,any]}*/
                     let keyExchange
-                    if(Array.isArray(_keyExchange))
-                        keyExchange = _keyExchange
-                    else{
+                    if(Array.isArray(_keyExchange)) keyExchange = _keyExchange
+                    else if(Try(() => {
                         let newEC = new ECDHKey()
                         let newKey = newEC.computeSecret(peer.pub)
                         keyExchange = [newKey,{
@@ -196,6 +197,11 @@ const Server = function(callback){
                             port: peer.port,
                             data: newEC.get.pub()
                         }]
+                    })){
+                        resolve(new Result({
+                            message: locale.str.peer.pubErr
+                        }))
+                        return
                     }
                     let keyExchangeResult = await sendMessage(keyExchange[1])
                     if(keyExchangeResult.success){
@@ -224,7 +230,7 @@ const Server = function(callback){
                     data: message
                 })
                 if(received.data === null){
-                    resolve(await _.peer.send(peer,message))
+                    resolve(await _.peer.send(peer,message, true))
                     return
                 }
                 resolve(Try(() => 
@@ -283,19 +289,14 @@ const Server = function(callback){
             else peer.socket.destroy()
         })
         socket.on('end',() => {
-            if(body.length === 0){
-                _.response(peer)
-                return
-            }
-            if(peer.key === null){
-                if(Try(() => {
-                    if(!body.length === 194) throw 'Illegal key length.'
+            if(Try(() => {
+                if(body.length === 0) throw 'Bad Peer'
+                if(peer.key === null){
+                    if(body.length !== 194) throw 'Illegal key length.'
                     peer.key = _.key.current.computeSecret(BaseN.decode(body, '62'))
                     _.response(peer, 'nice2meetu')
-                })) _.response(peer)
-                return
-            }
-            if(Try(() => {
+                    return
+                }
                 body = JSON.parse(peer.key.decrypt(body))
             })){
                 _.response(peer)

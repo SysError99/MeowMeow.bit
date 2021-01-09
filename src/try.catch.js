@@ -1,5 +1,5 @@
 /** @type {string} Ignored errors */
-const ignore = ['JSON']
+const ignore = ['Bad Peer', 'JSON']
 /**
  * Try to execute this function, and handle error automatically
  * @param {function} fn A function
