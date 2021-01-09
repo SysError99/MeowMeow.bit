@@ -11,7 +11,7 @@ let func = () => {
         BaseN.decode(server.key.current.get.pub(), '62').toString('base64')
     ])
     let msg = ['hello']
-    setTimeout(async () => {
+    setInterval(async () => {
         let result = await server.peer.send(peer, msg)
         if(result.success)
             console.log('hello ' + result.data[0])
