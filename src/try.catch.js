@@ -32,7 +32,7 @@ const tryCatch = (fn, errreturn) => {
                  + '] '
                  + err.stack
             )
-            return erreturn
+            return errreturn
         }
     }else
         throw Error('tryCatch() expects function!')
