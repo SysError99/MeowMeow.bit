@@ -14,6 +14,7 @@ module.exports = locale => {
     locale.str.paramInvalid = 'Invalid parameter.'
 
     locale.str.peer.bad = 'Peer is bad-quality, try again.'
+    locale.str.peer.pubErr = 'Public key is invalid.'
 
     locale.str.server.conErr = 'Error occured during connection: '
     locale.str.server.dataCorrupt = 'Data received is corrupted, maybe the connection was hijacked.'

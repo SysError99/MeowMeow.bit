@@ -29,7 +29,8 @@ const Locale = function(f){
         },
         paramInvalid: '',
         peer: {
-            bad: ''
+            bad: '',
+            pubErr: ''
         },
         server:{
             conErr: '',
