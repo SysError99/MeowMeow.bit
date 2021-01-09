@@ -18,19 +18,23 @@ const PostPointer = function(d){
     this.signature = ''
 
     /**
-     * Import from JSON.
+     * Import from array
      */
     let _import = () => {
-        if(d.length !== 2) return
         if(typeof d[0] === 'number') _.pos = d[0]
         if(typeof d[1] === 'string') _.pub = d[1]
         if(typeof d[2] === 'string') _.signature = d[2] 
     }
     /**
-     * Export to JSON
+     * Export to array
+     * @returns {Array} Array object
      */
     this.export = () => {
-        return [_.pos, _.pub, _.signature]
+        return [
+            _.pos,
+            _.pub,
+            _.signature
+        ]
     }
     if(Array.isArray(d)) _import()
 }

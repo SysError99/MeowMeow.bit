@@ -1,9 +1,8 @@
-const isAny = require('../type.any.check')
 const Peer = require('./peer')
 const PostPointer = require('./post.pointer')
 /**
  * Post object
- * @param {Object} d JSON
+ * @param {Array} d Array object
  */
 const Post = function(d){
     /** This object*/
@@ -46,31 +45,26 @@ const Post = function(d){
      * Import d to object
      */
     let _import = () => {
-        if(Array.isArray(d.comment)){
-            d.comment.forEach(el => {
+        if(Array.isArray(d[0])){
+            d[0].forEach(el => {
                 if(Array.isArray(el)) _.comment.push(new PostPointer(el))
             })
         }
-        if(isAny(d)){
-            if(typeof d.like.amount === 'number') _.like.amount = d.like.amount
-            if(typeof d.like.signature === 'string') _.like.signature = d.like.signature
-            if(isAny(d.like.verifier)){
-                if(d.like.verifier.isPeer)
-                    _.like.verifier = d.like.verifier
-                else
-                    _.like.verifier = new Peer(d.like.verifier)
-            }
+        if(Array.isArray(d[1])){
+            if(typeof d[1][0] === 'number') _.like.amount = d[1][0]
+            if(typeof d[1][1] === 'string') _.like.signature = d[1][1]
+            if(Array.isArray(d[1][2])) _.like.verifier = new Peer(d[1][2])
         }
-        if(Array.isArray(d.media)) _.media = d.media
-        if(Array.isArray(d.mention)) _.mention = new PostPointer(d.mention)
-        if(typeof d.owner === 'string') _.owner = d.owner
-        if(typeof d.signature === 'string') _.signature = d.signature
-        if(Array.isArray(d.tag)) _.tag = d.tag
-        if(typeof d.text === 'string') _.text = d.text
+        if(Array.isArray(d[2])) _.media = d[2]
+        if(Array.isArray(d[3])) _.mention = d[3]
+        if(typeof d[4] === 'string') _.owner = d[4]
+        if(typeof d[5] === 'string') _.signature = d[5]
+        if(Array.isArray(d[6])) _.tag = d[6]
+        if(typeof d[7] === 'string') _.tag = d[7]
     }
     /**
-     * Export to JSON
-     * @returns {Object} JSON
+     * Export to array
+     * @returns {Array} Array object
      */
     this.export = () => {
         /** @type {PostPointer[]}*/
@@ -78,20 +72,19 @@ const Post = function(d){
         _.comment.forEach(el => {
             comments.push(el.export())
         })
-        return {
-            comment: comments,
-            like: {
-                amount: _.like.amount,
-                signature: _.like.signature,
-                verifier: _.like.verifier.export()
-            },
-            media: _.media,
-            mention: _.mention.export(),
-            owner: _.owner,
-            tag: _.tag,
-            text: _.text,
-        }
+        return [
+            comments,
+            [
+                _.like.amount,
+                _.like.signature,
+                _.like.verifier.export()
+            ],
+            _.media,
+            _.owner,
+            _.tag,
+            _.text
+        ]
     }
-    if(isAny(d)) _import()
+    if(Array.isArray(d)) _import()
 }
 module.exports = Post

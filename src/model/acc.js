@@ -1,8 +1,7 @@
-const isAny = require('../type.any.check')
 const SignKey = require("./key.sign")
 /**
  * Account object
- * @param {Object} d JSON
+ * @param {Array[]} d Array object
  */
 const Acc = function(d){
     /** This object*/
@@ -50,57 +49,57 @@ const Acc = function(d){
     }
 
     /**
-     * Import JSON
+     * Import array
      */
     let _import = () => {
-        if(typeof d.description === 'string') _.description = d.description
-        if(Array.isArray(d.follower)) _.follower = d.follower
-        if(isAny(d.key)){
-            if(d.key.isKey) _.key = d.key
-            else _.key = new SignKey(d.key)
-        }else _.key = new SignKey()
-        if(typeof d.name === 'string') _.name = d.name
-        if(isAny(d.pic)){
-            if(typeof d.pic.cover === 'string') _.pic.cover = d.pic.cover
-            if(typeof d.pic.profile === 'string') _.pic.profile = d.pic.profile
+        if(typeof d[0] === 'string') _.description = d[0]
+        if(Array.isArray(d[1])) _.follower = d[1]
+        if(Array.isArray(d[2])) _.key = new SignKey(d[2])
+        else _.key = new SignKey()
+        if(typeof d[3] === 'string') _.name = d[3]
+        if(Array.isArray(d[4])){
+            if(typeof d[4][0] === 'string') _.pic.cover = d[4][0]
+            if(typeof d[4][1] === 'string') _.pic.profile = d[4][1]
         }
-        if(typeof d.posts === 'number') _.posts = d.posts
-        if(typeof d.public === 'boolean') _.public = d.public
-        if(Array.isArray(d.tag)) _.tag = d.tag
+        if(typeof d[5] === 'number') _.posts = d[5]
+        if(typeof d[6] === 'boolean') _.posts = d[6]
+        if(Array.isArray(d[7])) _.tag = d[7]
     }
     /**
-     * Export base
+     * Export to array
+     * @returns {Array} Array object
      */
     let exportBase = () => {
-        return {
-            description: _.description,
-            follower: _.follower,
-            key: null,
-            name: _.name,
-            pic: _.pic,
-            posts: _.posts,
-            public: _.public,
-            tag: _.tag
-        }
+        return [
+            _.description,
+            _.follower,
+            null,
+            _.name,
+            _.pic,
+            _.posts,
+            _.public,
+            _.tag
+        ]
     }
     /**
-     * Export to JSON
-     * @returns {Object} JSON
+     * Export to array
+     * @returns {Array} Array object
      */
     this.export = () => {
         let e = exportBase()
-        e.key = _.key.export()
+        e[2] = _.key.export()
         return e
     }
     /**
-     * Export to JSON
+     * Export to array
+     * @returns {Array} Array object
      */
     this.exportPub = () => {
         let e = exportBase()
-        e.key = _.key.exportPub()
+        e[2] = _.key.exportPub()
         return e
     }
-    if(isAny(d)) _import(d)
+    if(Array.isArray(d)) _import()
     else _new()
 }
 module.exports = Acc

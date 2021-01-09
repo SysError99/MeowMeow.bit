@@ -1,9 +1,8 @@
-const isAny = require('../type.any.check')
 const Net = require('net')
 const SymmetricKey = require('./key.symmetric')
 /** 
  * Peer object
- * @param {{ip: string, port: number, pub: Buffer, key: SymmetricKey, socket: Net.Socket}} d JSON
+ * @param {Array} d Array object
  */
 const Peer = function(d){
     /** This object */
@@ -26,21 +25,21 @@ const Peer = function(d){
      * Import JSON
      */
     let _import = () => {
-        if(typeof d.ip === 'string') _.ip = d.ip
-        if(typeof d.port === 'number') _.port = d.port
-        if(typeof d.pub === 'string') _.pub = Buffer.from(d.pub, 'base64')
+        if(typeof d[0] === 'string') _.ip = d[0]
+        if(typeof d[1] === 'number') _.port = d[1]
+        if(typeof d[2] === 'string') _.pub = Buffer.from(d[2], 'base64')
     }
     /**
      * Export to JSON
      * @returns {Object} JSON
      */
     this.export = () => {
-        return {
-            ip: _.ip,
-            port: _.port,
-            pub: _.pub.toString('base64'),
-        }
+        return [
+            _.ip,
+            _.port,
+            _.pub.toString('base64')
+        ]
     }
-    if(isAny(d)) _import()
+    if(Array.isArray(d)) _import()
 }
 module.exports = Peer

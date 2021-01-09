@@ -1,10 +1,9 @@
-const isAny = require('../type.any.check')
 const Try = require('../try.catch')
 const BaseN = require('../base.n')
 const Crypt = require('../crypt')
 /**
  * Sign key object.
- * @param {Object|string} d JSON or string for new key (passphrase)
+ * @param {Array|string} d Array object or string for new key (passphrase)
  */
 const SignKey = function(d){
     /** @type {boolean} This is 'SignKey' object*/
@@ -62,33 +61,32 @@ const SignKey = function(d){
         public = newKey.publicKey
     }
     /**
-     * Import JSON
+     * Import array object
      */
     let _import = () => {
-        if(typeof d.password === 'string') password = d.password
-        if(typeof d.private === 'string') private = d.private
-        if(typeof d.public === 'string') public = d.public
+        if(typeof d[0] === 'string') password = d[0]
+        if(typeof d[1] === 'string') private = d[1]
+        if(typeof d[2] === 'string') public = d[2]
     }
     /**
-     * Export to JSON
-     * @returns {Object} JSON
+     * Export to array
+     * @returns {Array} Array object
      */
     this.export = () => {
-        return {
-            password: password,
-            private: private,
-            public: public
-        }
+        return [
+            password,
+            private,
+            public
+        ]
     }
     /**
-     * Export only public key to JSON
+     * Export only public key
+     * @returns {string} A public key
      */
     this.exportPub = () => {
-        return {
-            public: public
-        }
+        return public
     }
-    if(isAny(d)) _import()
+    if(Array.isArray(d)) _import()
     else if(typeof d === 'string') _newKey(d)
     else _newKey('')
 }
