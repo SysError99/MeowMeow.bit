@@ -278,8 +278,7 @@ const Server = function(callback){
             port: addr.port
         }
         let peer = _.peer.find(peerProperties)
-        if(peer === null)
-            peer = _.peer.add(peerProperties)
+        if(peer === null) peer = _.peer.add(peerProperties)
         peer.socket = socket
         /** @type {string} Data received */
         let body = ''
@@ -292,18 +291,18 @@ const Server = function(callback){
             if(Try(() => {
                 if(body.length === 0) throw 'Bad Peer'
                 if(peer.key === null){
-                    if(body.length !== 194) throw 'Illegal key length.'
+                    if(body.length !== 194) throw 'Illegal key length'
                     peer.key = _.key.current.computeSecret(BaseN.decode(body, '62'))
                     _.response(peer, 'nice2meetu')
                     return
                 }
                 body = JSON.parse(peer.key.decrypt(body))
-            })){
+            })) peer.key = null
+            if(!Array.isArray(body)){
                 _.response(peer)
-                peer.key = null
                 return
             }
-            if(Array.isArray(body)) callback(peer, body)
+            callback(peer, body)
         })
         socket.on('error', err => {
             console.error('E -> Server.on(\'error\'): ' + err.message)
