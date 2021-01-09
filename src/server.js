@@ -129,9 +129,6 @@ const Server = function(callback){
     /** @type {Locale} Currently used locale on this server*/
     this.locale = locale
 
-    /** @type {boolean} Is server online now?*/
-    this.online = false
-
     /** Peer functions*/
     this.peer = {
         /** @type {Peer[]} List of active peers*/
@@ -248,7 +245,7 @@ const Server = function(callback){
     }
 
     /** @type {number} Running port*/
-    this.port = 8080
+    this.port = 25420
 
     /**
      * Send data back to client (peer)
@@ -313,15 +310,9 @@ const Server = function(callback){
      * Start a server.
      */
     this.start = () => {
-        _.port = 1024 + Math.floor(Math.random() * 64510)
-        if(Try(() => {
-            server.listen(_.port)
-            _.online = true
-            console.log('Server is now listening on port '+String(_.port))
-        })){
-            console.error('Port '+String(_.port)+' can\'t be established, trying other port.')
-            setTimeout(_.start,1000)
-        }
+        server.listen(_.port)
+        _.port = server.address().port
+        console.log('Server is now listening on port '+String(_.port))
     }
 
     if(typeof callback === 'function') {
