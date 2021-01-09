@@ -29,8 +29,8 @@ const ECDHKey = function(d){
             return Try(() => BaseN.encode(ecdh.getPrivateKey(), '62'))
         },
         /**
-         * Get private key as Base62
-         * @returns {string} Private key
+         * Get public key as Base62
+         * @returns {string} Public key
          */
         pub: () => {
             return Try(() => BaseN.encode(ecdh.getPublicKey(), '62'))
