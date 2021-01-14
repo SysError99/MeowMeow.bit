@@ -75,7 +75,10 @@ const Acc = function(d){
             _.follower,
             null,
             _.name,
-            _.pic,
+            [
+                _.pic.cover,
+                _.pic.profile
+            ],
             _.posts,
             _.public,
             _.tag
