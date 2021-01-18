@@ -1,27 +1,27 @@
 > $ means it is identified by public key.
 
+# Peer
+
 ## Account Manager
-Contains:
- - All personal accounts, separted by folder
 Features:
  - Choose active account
  - Create a new account
  - Delete accounts from device
 
-## General-Purpose Data Registry
+## Data Registry
 Contains:
- - Tracker List [n]
- - Account list [$]
- - Peer list [$,n]
- - Post list [$,n]
- - Post timeline [n]
+ - Account [$]
+ - Account database [tag]
+ - Account seeders [$] [n]
+ - Posts [$,tag,n] [n] (tag: by tag, n: by timeline)
+ - Trackers [n]
 Features:
  - Creating & Updating data
  - Querying data
  - Removing data
 
 ## Networking (incoming & outgoing)
-Receive & send requests [$]:
+Receive & send requests [$] [signature]:
  - Configure
     - Set account name
     - Manage followers
@@ -29,9 +29,6 @@ Receive & send requests [$]:
     - Rename the account
     - Change cover picture
     - Change profile picture
-    - Change account visibility
-        - Annouce account to trackers
-        - Delete account from trackers
     - Manage account tags
  - Download 
     - Account (+follow)
@@ -39,17 +36,18 @@ Receive & send requests [$]:
     - Post [n]
  - Interact [post]
     - Comment
+    - Like
     - Post & Share
        - with tag [$]
-    - Like
 
 ## Rendering (HTTP server)
 
-## Tracker 
-Contains [$]:
- - Peer list
-Features:
- - Check client alive
-Receive requests [$]:
- - Download [random1/all]
-    - Peer list
+# Announcer
+Contains: Announcement [ip:port]
+Receive requests: 
+ - Announcement [ip:port]
+ - Connected port
+
+# Tracker 
+Contains: Account seeders [$]: Peer[]
+Receive requests: Account seeders [$]
