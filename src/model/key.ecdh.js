@@ -36,6 +36,22 @@ const ECDHKey = function(d){
             return Try(() => BaseN.encode(ecdh.getPublicKey(), '62'))
         }
     }
+    this.raw = {
+        /**
+         * Get public key, as buffer
+         * @returns {string} Public key
+         */
+        prv: () => {
+            return Try(ecdh.getPrivateKey(), Buffer.from([]))
+        },
+        /**
+         * Get public key, as buffer
+         * @returns {string} Public key
+         */
+        pub: () => {
+            return Try(() => ecdh.getPublicKey(), Buffer.from([]))
+        }
+    }
     /**
      * Export key
      * @returns {string} Private key
