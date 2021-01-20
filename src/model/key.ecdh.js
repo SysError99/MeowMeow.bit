@@ -13,7 +13,7 @@ const ECDHKey = function(d){
     let ecdh = Try(() => Crypt.newKey.ecdh(d), Crypt.newKey.ecdh())
     /**
      * Compute a secret key
-     * @param {Buffer|string} pub Public key
+     * @param {Buffer} pub Public key
      * @returns {SymmetricKey} Symmetric key
      */
     this.computeSecret = pub => {
