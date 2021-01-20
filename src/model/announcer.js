@@ -17,9 +17,9 @@ const Announcer = function(d){
     /** @type {SymmetricKey} Secret assigned to this announcer*/
     this.key = null
     /** @type {Buffer} Randomly generated local pubilc key to be shared with an announcer*/
-    this.myPub = ''
+    this.myPub = Buffer.from([])
     /** @type {Buffer} Public key of an announcer*/
-    this.pub = ''
+    this.pub = Buffer.from([])
 
     /** Import from array*/
     let _import = () => Try(() => {

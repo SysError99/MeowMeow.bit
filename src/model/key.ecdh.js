@@ -1,6 +1,5 @@
 const Try = require('../try.catch')
 const Crypto = require('crypto')
-const BaseN = require('../base.n')
 const Crypt = require('../crypt')
 const SymmetricKey = require('./key.symmetric')
 /**
@@ -22,30 +21,14 @@ const ECDHKey = function(d){
     }
     this.get = {
         /**
-         * Get public key
-         * @returns {string} Public key
-         */
-        prv: () => {
-            return Try(() => BaseN.encode(ecdh.getPrivateKey(), '62'))
-        },
-        /**
-         * Get public key as Base62
-         * @returns {string} Public key
-         */
-        pub: () => {
-            return Try(() => BaseN.encode(ecdh.getPublicKey(), '62'))
-        }
-    }
-    this.raw = {
-        /**
-         * Get public key, as buffer
+         * Get private key
          * @returns {Buffer} Public key
          */
         prv: () => {
-            return Try(ecdh.getPrivateKey(), Buffer.from([]))
+            return Try(() => ecdh.getPrivateKey(), Buffer.from([]))
         },
         /**
-         * Get public key, as buffer
+         * Get public key
          * @returns {Buffer} Public key
          */
         pub: () => {

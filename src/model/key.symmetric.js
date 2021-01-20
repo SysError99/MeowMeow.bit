@@ -8,7 +8,7 @@ const SymmetricKey = function(d){
     /** @type {boolean} This is 'SymmetricKey' object*/
     this.isSymmetricKey = true
     /** @type {Buffer} Key buffer*/
-    let key = Crypt.newKey.symmetric()
+    let key
     /**
      * Encrypt a string
      * @param {string} str String to be encrpyted
@@ -36,5 +36,6 @@ const SymmetricKey = function(d){
     }
     if(typeof d === 'string') Try(() => key = Buffer.from(d, 'base64'))
     else if(Buffer.isBuffer(d)) key = d
+    else key = Crypt.newKey.symmetric()
 }
 module.exports = SymmetricKey

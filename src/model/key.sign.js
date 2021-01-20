@@ -1,5 +1,4 @@
 const Try = require('../try.catch')
-const BaseN = require('../base.n')
 const Crypt = require('../crypt')
 /**
  * Sign key object.
@@ -32,23 +31,6 @@ const SignKey = function(d){
     this.verify = (str, signature) => {
         if(public.length === 0 || str.length === 0) return false
         return Try(() => Crypt.sign.verify(str, public, signature), '')
-    }
-    /** Key retrieving functions*/
-    this.get = {
-        /**
-         * Get private key in Base58 form
-         * @returns {string} Base58-encoded string
-         */
-        private: () => {
-            return Try(() => BaseN.encode(Buffer.from(private, 'base64')), '')
-        },
-        /**
-         * Get public key in Base58 form
-         * @returns {string} Base58-encoded string
-         */
-        public: () => {
-            return Try(() => BaseN.encode(Buffer.from(public, 'base64')), '')
-        }
     }
     /**
      * Generate a new key
