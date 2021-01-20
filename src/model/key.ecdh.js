@@ -39,14 +39,14 @@ const ECDHKey = function(d){
     this.raw = {
         /**
          * Get public key, as buffer
-         * @returns {string} Public key
+         * @returns {Buffer} Public key
          */
         prv: () => {
             return Try(ecdh.getPrivateKey(), Buffer.from([]))
         },
         /**
          * Get public key, as buffer
-         * @returns {string} Public key
+         * @returns {Buffer} Public key
          */
         pub: () => {
             return Try(() => ecdh.getPublicKey(), Buffer.from([]))
