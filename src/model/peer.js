@@ -1,5 +1,6 @@
 const Try = require('../try.catch')
 const Datagram = require('dgram')
+const ECDHKey = require('./key.ecdh')
 const SymmetricKey = require('./key.symmetric')
 /** 
  * Peer object
@@ -18,19 +19,32 @@ const Peer = function(d){
     this.port = 8080
     /** @type {Buffer} Peer public key.*/
     this.pub = Buffer.from([])
+    /** @type {Buffer} Randomly generated public key to be shared with another peer*/
+    this.myPub = Buffer.from([])
     /** @type {SymmetricKey} Peer Symmetric key*/
     this.key = null
     /** @type {number} Peer quality indicator*/
     this.quality = 5
     /** @type {Datagram.Socket} Network socket*/
     this.socket = null
+    /** @type {boolean} Is the connection established?*/
+    this.connected = false
+    /** @type {boolean} If this peer is currently sending large bytes*/
+    this.downloading = false
     /**
      * Import JSON
      */
     let _import = () => {
         if(typeof d[0] === 'string') _.ip = d[0]
         if(typeof d[1] === 'number') _.port = d[1]
-        if(typeof d[2] === 'string') _.pub = Try(() => Buffer.from(d[2], 'base64'), _.pub)
+        Try(() => {
+            if(typeof d[2] === 'string') d[2] = Buffer.from(d[2], 'base64')
+            if(!Buffer.isBuffer(d[2])) return
+            let newECDH = new ECDHKey()
+            _.key = newECDH.computeSecret(d[2])
+            _.myPub = newECDH.get.pub()
+            _.pub = d[2]
+        })
         if(typeof d[3] === 'string') _.lastAccess = d[3]
     }
     /**
