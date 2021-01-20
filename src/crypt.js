@@ -5,6 +5,13 @@ const Crypto = require('crypto')
 const BaseN = require('./base.n')
 /** @type {string} Currently used EC*/
 const curve = 'sect571k1'
+/** Key headers*/
+const header = {
+    /** @type {[string,string]} Private key encryption functions*/
+    private: ['-----BEGIN ENCRYPTED PRIVATE KEY-----', '-----END ENCRYPTED PRIVATE KEY-----'],
+    /** @type {[string,string]} Public key encryption functions*/
+    pubilc: ['-----BEGIN PUBLIC KEY-----', '-----END PUBLIC KEY-----']
+},
 /** @type {number} Public key length per row*/
 const len = 64
 /**
@@ -38,32 +45,8 @@ const short = str => {
     str.splice(0,1)
     return str.join('')
 }
-
 /** Key creator*/
 const keyCreator = {
-    /**
-     * Generate a new asymmetric key
-     * @param {string} password Passphrase for this key
-     * @returns {import('crypto').KeyPairSyncResult<string,string>} Key result
-     */
-    asymmetric: password => {
-        let k = Crypto.generateKeyPairSync('rsa', {
-            modulusLength: 4096,
-            publicKeyEncoding: {
-                type: 'spki',
-                format: 'pem'     
-            },     
-            privateKeyEncoding: {
-                type: 'pkcs8',
-                format: 'pem',
-                cipher: 'aes-256-cbc',
-                passphrase: typeof password === 'string' ? password : ''
-            } 
-        })
-        k.privateKey = short(k.privateKey)
-        k.publicKey = short(k.publicKey)
-        return k
-    },
     /**
      * Create Elliptic Curve Diffie-Hellman object
      * @param {Buffer|string} key Buffer to be used as private key
@@ -118,60 +101,6 @@ const ecdh = {
         return ecdh.computeSecret(public).slice(32,64)
     }
 }
-/** Private key encryption functions*/
-const private = {
-    /** @type {[string,string]} Header to be used for long()*/
-    header: ['-----BEGIN ENCRYPTED PRIVATE KEY-----', '-----END ENCRYPTED PRIVATE KEY-----'],
-    /**
-     * Encrypt with private key
-     * @param {string} str String that will be encrypted
-     * @param {string} key Private key that will be used to encrypt
-     * @param {string} password Password for decrypting private key
-     * @returns {string} Encrpyted string.
-     */
-    encrypt: (str, key, password) => {
-        return BaseN.encode(Crypto.privateEncrypt({
-            key: long(key, private.header),
-            passphrase: (typeof password === 'string') ? password : ''
-        }, Buffer.from(str, 'utf-8')), '62')
-    },
-    /**
-     * Decrypt with private key
-     * @param {string} str String that will be decrypted
-     * @param {string} key Private key that will be used to decrypt
-     * @param {string} password Password for decrypting private key
-     * @returns {string} Decrpyted string.
-     */
-    decrypt: (str, key, password) => {
-        return Crypto.privateDecrypt({
-            key: long(key, private.header),
-            passphrase: (typeof password === 'string') ? password : ''
-        }, BaseN.decode(str, '62')).toString('utf-8')
-    }
-}
-/** Public key encryption functions*/
-const public = {
-    /** @type {[string,string]} Header to be used for long()*/
-    header: ['-----BEGIN PUBLIC KEY-----', '-----END PUBLIC KEY-----'],
-    /**
-     * Encrypt with public key
-     * @param {string} str String that will be encrypted
-     * @param {string} key Public key that will be used to encrypt
-     * @returns {string} Encrpyted string.
-     */
-    encrypt: (str, key) => {
-        return BaseN.encode(Crypto.publicEncrypt(long(key, public.header), Buffer.from(str,'utf8')), '62')
-    },
-    /**
-     * Decrypt with public key
-     * @param {string} str String that will be decrypted
-     * @param {string} key Public key that will be used to decrypt
-     * @returns {string} Decrpyted string.
-     */
-    decrypt: (str, key) => {
-        return Crypto.publicDecrypt(long(key, public.header), BaseN.decode(str, '62')).toString('utf8')
-    }
-}
 /** Key signing functions*/
 const sign = {
     /**
@@ -182,7 +111,7 @@ const sign = {
      * @returns {string} Signature
      */
     perform: (str,key,password) => {
-        return BaseN.encode(Crypto.sign(null, Buffer.from(str), {key: long(key, private.header), passphrase: password}), '62')
+        return BaseN.encode(Crypto.sign(null, Buffer.from(str), {key: long(key, header.private), passphrase: password}), '62')
     },
     /**
      * Perform key verification
@@ -192,7 +121,7 @@ const sign = {
      * @returns {boolean} Is this legit?
      */
     verify: (str,key,signature) => {
-        return Crypto.verify(null, Buffer.from(str), long(key, public.header), BaseN.decode(signature, '62'))
+        return Crypto.verify(null, Buffer.from(str), long(key, header.public), BaseN.decode(signature, '62'))
     }
 }
 /** Symmetric encryption functions*/
@@ -201,25 +130,24 @@ const symmetric = {
      * Encrypt a string
      * @param {string} str string to be encrypted
      * @param {Buffer} key Key that will be used
-     * @returns {string} Encrypted string
+     * @returns {Buffer} Encrypted string
      */
     encrypt: (str, key) => {
         let iv = Crypto.randomBytes(16)
         let cipherIv = Crypto.createCipheriv('aes-256-gcm', key, iv)
         str = cipherIv.update(str)
-        return BaseN.encode(Buffer.concat([iv,str,cipherIv.final()]), '62')
+        return Buffer.concat([iv,str,cipherIv.final()])
     },
     /**
      * Decrypt a string
-     * @param {string} str String to be decrypted
+     * @param {Buffer} buf Buffer to be decrypted (Can be decoded from string)
      * @param {Buffer} key Key to be used
      * @returns {string} Decrypted string
      */
-    decrypt: (str, key) => {
-        str = BaseN.decode(str, '62')
-        let iv  = str.slice(0,16)
-        str = str.slice(16, str.length)
-        return Crypto.createDecipheriv('aes-256-gcm', key, iv).update(str).toString('utf-8')
+    decrypt: (buf, key) => {
+        let iv  = buf.slice(0,16)
+        buf = buf.slice(16, buf.length)
+        return Crypto.createDecipheriv('aes-256-gcm', key, iv).update(buf).toString('utf-8')
     }
 }
 /**
@@ -228,8 +156,6 @@ const symmetric = {
 module.exports = {
     ecdh: ecdh,
     newKey: keyCreator,
-    private: private,
-    public: public,
     /**
      * Generate a randomized buffer
      * @param {number} size Buffer size
