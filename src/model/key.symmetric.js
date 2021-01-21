@@ -12,20 +12,20 @@ const SymmetricKey = function(d){
     /**
      * Encrypt a string
      * @param {string} str String to be encrpyted
-     * @returns {string} Encrypted string
+     * @returns {Buffer} Encrypted string
      */
     this.encrypt = str => {
-        if(str.length === 0) return ''
+        if(str.length === 0) return Buffer.from([])
         return Try(() => Crypt.symmetric.encrypt(str, key), '')
     }
     /**
      * Decrypt a string
-     * @param {string} str String to be decrypted
+     * @param {Buffer} buf String to be decrypted
      * @returns {string} Decrypted string
      */
-    this.decrypt = str => {
-        if(str.length === 0) return ''
-        return Try(() => Crypt.symmetric.decrypt(str, key), '')
+    this.decrypt = buf => {
+        if(buf.length === 0) return ''
+        return Try(() => Crypt.symmetric.decrypt(buf, key), '')
     }
     /**
      * Export to string
