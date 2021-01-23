@@ -3,7 +3,7 @@
  * 
  * By SysError99, Licensed with MIT
  */
-const Server = require('./server')
+const Receiver = require('./receiver')
 const Web = require('./web')
 
 /** HTTP web front-end app object*/
@@ -22,15 +22,15 @@ app.get('/find/:id', (req,res) => {
     res.send('You request for: '+req.params.id)
 })
 
-/** Server Object*/
-const server = new Server((peer, data) => {
+/** Receiver Object*/
+const receiver = new Receiver((peer, data) => {
     if(typeof data[0] !== 'string'){
-        server.response(peer)
+        receiver.send(peer)
         return
     }
     switch(data[0]){
         default:
-            server.response(peer, ['what'])
+            receiver.send(peer, ['what'])
             break
     }
 })

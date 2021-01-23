@@ -3,19 +3,19 @@
  */
 const Net = require('net')
 
-const BaseN = require('./base.n')
-const Try = require('./try.catch')
+const BaseN = require('../src/base.n')
+const Try = require('../src/try.catch')
 
-const __ = require('./const')
-const ECDHKey = require('./model/key.ecdh')
-const Locale = require('./locale')
-const Peer = require('./model/peer')
-const Result = require('./model/result')
-const SymmetricKey = require('./model/key.symmetric')
+const __ = require('../src/const')
+const ECDHKey = require('../src/model/key.ecdh')
+const Locale = require('../src/locale')
+const Peer = require('../src/model/peer')
+const Result = require('../src/model/result')
+const SymmetricKey = require('../src/model/key.symmetric')
 
 const locale = new Locale()
 const paramInvalid = new Result({message: locale.str.paramInvalid})
-const storage = require('./storage')(locale)
+const storage = require('../src/storage')(locale)
 
 process.on('uncaughtException', err => {
     switch(err.code){
