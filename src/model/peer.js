@@ -1,5 +1,6 @@
 const Try = require('../try.catch')
 const Datagram = require('dgram')
+const Net = require('net')
 const ECDHKey = require('./key.ecdh')
 const SymmetricKey = require('./key.symmetric')
 /** 
@@ -13,8 +14,8 @@ const Peer = function(d){
     this.isPeer = true
     /** @type {string} Peer IP address*/
     this.ip = ''
-    /** @type {string} Last accessed time*/
-    this.lastAccess = new Date().toUTCString()
+    /** @type {Date} Last accessed time*/
+    this.lastAccess = new Date()
     /** @type {number} Peer connected port*/
     this.port = 8080
     /** @type {Buffer} Peer public key.*/
@@ -39,13 +40,13 @@ const Peer = function(d){
         if(typeof d[1] === 'number') _.port = d[1]
         Try(() => {
             if(typeof d[2] === 'string') d[2] = Buffer.from(d[2], 'base64')
+            if(typeof d[3] === 'string') _.lastAccess = Date.parse(d[3])
             if(!Buffer.isBuffer(d[2])) return
             let newECDH = new ECDHKey()
             _.key = newECDH.computeSecret(d[2])
             _.myPub = newECDH.get.pub()
             _.pub = d[2]
         })
-        if(typeof d[3] === 'string') _.lastAccess = d[3]
     }
     /**
      * Export to JSON
@@ -56,7 +57,7 @@ const Peer = function(d){
             _.ip,
             _.port,
             _.pub.toString('base64'),
-            _.lastAccess
+            _.lastAccess.toUTCString()
         ]
     }
     if(Array.isArray(d)) _import()
