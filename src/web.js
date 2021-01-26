@@ -68,26 +68,19 @@ const WebResponse = function(res){
     }
     /**
      * Send data back to client
-     * @param {any} data Data to be sent back to client
+     * @param {Buffer|string} data Data to be sent back to client
      * @returns {WebResponse} 
      */
     this.send = data => {
-        let payload = ''
         switch(typeof data){
             case 'object':
-                Try(() => payload = JSON.stringify(data))
+                data = Try(() => JSON.stringify(data), '')
                 break
-            case 'string':
-                payload = data
-                break
-            case 'number':
-                payload = data + ''
-                break
-            case 'boolean':
-                payload = data ? 'true' : 'false'
+            default:
+                data = Try(() => `${data}`, '')
                 break
         }
-        res.end(payload)
+        res.end(data)
         return _
     }
     /**
