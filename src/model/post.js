@@ -16,6 +16,9 @@ const Post = function(d){
     /** @type {string} People names who like this post*/
     this.like = []
 
+    /** @type {string} People signatures who like this post*/
+    this.likeSignature = []
+
     /** @type {string[]} Base64-based media files*/
     this.media = []
 
@@ -44,12 +47,13 @@ const Post = function(d){
             })
         }
         if(Array.isArray(d[1])) _.like = d[1]
-        if(Array.isArray(d[2])) _.media = d[2]
-        if(Array.isArray(d[3])) _.mention = d[3]
-        if(typeof d[4] === 'string') _.owner = d[4]
-        if(typeof d[5] === 'string') _.signature = d[5]
-        if(Array.isArray(d[6])) _.tag = d[6]
-        if(typeof d[7] === 'string') _.tag = d[7]
+        if(Array.isArray(d[2])) _.likeSignature = d[2]
+        if(Array.isArray(d[3])) _.media = d[3]
+        if(Array.isArray(d[4])) _.mention = d[4]
+        if(typeof d[5] === 'string') _.owner = d[5]
+        if(typeof d[6] === 'string') _.signature = d[6]
+        if(Array.isArray(d[7])) _.tag = d[7]
+        if(typeof d[8] === 'string') _.tag = d[8]
     }
     /**
      * Export to array
@@ -63,13 +67,12 @@ const Post = function(d){
         })
         return [
             comments,
-            [
-                _.like.amount,
-                _.like.signature,
-                _.like.verifier.export()
-            ],
+            _.like,
+            _.likeSignature,
             _.media,
+            _.mention,
             _.owner,
+            _.signature,
             _.tag,
             _.text
         ]
