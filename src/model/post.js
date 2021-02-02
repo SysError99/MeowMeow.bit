@@ -53,7 +53,7 @@ const Post = function(d){
         if(typeof d[5] === 'string') _.owner = d[5]
         if(typeof d[6] === 'string') _.signature = d[6]
         if(Array.isArray(d[7])) _.tag = d[7]
-        if(typeof d[8] === 'string') _.tag = d[8]
+        if(typeof d[8] === 'string') _.text = d[8]
     }
     /**
      * Export to array
