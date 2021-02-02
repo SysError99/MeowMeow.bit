@@ -13,15 +13,8 @@ const Post = function(d){
     /** @type {PostPointer[]} Post comments*/
     this.comment = []
 
-    /** Like manager*/
-    this.like = {
-        /** @type {number} Amount of likes received*/
-        amount: 0,
-        /** @type {string} Signed signature by a tracker*/
-        signature: '',
-        /** @type {Peer} Tracker who verifies this*/
-        verifier: null,
-    }
+    /** @type {number} Amount of likes received*/
+    this.like = 0
 
     /** @type {string[]} Base64-based media files*/
     this.media = []
