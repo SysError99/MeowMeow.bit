@@ -11,19 +11,15 @@ const PostPointer = function(d){
     /** @type {number} Position of a post*/
     this.pos = -1
 
-    /** @type {string} Public key*/
-    this.pub = ''
-
-    /** @type {string} Signature */
-    this.signature = ''
+    /** @type {string} Account owner*/
+    this.owner = ''
 
     /**
      * Import from array
      */
     let _import = () => {
         if(typeof d[0] === 'number') _.pos = d[0]
-        if(typeof d[1] === 'string') _.pub = d[1]
-        if(typeof d[2] === 'string') _.signature = d[2] 
+        if(typeof d[1] === 'string') _.owner = d[1]
     }
     /**
      * Export to array
@@ -32,8 +28,7 @@ const PostPointer = function(d){
     this.export = () => {
         return [
             _.pos,
-            _.pub,
-            _.signature
+            _.owner
         ]
     }
     if(Array.isArray(d)) _import()
