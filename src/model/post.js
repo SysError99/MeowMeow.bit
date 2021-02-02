@@ -13,8 +13,8 @@ const Post = function(d){
     /** @type {PostPointer[]} Post comments*/
     this.comment = []
 
-    /** @type {number} Amount of likes received*/
-    this.like = 0
+    /** @type {string} People names who like this post*/
+    this.like = []
 
     /** @type {string[]} Base64-based media files*/
     this.media = []
@@ -22,11 +22,11 @@ const Post = function(d){
     /** @type {PostPointer[]} Post mention*/
     this.mention = null
 
-    /** @type {string} Post owner (identified with a public key)*/
+    /** @type {string} Post owner name*/
     this.owner = ''
 
     /** @type {string} Post signature from owner*/
-    this.signature = ''
+    this.signature = Buffer.from([])
 
     /** @type {string[]} Account Tags*/
     this.tag = []
@@ -43,11 +43,7 @@ const Post = function(d){
                 if(Array.isArray(el)) _.comment.push(new PostPointer(el))
             })
         }
-        if(Array.isArray(d[1])){
-            if(typeof d[1][0] === 'number') _.like.amount = d[1][0]
-            if(typeof d[1][1] === 'string') _.like.signature = d[1][1]
-            if(Array.isArray(d[1][2])) _.like.verifier = new Peer(d[1][2])
-        }
+        if(Array.isArray(d[1])) _.like = d[1]
         if(Array.isArray(d[2])) _.media = d[2]
         if(Array.isArray(d[3])) _.mention = d[3]
         if(typeof d[4] === 'string') _.owner = d[4]
