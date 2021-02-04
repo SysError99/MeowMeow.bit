@@ -1,7 +1,10 @@
-const Try = require('../try.catch')
 const Crypto = require('crypto')
-const Crypt = require('../crypt')
+
+const Try = require('../fn.try.catch')
+const Crypt = require('../fn.crypt')
+
 const SymmetricKey = require('./key.symmetric')
+
 /**
  * ECDH key object
  * @param {Buffer|string} d String to be used as private key
@@ -9,8 +12,10 @@ const SymmetricKey = require('./key.symmetric')
 const ECDHKey = function(d){
     /** @type {boolean} This is 'ECDH Key'*/
     this.isECDHKey = true
+
     /** @type {Crypto.ECDH} ECDH key object*/
     let ecdh = Try(() => Crypt.newKey.ecdh(d), Crypt.newKey.ecdh())
+
     /**
      * Compute a secret key
      * @param {Buffer} pub Public key
@@ -19,6 +24,7 @@ const ECDHKey = function(d){
     this.computeSecret = pub => {
         return Try(() => new SymmetricKey(Crypt.ecdh.computeSecret(ecdh, pub)))
     }
+
     this.get = {
         /**
          * Get private key
@@ -35,6 +41,7 @@ const ECDHKey = function(d){
             return Try(() => ecdh.getPublicKey(), Buffer.from([]))
         }
     }
+
     /**
      * Export key
      * @returns {string} Private key
@@ -42,5 +49,7 @@ const ECDHKey = function(d){
     this.export = () => {
         return Try(() => ecdh.getPrivateKey().toString('base64'))
     }
+
 }
+
 module.exports = ECDHKey

@@ -1,4 +1,3 @@
-const Peer = require('./peer')
 const PostPointer = require('./post.pointer')
 /**
  * Post object
@@ -79,4 +78,5 @@ const Post = function(d){
     }
     if(Array.isArray(d)) _import()
 }
+
 module.exports = Post

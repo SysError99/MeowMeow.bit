@@ -1,22 +1,24 @@
 // UNSTABLE, NOT TESTED
 const Datagram = require('dgram')
 
-const Try = require('./try.catch')
+const Crypt = require('./fn.crypt')
+const Try = require('./fn.try.catch')
+const Locale = require('./locale/locale')
 
-const Crypt = require('./crypt')
-const ECDHKey = require('./model/key.ecdh')
-const Locale = require('./locale')
-const Peer = require('./model/peer')
-const Result = require('./model/result')
+const ECDHKey = require('./data/key.ecdh')
+const Peer = require('./data/peer')
+const Result = require('./data/result')
 
 /** Peer hole */
 const peers = {}
+
 /** List of sending in progress peers*/
 const sending = {}
+
 /** @type {Peer[]} List of trackers*/
 const trackers = Try(() => {
     /** @type {Array} */
-    let trackersLoaded = JSON.parse(require('./storage')(new Locale()).read('trackers').data)
+    let trackersLoaded = JSON.parse(require('./fn.storage')(new Locale()).read('trackers').data)
     /** @type {Peer[]} */
     let trackersImported = []
 
@@ -33,7 +35,7 @@ const trackers = Try(() => {
 }, [])
 
 /** @type {RegExp} IP address regular expression*/
-const IpRegex = require('./model/ip.regex')
+const IpRegex = require('./data/ip.regex')
 
 /**
  * @param {Error} err 
@@ -45,6 +47,7 @@ const showError = err => err ? console.error(err) : 0
  * @param {Peer} peer Peer object
  * @param {any[]} data Data object
  */
+
 /**
  * Handle incoming message from other peers
  * @param {Receiver} pm Peer manager
@@ -132,7 +135,7 @@ const Receiver = function(callback){
     })
 
     /** Storage module*/
-    let storage = require('./storage')(locale)
+    let storage = require('./fn.storage')(locale)
 
     /** @type {RequestFunction} Callback function for this object */
     this.callback = typeof callback === 'function' ? callback : () => false

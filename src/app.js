@@ -3,8 +3,8 @@
  * 
  * By SysError99, Licensed with MIT
  */
-const Receiver = require('./receiver')
-const Web = require('./web')
+const Receiver = require('./fn.receiver')
+const Web = require('./fn.web')
 
 /** HTTP web front-end app object*/
 const app = new Web()

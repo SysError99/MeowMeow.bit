@@ -4,8 +4,8 @@
  * By SysError99, Licensed with MIT
  */
 const HTTP = require('http')
-const isAny = require('./type.any.check')
-const Try = require('./try.catch')
+const isAny = require('./fn.is.any')
+const Try = require('./fn.try.catch')
 
 /**
  * @callback RequestCallback
@@ -285,4 +285,5 @@ const Web = function(d){
     if(isAny(d)) _import()
     else _server()
 }
+
 module.exports = Web

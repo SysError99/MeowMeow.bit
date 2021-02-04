@@ -10,13 +10,13 @@ const Locale = function(f){
     
     /** @type {string} Currently used locale*/
     this.current = ''
+
     /**
      * Change locale with the function.
      * @param {function} fn 
      */
-    this.change = fn => {
-        fn(_)
-    }
+    this.change = fn => fn(_)
+
     /** List of locale */
     this.str = {
         file: {
@@ -41,7 +41,10 @@ const Locale = function(f){
             timeOut: ''
         }
     }
+
     if(typeof f === 'function') this.change(f)
-    else this.change(require('./locale/en'))
+    else this.change(require('./en'))
+    
 }
+
 module.exports = Locale

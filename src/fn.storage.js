@@ -1,8 +1,10 @@
-const isAny = require('./type.any.check')
-const Try = require('./try.catch')
 const FileSystem = require('fs')
-const Locale = require('./locale')
-const Result = require('./model/result')
+
+const isAny = require('./fn.is.any')
+const Try = require('./fn.try.catch')
+
+const Locale = require('./locale/locale')
+const Result = require('./data/result')
 
 /** File path structure*/
 const P = {a: './data/', b: '.json'}

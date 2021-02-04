@@ -1,4 +1,5 @@
-const isAny = require('../type.any.check')
+const isAny = require('../fn.is.any')
+
 /** 
  * Result object.
  * @param {{success: boolean, message: string, data:any}} d JSON
@@ -8,12 +9,16 @@ const Result = function(d){
     let _ = this
     /** @type {boolean} This is 'Result' object*/
     this.isResult = true
+
     /** @type {Object} Data received*/
     this.data = null
+
     /** @type {string} Result message*/
     this.message = ''
+
     /** @type {boolean} Is this result success?*/
     this.success = false
+
     /**
      * Import JSON
      */
@@ -22,6 +27,7 @@ const Result = function(d){
         if(typeof d.message === 'string') _.message = d.message
         if(typeof d.success === 'boolean') _.success = d.success
     }
+
     /**
      * Export to JSON
      * @returns {Object} JSON
@@ -33,6 +39,9 @@ const Result = function(d){
             success: _.success
         }
     }
+
     if(isAny(d)) _import()
+    
 }
+
 module.exports = Result

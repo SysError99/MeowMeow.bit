@@ -1,5 +1,7 @@
-const isAny = require('./type.any.check')
 const __ = require('./const')
+
+const isAny = require('./fn.is.any')
+
 /** Blocked lists*/
 const blocked = {
     /** @type {string[]} Blocked account lists*/
@@ -7,6 +9,7 @@ const blocked = {
     /** @type {string[]} Blocked words*/
     word: []
 }
+
 /** Account limit rate*/
 const limit = {
     /** @type {number[][]} Allowed UTF-8 character range, can be multiple*/
@@ -14,10 +17,12 @@ const limit = {
     /** @type {number} Max size of each post (default: a four of max payload, that is 8 MB)*/
     size: __.MAX_PAYLOAD / 4
 }
+
 /** Content filtering module*/
 module.exports = {
     blocked: blocked,
     limit: limit,
+
     /**
      * Import data to object
      * @param {Object} d JSON
@@ -32,6 +37,7 @@ module.exports = {
             if(typeof d.limit.size === 'number') limit.size = d.limit.size
         }
     },
+
     /**
      * Export block list to JSON
      * @returns {Object} JSON
@@ -42,4 +48,5 @@ module.exports = {
             limit: limit
         }
     }
+    
 }

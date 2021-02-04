@@ -5,17 +5,18 @@
 const Datagram = require('dgram')
 
 const __ = require('./const')
-const Try = require('./try.catch')
-const Announcement = require('./model/announcement')
-const ECDHkey = require('./model/key.ecdh')
-const IpRegex = require('./model/ip.regex')
-const Locale = require('./locale')
-const Peer = require('./model/peer')
+const Try = require('./fn.try.catch')
+const Locale = require('./locale/locale')
+
+const Announcement = require('./data/announcement')
+const ECDHkey = require('./data/key.ecdh')
+const IpRegex = require('./data/ip.regex')
+const Peer = require('./data/peer')
 
 const announcement = {}
 const knownPeers = {}
 const myKey = Try(() => new ECDHkey(storage.read('key.server')))
-const storage = require('./storage')(new Locale())
+const storage = require('./fn.storage')(new Locale())
 
 /**
  * Shows error via log

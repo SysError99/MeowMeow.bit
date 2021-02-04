@@ -1,5 +1,6 @@
-const Try = require('../try.catch')
-const Crypt = require('../crypt')
+const Try = require('../fn.try.catch')
+const Crypt = require('../fn.crypt')
+
 /**
  * Symmetric key object
  * @param {Buffer|string} d Data to be imported
@@ -7,8 +8,10 @@ const Crypt = require('../crypt')
 const SymmetricKey = function(d){
     /** @type {boolean} This is 'SymmetricKey' object*/
     this.isSymmetricKey = true
+
     /** @type {Buffer} Key buffer*/
     let key
+
     /**
      * Encrypt a string
      * @param {string} str String to be encrpyted
@@ -18,6 +21,7 @@ const SymmetricKey = function(d){
         if(str.length === 0) return Buffer.from([])
         return Try(() => Crypt.symmetric.encrypt(str, key), '')
     }
+
     /**
      * Decrypt a string
      * @param {Buffer} buf String to be decrypted
@@ -27,6 +31,7 @@ const SymmetricKey = function(d){
         if(buf.length === 0) return ''
         return Try(() => Crypt.symmetric.decrypt(buf, key), '')
     }
+
     /**
      * Export to string
      * @returns {string} Secret key
@@ -34,8 +39,11 @@ const SymmetricKey = function(d){
     this.export = () => {
         return key.toString('base64')
     }
+
     if(typeof d === 'string') Try(() => key = Buffer.from(d, 'base64'))
     else if(Buffer.isBuffer(d)) key = d
     else key = Crypt.newKey.symmetric()
+
 }
+
 module.exports = SymmetricKey

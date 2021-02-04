@@ -18,4 +18,5 @@ const Announcement = function(d){
     this.request.port = d[1]
     
 }
+
 module.exports = Announcement

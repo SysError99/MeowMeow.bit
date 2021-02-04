@@ -1,4 +1,4 @@
-const SignKey = require("./key.sign")
+const SignKey = require('./key.sign')
 /**
  * Account object
  * @param {Array[]} d Array object
@@ -105,4 +105,5 @@ const Acc = function(d){
     if(Array.isArray(d)) _import()
     else _new()
 }
+
 module.exports = Acc

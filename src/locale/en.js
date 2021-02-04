@@ -1,4 +1,5 @@
-const Locale = require('../locale')
+const Locale = require('./locale')
+
 /**
  * Translate to english.
  * @param {Locale} locale Locale object

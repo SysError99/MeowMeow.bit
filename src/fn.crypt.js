@@ -2,18 +2,23 @@
  * Encrpytion module, separeted from Crpyto for the case of encryption method changes.
  */
 const Crypto = require('crypto')
-const BaseN = require('./base.n')
+
+const BaseN = require('./fn.base.n')
+
 /** @type {string} Currently used EC*/
 const curve = 'sect571k1'
+
 /** Key headers*/
 const header = {
     /** @type {[string,string]} Private key encryption functions*/
     private: ['-----BEGIN ENCRYPTED PRIVATE KEY-----', '-----END ENCRYPTED PRIVATE KEY-----'],
     /** @type {[string,string]} Public key encryption functions*/
     pubilc: ['-----BEGIN PUBLIC KEY-----', '-----END PUBLIC KEY-----']
-},
+}
+
 /** @type {number} Public key length per row*/
 const len = 64
+
 /**
  * Restore public key to its original state
  * @param {string} str String to be restored
@@ -33,6 +38,7 @@ const long = (str,prefix) => {
     strArr[s] = prefix[1]
     return strArr.join('\n')
 }
+
 /**
  * Shorten public key 
  * @param {string} str String to be shortened
@@ -45,8 +51,10 @@ const short = str => {
     str.splice(0,1)
     return str.join('')
 }
+
 /** Key creator*/
 const keyCreator = {
+
     /**
      * Create Elliptic Curve Diffie-Hellman object
      * @param {Buffer|string} key Buffer to be used as private key
@@ -59,6 +67,7 @@ const keyCreator = {
         else ecdh.generateKeys()
         return ecdh
     },
+
     /**
      * Generate a new signing key
      * @returns {import('crypto').KeyPairSyncResult<string,string>} Key result
@@ -82,6 +91,7 @@ const keyCreator = {
         k.publicKey = short(k.publicKey)
         return k
     },
+    
     /**
      * Generate a new symmetric key
      * @returns {Buffer} Key buffer
@@ -89,8 +99,10 @@ const keyCreator = {
     symmetric: () => {
         return Crypto.randomBytes(32)
     }
+
 }
 const ecdh = {
+
     /**
      * Compute a secret key
      * @param {Crypto.ECDH} ecdh ECDH Key object
@@ -100,9 +112,11 @@ const ecdh = {
     computeSecret: (ecdh, public) => {
         return ecdh.computeSecret(public).slice(32,64)
     }
+
 }
 /** Key signing functions*/
 const sign = {
+
     /**
      * Perform a key signing
      * @param {string} str String to be signed
@@ -113,6 +127,7 @@ const sign = {
     perform: (str,key,password) => {
         return BaseN.encode(Crypto.sign(null, Buffer.from(str), {key: long(key, header.private), passphrase: password}), '62')
     },
+
     /**
      * Perform key verification
      * @param {string} str String to be verified
@@ -123,9 +138,11 @@ const sign = {
     verify: (str,key,signature) => {
         return Crypto.verify(null, Buffer.from(str), long(key, header.public), BaseN.decode(signature, '62'))
     }
+
 }
 /** Symmetric encryption functions*/
 const symmetric = {
+
     /**
      * Encrypt a string
      * @param {string} str string to be encrypted
@@ -138,6 +155,7 @@ const symmetric = {
         str = cipherIv.update(str)
         return Buffer.concat([iv,str,cipherIv.final()])
     },
+
     /**
      * Decrypt a string
      * @param {Buffer} buf Buffer to be decrypted (Can be decoded from string)
@@ -149,13 +167,18 @@ const symmetric = {
         buf = buf.slice(16, buf.length)
         return Crypto.createDecipheriv('aes-256-gcm', key, iv).update(buf).toString('utf-8')
     }
+
 }
 /**
  * Encryption module
  */
 module.exports = {
+
     ecdh: ecdh,
     newKey: keyCreator,
+    sign: sign,
+    symmetric: symmetric,
+
     /**
      * Generate a randomized buffer
      * @param {number} size Buffer size
@@ -164,7 +187,6 @@ module.exports = {
     rand: size => {
         if(typeof size !== 'number') return Crypto.randomBytes(3)
         return Crypto.randomBytes(Math.floor(size))
-    },
-    sign: sign,
-    symmetric: symmetric
+    }
+
 }
