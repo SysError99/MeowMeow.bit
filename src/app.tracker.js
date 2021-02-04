@@ -66,6 +66,8 @@ udp.on('message', (msg, remote) => {
 
     if(Try(identifyPeer)) return
 
+    peer.lastAccess = new Date()
+
     message = peer.key.decrypt(msg)
 
     //Announcer

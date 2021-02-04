@@ -186,7 +186,7 @@ const Receiver = function(callback){
         let tracker = randTracker()
         /** @type {Datagram.Socket} */
         let conn
-        let date = new Date().toUTCString()
+        let date = new Date()
         let encryptedFullAddress
 
         if(peer.connected){
