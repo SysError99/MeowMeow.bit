@@ -30,7 +30,6 @@ const trackers = Try(() => {
 
 /** @type {RegExp} IP address regular expression*/
 const IpRegex = require('./data/ip.regex')
-const { send } = require('process')
 
 /**
  * @param {Error} err 
