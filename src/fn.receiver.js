@@ -55,63 +55,61 @@ const handleIncomingMessage = (receiver, peer, message, remote) => {
     let remoteAddress = `${remote.address}:${remote.port}`
     let socket = peer.socket
 
-    if(peer.isReceiver){
+    if(peer.isReceiver){ //incoming connection
         if(typeof receiver.peers[remoteAddress] === 'undefined')
             return Try(() => {
                 setInterval(() => socket.send('', 0, 0, remote.port, remote.address, showError), 4000)
-                if(!peer.isPeer){
-                    peer = new Peer([
-                        remote.address,
-                        remote.port, 
-                        message,
-                        new Date().toUTCString()
-                    ])
-                }
+                peer = new Peer([
+                    remote.address,
+                    remote.port, 
+                    message,
+                    new Date().toUTCString()
+                ])
                 peer.connected = true
                 remote.peers[remoteAddress] = peer
             })
-        else
-            peer = receiver.peers[remoteAddress]
-    }
-    else if(remoteAddress === `${peer.ip}:${peer.port}`){
-        peer.connected = true
-        return true
-    }
-    
-    if(Try(() => message = peer.key.decrypt(message))) return
+        
+        peer = receiver.peers[remoteAddress]
 
-    if(typeof trackers[remoteAddress] !== 'undefined')
-        switch(message[0]){
-            case '*': //start connection
+        if(Try(() => message = peer.key.decrypt(message))) return
+
+        if(typeof trackers[remoteAddress] === 'undefined'){ //receive data
+            message = Try(() => JSON.parse(message))
+            if(Array.isArray(message))
+                receiver.callback(peer, new Result({
+                    success: true,
+                    data: received
+                }))
+        }
+
+        switch(message[0]){ // tracker responses
+            case '*': // peer response back
                 message = message.slice(1, message.length)
                 if(!IpRegex.test(message)) return
                 message = message.split(':')
                 message[1] = parseInt(message[1])
-
-                /** @type {Buffer} */
-                let pubKey
-                if(peer.isReceiver)
-                    pubKey = Crypt.rand(32) // response back
-                else
-                    pubKey = receiver.key.current.get.pub() // send temp pub key
-                socket.send(pubKey, 0, pubKey.length, message[1], message[0], showError)
+                let randomResponse = Crypt.rand(32)
+                socket.send(randomResponse, 0, randomResponse.length, message[1], message[0], showError)
                 return
             case ':': //port set
                 receiver.port = Try(() => parseInt(message.slice(1,message.length)), 0)
                 return
         }
-
-    message = Try(() => JSON.parse(message))
-
-    if(Array.isArray(message)) receiver.callback(peer, new Result({
-        success: true,
-        data: received
-    }))
-
+    }
+    
+    if(typeof trackers[remoteAddress] !== 'undefined'){ // outgoing connection
+        let pubKey = peer.myPub
+        socket.send(pubKey, 0, pubKey.length, peer.port, peer.ip, showError)
+    }
+    else if(remoteAddress === `${peer.ip}:${peer.port}`){
+        peer.connected = true
+        return true //outgoing connection established
+    }
+    
 }
 
 /**
- * Retrieve an tracker randomly
+ * Retrieve a tracker randomly
  * @returns {Peer} An annoucer
  */
 const randTracker = () => trackers[Math.floor(Math.random() * trackers.length)]
@@ -251,6 +249,7 @@ const Receiver = function(callback){
             tracker.ip,
             showError
         )
+        _.peers[t] = tracker
     }
 
     let askForSocketPort = setInterval(() => {
