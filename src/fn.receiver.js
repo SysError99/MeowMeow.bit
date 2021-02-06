@@ -9,25 +9,19 @@ const ECDHKey = require('./data/key.ecdh')
 const Peer = require('./data/peer')
 const Result = require('./data/result')
 
-/** Peer hole */
-const peers = {}
-
-/** List of sending in progress peers*/
-const sending = {}
-
 /** @type {Peer[]} List of trackers*/
 const trackers = Try(() => {
     /** @type {Array} */
     let trackersLoaded = JSON.parse(require('./fn.storage')(new Locale()).read('trackers').data)
     /** @type {Peer[]} */
-    let trackersImported = []
+    let trackersImported = {}
 
     trackersLoaded.forEach((el, ind) => {
-        trackersImported.push(new Peer([
+        trackersImported [`${el.ip}:${el.port}`] = new Peer([
             el.ip,
             el.port,
-            el.pub
-        ]))
+            el.pub,
+        ])
         delete trackersLoaded [ind]
     })
     
@@ -36,6 +30,7 @@ const trackers = Try(() => {
 
 /** @type {RegExp} IP address regular expression*/
 const IpRegex = require('./data/ip.regex')
+const { send } = require('process')
 
 /**
  * @param {Error} err 
@@ -50,63 +45,70 @@ const showError = err => err ? console.error(err) : 0
 
 /**
  * Handle incoming message from other peers
- * @param {Receiver} pm Peer manager
- * @param {Datagram.Socket} socket Socket to be used
+ * @param {Receiver} receiver Receiver object
+ * @param {Peer} peer Peer called
  * @param {Buffer|string} message Incoming message
  * @param {Datagram.RemoteInfo} remote Remote target
- * @returns {Array} If the connection is established, it will return Array
  */
-const handleIncomingMessage = (pm, socket, message, remote) => {
+const handleIncomingMessage = (receiver, peer, message, remote) => {
     if(message.length === 0) return
 
     let remoteAddress = `${remote.address}:${remote.port}`
-    /** @type {Peer} */
-    let peer = peers[remoteAddress]
+    let socket = peer.socket
 
-    if(typeof peer === 'undefined'){
-        Try(() => {
-            peer = new Peer([
-                remote.address,
-                remote.port, 
-                message,
-                new Date().toUTCString()
-            ])
-            peer.key = pm.key.current.computeSecret(message)
-            setInterval(() => socket.send('', 0, 0, remote.port, remote.address, showError), 4000)
-            peers[remoteAddress] = peer
-        })
-        return
+    if(peer.isReceiver){
+        if(typeof receiver.peers[remoteAddress] === 'undefined')
+            return Try(() => {
+                setInterval(() => socket.send('', 0, 0, remote.port, remote.address, showError), 4000)
+                if(!peer.isPeer){
+                    peer = new Peer([
+                        remote.address,
+                        remote.port, 
+                        message,
+                        new Date().toUTCString()
+                    ])
+                }
+                peer.connected = true
+                remote.peers[remoteAddress] = peer
+            })
+        else
+            peer = receiver.peers[remoteAddress]
     }
-
-    peer.connected = true
-    peer.connectedPort = remote.port
-
-    message = peer.key.decrypt(message)
-
-    if(message[0] === '*') Try(() => {
-        message = message.slice(1, message.length)
-        if(!IpRegex.test(message)) return
-        message = message.split(':')
-        message[1] = parseInt(message[1])
-        /** @type {Buffer} */
-        let pubKey
-        if(sending[remoteAddress]) pubKey = pm.key.current.get.pub()
-        else pubKey = Crypt.rand(32)
-        socket.send(pubKey, 0, pubKey.length, message[1], message[0], showError)
-    })
-
-    else if(message[0] === ':'){
-        if(typeof trackers[remoteAddress] === 'undefined') return
-        pm.port = Try(() => parseInt(message.slice(1,message.length)), 0)
+    else if(remoteAddress === `${peer.ip}:${peer.port}`){
+        peer.connected = true
+        return true
     }
     
-    else{
-        message = Try(() => JSON.parse(peer.key.decrypt(message)), message)
-        if(Array.isArray(message)) pm.callback(peer, new Result({
-            success: true,
-            data: received
-        }))
-    }
+    if(Try(() => message = peer.key.decrypt(message))) return
+
+    if(typeof trackers[remoteAddress] !== 'undefined')
+        switch(message[0]){
+            case '*': //start connection
+                message = message.slice(1, message.length)
+                if(!IpRegex.test(message)) return
+                message = message.split(':')
+                message[1] = parseInt(message[1])
+
+                /** @type {Buffer} */
+                let pubKey
+                if(peer.isReceiver)
+                    pubKey = Crypt.rand(32) // response back
+                else
+                    pubKey = receiver.key.current.get.pub() // send temp pub key
+                socket.send(pubKey, 0, pubKey.length, message[1], message[0], showError)
+                return
+            case ':': //port set
+                receiver.port = Try(() => parseInt(message.slice(1,message.length)), 0)
+                return
+        }
+
+    message = Try(() => JSON.parse(message))
+
+    if(Array.isArray(message)) receiver.callback(peer, new Result({
+        success: true,
+        data: received
+    }))
+
 }
 
 /**
@@ -116,6 +118,59 @@ const handleIncomingMessage = (pm, socket, message, remote) => {
 const randTracker = () => trackers[Math.floor(Math.random() * trackers.length)]
 
 /**
+ * Send message to target
+ * @param {Receiver} receiver Receiver object
+ * @param {Peer} peer Peer to send data to
+ * @param {string|Array} message Message to be sent
+ */
+const sendMessage = (receiver, peer, message) => {
+    let fullAddress = `${peer.ip}:${peer.port}`
+    let tracker = randTracker()
+    /** @type {Datagram.Socket} */
+    let conn
+    let date = new Date()
+    let encryptedFullAddress
+    let messageSent = false
+
+    if(peer.connected){
+        conn = peer.socket
+        if(Array.isArray(message)) message = JSON.stringify(message)
+        Try(() => {
+            message = peer.key.encrypt(message)
+            conn.send(message, 0, message.length, peer.port, peer.ip, showError)
+        })
+        return
+    }
+
+    conn = Datagram.createSocket({
+        type: 'udp4',
+        reuseAddr: true
+    })
+    conn.on('error', showError)
+    conn.on('message', (msg, remote) => {
+        if(handleIncomingMessage(receiver, peer, msg, remote)) 
+            sendMessage(receiver, peer, message)
+    })
+
+    if(Try(() => encryptedFullAddress = tracker.key.encrypt(fullAddress))) return
+    
+    conn.send(
+        encryptedFullAddress, 0, encryptedFullAddress.length,
+        tracker.port,
+        tracker.ip,
+        showError
+    )
+
+    peer.socket = conn
+    peer.lastAccess = date
+    tracker.lastAccess = date
+
+    console.log(`Announcing ${fullAddress}`)
+
+    if(!messageSent) setTimeout(() => sendMessage(receiver, peer, message), 4000)
+}
+
+/**
  * Peer receiver.
  * @param {RequestFunction} callback Callback to handle server
  */
@@ -123,7 +178,7 @@ const Receiver = function(callback){
     /** This object*/
     let _ = this
     /** @type {string} This is 'Receiver' object*/
-    this.isPeerManager = true
+    this.isReceiver = true
 
     /** Locale being used in this object */
     let locale = new Locale()
@@ -171,68 +226,25 @@ const Receiver = function(callback){
     /** @type {number} Currently used port*/
     this.port = 0
 
+    /** @type {Peer[]} Connected peers */
+    this.peers = {}
+
     /**
      * Send message to target
      * @param {Peer} peer Peer to send data to
      * @param {string|Array} message 
      */
-    this.send = (peer, message) => {
-        let fullAddress = `${peer.ip}:${peer.port}`
+    this.send = (peer, message) => sendMessage(_, peer, message)
 
-        if(sending[fullAddress]) return callback(peer, new Result({
-            message: `${peer.ip}:${peer.port} message still in pending`
-        }))
-
-        let tracker = randTracker()
-        /** @type {Datagram.Socket} */
-        let conn
-        let date = new Date()
-        let encryptedFullAddress
-
-        if(peer.connected){
-            conn = peers[fullAddress].socket
-            if(Array.isArray(message)) message = JSON.stringify(message)
-            Try(() => {
-                message = peer.key.encrypt(message)
-                conn.send(message, 0, message.length, peer.port, peer.ip, showError)
-                delete sending[fullAddress]
-            })
-            return
-        }
-
-        conn = Datagram.createSocket({
-            type: 'udp4',
-            reuseAddr: true
-        })
-        conn.on('error', showError)
-        conn.on('message', (msg, remote) => handleIncomingMessage(_, conn, msg, remote))
-        if(Try(() => encryptedFullAddress = tracker.key.encrypt(fullAddress))) return
-        conn.send(
-            encryptedFullAddress, 0, encryptedFullAddress.length,
-            tracker.port,
-            tracker.ip,
-            showError
-        )
-
-        peer.socket = conn
-        peer.lastAccess = date
-        tracker.lastAccess = date
-        peers[fullAddress] = peer
-        peers[`${tracker.ip}:${tracker.port}`] = tracker
-        sending[fullAddress] = true
-
-        console.log(`Announcing ${fullAddress}`)
-
-        setTimeout(() => {
-            delete sending[fullAddress]
-            _.send(peer, message)
-        }, 4000)
-    }
+    /** Socket from receiver module */
+    this.socket = socket
 
     socket.on('error', showError)
-    socket.on('message', (msg, remote) =>  handleIncomingMessage(_, socket, msg, remote))    
+    socket.on('message', (msg, remote) => 
+        handleIncomingMessage(_, _, msg, remote))    
 
-    trackers.forEach(tracker => {
+    for(t in trackers){
+        let tracker = trackers[t]
         let myPub = tracker.myPub
         socket.send(
             myPub, 0, myPub.length,
@@ -240,10 +252,10 @@ const Receiver = function(callback){
             tracker.ip,
             showError
         )
-    })
+    }
 
-    let findSocketPort = setInterval(() => {
-        if(_.port > 0) return clearInterval(findSocketPort)
+    let askForSocketPort = setInterval(() => {
+        if(_.port > 0) return clearInterval(askForSocketPort)
         let tracker = randTracker()
         socket.send(
             tracker.key.encrypt('?'), 0, 1,
@@ -253,16 +265,17 @@ const Receiver = function(callback){
         )
     }, 1000)
 
-    setInterval(() => 
-        trackers.forEach(tracker => {
+    setInterval(() => { 
+        for(t in trackers){
+            let tracker = trackers[t]
             socket.send(
                 '', 0, 0,
                 tracker.port,
                 tracker.ip,
                 showError
             )
-        })
-    , 4000)
+        }   
+    }, 4000)
 }
 
 if(trackers.length === 0) throw Error('No trackers has been set')
