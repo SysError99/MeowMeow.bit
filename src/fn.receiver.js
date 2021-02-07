@@ -63,8 +63,8 @@ const handleIncomingMessage = (receiver, peer, message, remote) => {
                     remote.address,
                     remote.port
                 ])
-                peer.key = receiver.key.current.computeSecret(message)
                 peer.connected = true
+                peer.key = receiver.key.computeSecret(message)
                 remote.peers[remoteAddress] = peer
             })
         
@@ -196,30 +196,8 @@ const Receiver = function(callback){
     /** @type {RequestFunction} Callback function for this object */
     this.callback = typeof callback === 'function' ? callback : () => false
 
-    /** Key manager, only used for a receiver*/
-    this.key = {
-        /** @type {ECDHKey} Currently used key*/
-        current: null,
-        /**
-         * Load key from specific location, if can't, build a new one.
-         * @param {string} location Key location
-         */
-        load: location => {
-            let keyRead = storage.read(typeof location === 'string' ? location : __.KEY.LOCATION)
-            if(keyRead.success) _.key.current = new ECDHKey(keyRead.data)
-            else _.key.new()
-        },
-        /**
-         * Create a new key for this server
-         * @param {string} location Asymmetric key location to be saved
-         * @param {string} password Passphrase for this key
-         */
-        new: location => {
-            _.key.current = new ECDHKey()
-            let keyWrite = storage.write(typeof location === 'string' ? location : __.KEY.LOCATION, _.key.current.export())
-            if(!keyWrite.success) throw keyWrite.message
-        }
-    }
+     /** @type {ECDHKey} Receiver generated key, always brand-new */
+    this.key = new ECDHKey()
 
     /** @type {Locale} Locale being used*/
     this.locale = locale
