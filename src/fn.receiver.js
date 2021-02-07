@@ -26,7 +26,9 @@ const trackers = Try(() => {
     })
     
     return trackersImported
-}, [])
+}, null)
+
+if(trackers === null) throw Error('No trackers has been set')
 
 /** @type {RegExp} IP address regular expression*/
 const IpRegex = require('./data/ip.regex')
@@ -257,7 +259,5 @@ const Receiver = function(callback){
         }   
     }, 10000)
 }
-
-if(trackers.length === 0) throw Error('No trackers has been set')
 
 module.exports = Receiver
