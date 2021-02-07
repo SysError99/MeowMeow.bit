@@ -73,7 +73,9 @@ const handleIncomingMessage = (receiver, peer, message, remote) => {
                 ])
                 peer.connected = true
                 peer.key = receiver.key.computeSecret(message)
-                receiver.peers[remoteAddress] = peer
+                
+                if(peer.key !== null)
+                    receiver.peers[remoteAddress] = peer
             })
 
         if(typeof trackers[remoteAddress] !== 'undefined') //receive data
