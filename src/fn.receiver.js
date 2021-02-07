@@ -57,22 +57,24 @@ const handleIncomingMessage = (receiver, peer, message, remote) => {
     let remoteAddress = `${remote.address}:${remote.port}`
     let socket = peer.socket
 
+    if(peer.key.isSymmetricKey)
+        if(Try(() => message = peer.key.decrypt(message))) return
+    
     if(peer.isReceiver){ //incoming connection
-        if(typeof receiver.peers[remoteAddress] === 'undefined')
+        peer = receiver.peers[remoteAddress]
+
+        if(typeof peer === 'undefined')
             return Try(() => {
                 setInterval(() => socket.send('', 0, 0, remote.port, remote.address, showError), 10000)
+
                 peer = new Peer([
                     remote.address,
                     remote.port
                 ])
                 peer.connected = true
                 peer.key = receiver.key.computeSecret(message)
-                remote.peers[remoteAddress] = peer
+                receiver.peers[remoteAddress] = peer
             })
-        
-        peer = receiver.peers[remoteAddress]
-
-        if(Try(() => message = peer.key.decrypt(message))) return
 
         if(typeof trackers[remoteAddress] !== 'undefined') //receive data
             switch(message[0]){ // tracker responses
@@ -96,8 +98,8 @@ const handleIncomingMessage = (receiver, peer, message, remote) => {
                     data: received
                 }))
         }
-        
-    }else{
+    }
+    else{
         if(typeof trackers[remoteAddress] !== 'undefined'){ // outgoing connection
             let pubKey = peer.myPub
             socket.send(pubKey, 0, pubKey.length, peer.port, peer.ip, showError)
