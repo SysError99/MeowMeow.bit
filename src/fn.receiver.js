@@ -196,9 +196,6 @@ const Receiver = function(callback){
         reuseAddr: true
     })
 
-    /** Storage module*/
-    let storage = require('./fn.storage')(locale)
-
     /** @type {RequestFunction} Callback function for this object */
     this.callback = typeof callback === 'function' ? callback : () => false
 
