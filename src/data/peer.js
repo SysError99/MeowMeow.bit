@@ -29,6 +29,9 @@ const Peer = function(d){
 
     /** @type {Buffer} Randomly generated public key to be shared with another peer*/
     this.myPub = Buffer.from([])
+
+    /** @type {boolean} Is this running behind NAT?*/
+    this.nat = true
     
     /** @type {SymmetricKey} Peer Symmetric key*/
     this.key = null
@@ -53,7 +56,8 @@ const Peer = function(d){
         if(typeof d[1] === 'number') _.port = d[1]
         Try(() => {
             if(typeof d[2] === 'string') d[2] = Buffer.from(d[2], 'base64')
-            if(typeof d[3] === 'string') _.lastAccess = Date.parse(d[3])
+            if(typeof d[3] === 'boolean') _.nat = d[3]
+            if(typeof d[4] === 'string') _.lastAccess = Date.parse(d[4])
             if(!Buffer.isBuffer(d[2])) return
             let newECDH = new ECDHKey()
             _.key = newECDH.computeSecret(d[2])
@@ -71,7 +75,8 @@ const Peer = function(d){
             _.ip,
             _.port,
             _.pub.toString('base64'),
-            _.lastAccess.toUTCString()
+            _.nat,
+            _.lastAccess.toUTCString(),
         ]
     }
 

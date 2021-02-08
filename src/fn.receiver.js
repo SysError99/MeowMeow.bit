@@ -212,6 +212,17 @@ const Receiver = function(callback){
     this.peers = {}
 
     /**
+     * Do port forwarding and avoid NAT.
+     * @param {number} p Port to forward to
+     */
+    this.forwardPort = p => {
+        let tracker = randTracker()
+        let tellPortStr = tracker.key.encrypt(`@${p}`)
+        socket.bind(p)
+        socket.send(tellPortStr, 0, tellPortStr.length, tracker.port, tracker.ip, showError)
+    }
+
+    /**
      * Send message to target
      * @param {Peer} peer Peer to send data to
      * @param {string|Array} message 

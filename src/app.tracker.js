@@ -7,6 +7,7 @@ const Datagram = require('dgram')
 const __ = require('./const')
 const Try = require('./fn.try.catch')
 const Locale = require('./locale/locale')
+const Storage = require('./fn.storage')(new Locale())
 
 const Announcement = require('./data/announcement')
 const ECDHkey = require('./data/key.ecdh')
@@ -15,8 +16,7 @@ const Peer = require('./data/peer')
 
 const announcement = {}
 const knownPeers = {}
-const myKey = Try(() => new ECDHkey(storage.read('key.server')))
-const storage = require('./fn.storage')(new Locale())
+const myKey = Try(() => new ECDHkey(Storage.read('key.server')))
 
 /**
  * Shows error via log
@@ -88,6 +88,9 @@ udp.on('message', (msg, remote) => {
 
     //Announcer
     switch(cmd){
+        case '@':
+            peer.nat = true
+            break
         case '?':
             let remotePort = peer.key.encrypt(`${remote.port}`)
             udp.send(remotePort, 0, remotePort.length, remote.port, remote.address, error)
