@@ -135,7 +135,7 @@ const sendMessage = (receiver, peer, message) => {
     let encryptedFullAddress
     let messageSent = false
 
-    if(peer.connected){
+    if(peer.connected || !peer.nat){
         conn = peer.socket
         if(Array.isArray(message)) message = JSON.stringify(message)
         Try(() => {
