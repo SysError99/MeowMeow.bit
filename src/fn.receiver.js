@@ -1,6 +1,7 @@
 // UNSTABLE, NOT TESTED
 const Datagram = require('dgram')
 
+const BaseN = require('./fn.base.n')
 const Crypt = require('./fn.crypt')
 const Try = require('./fn.try.catch')
 const Locale = require('./locale/locale')
@@ -251,8 +252,9 @@ const Receiver = function(callback){
     let askForSocketPort = setInterval(() => {
         if(_.port > 0) return clearInterval(askForSocketPort)
         let tracker = randTracker()
+        let askForSocketPortPacket = tracker.key.encrypt(`?${BaseN.encode(Crypt.rand(8))}`)
         socket.send(
-            tracker.key.encrypt('?'), 0, 1,
+            askForSocketPortPacket, 0, askForSocketPortPacket,
             tracker.port,
             tracker.ip,
             showError
