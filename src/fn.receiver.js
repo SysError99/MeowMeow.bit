@@ -13,7 +13,7 @@ const Result = require('./data/result')
 /** @type {Peer[]} List of trackers*/
 const trackers = Try(() => {
     /** @type {Array} */
-    let trackersLoaded = JSON.parse(require('./fn.storage')(new Locale()).read('trackers').data)
+    let trackersLoaded = require('./fn.storage')().read('trackers').data
     /** @type {Peer[]} */
     let trackersImported = {}
 
