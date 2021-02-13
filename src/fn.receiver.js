@@ -29,7 +29,8 @@ const trackers = Try(() => {
     return trackersImported
 }, null)
 
-if(trackers === null) throw Error('No trackers has been set')
+if(trackers === null)
+    throw Error('No trackers has been set')
 
 /** @type {RegExp} IP address regular expression*/
 const IpRegex = require('./data/ip.regex')
@@ -53,13 +54,15 @@ const showError = err => err ? console.error(err) : 0
  * @param {Datagram.RemoteInfo} remote Remote target
  */
 const handleIncomingMessage = (receiver, peer, message, remote) => {
-    if(message.length === 0) return
+    if(message.length === 0)
+        return
 
     let remoteAddress = `${remote.address}:${remote.port}`
     let socket = peer.socket
 
     if(peer.key.isSymmetricKey)
-        if(Try(() => message = peer.key.decrypt(message))) return
+        if(Try(() => message = peer.key.decrypt(message)))
+            return
     
     if(peer.isReceiver){ //incoming connection
         peer = receiver.peers[remoteAddress]
@@ -83,9 +86,13 @@ const handleIncomingMessage = (receiver, peer, message, remote) => {
             switch(message[0]){ // tracker responses
                 case '*': // peer response back
                     message = message.slice(1, message.length)
-                    if(!IpRegex.test(message)) return
+
+                    if(!IpRegex.test(message))
+                        return
+
                     message = message.split(':')
                     message[1] = parseInt(message[1])
+
                     let randomResponse = Crypt.rand(32)
                     socket.send(randomResponse, 0, randomResponse.length, message[1], message[0], showError)
                     return
@@ -136,7 +143,12 @@ const sendMessage = (receiver, peer, message) => {
 
     if(peer.connected || !peer.nat){
         conn = peer.socket
-        if(Array.isArray(message)) message = JSON.stringify(message)
+
+        if(Array.isArray(message))
+            message = JSON.stringify(message)
+        else if(typeof message !== 'string')
+            return
+            
         Try(() => {
             message = peer.key.encrypt(message)
             conn.send(message, 0, message.length, peer.port, peer.ip, showError)
@@ -146,7 +158,8 @@ const sendMessage = (receiver, peer, message) => {
 
     /** @type {Buffer} */
     let encryptedPeerPub
-    if(Try(() => encryptedPeerPub = tracker.key.encrypt(`>${BaseN.encode(peer.pub)}`))) return
+    if(Try(() => encryptedPeerPub = tracker.key.encrypt(`>${BaseN.encode(peer.pub)}`)))
+        return
 
     conn = Datagram.createSocket({
         type: 'udp4',
@@ -154,7 +167,7 @@ const sendMessage = (receiver, peer, message) => {
     })
     conn.on('error', showError)
     conn.on('message', (msg, remote) => {
-        if(handleIncomingMessage(receiver, peer, msg, remote)) {
+        if(handleIncomingMessage(receiver, peer, msg, remote)){
             sendMessage(receiver, peer, message)
             messageSent = true
         }
@@ -253,7 +266,9 @@ const Receiver = function(callback){
     }
 
     let askForSocketPort = setInterval(() => {
-        if(_.port > 0) return clearInterval(askForSocketPort)
+        if(_.port > 0)
+            return clearInterval(askForSocketPort)
+
         let tracker = randTracker()
         let askForSocketPortPacket = tracker.key.encrypt(`?${BaseN.encode(Crypt.rand(8))}`)
         socket.send(

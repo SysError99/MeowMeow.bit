@@ -42,8 +42,11 @@ const Locale = function(f){
         }
     }
 
-    if(typeof f === 'function') this.change(f)
-    else this.change(require('./en'))
+    if(typeof f === 'function')
+        this.change(f)
+
+    else
+        this.change(require('./en'))
     
 }
 

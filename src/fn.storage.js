@@ -101,9 +101,14 @@ const storage = {
  */
 module.exports = locale => {
     if(isAny(locale)){
-        if(locale.isLocale) storage.locale = locale
+        if(locale.isLocale)
+            storage.locale = locale
     }
-    if(storage.locale === null) storage.locale = new Locale()
+
+    if(storage.locale === null)
+        storage.locale = new Locale()
+        
     paramInvalid.message = storage.locale.str.paramInvalid
+    
     return storage
 }

@@ -11,9 +11,16 @@ const Announcement = function(d){
         /** @type {number} Author port*/
         port: 0
     }
-    if(typeof d !== 'object') return
-    if(typeof d[0] !== 'string' || typeof d[1] !== 'number') return
-    if(!IpRegex.test(`${d[0]}:${d[1]}`)) return
+
+    if(typeof d !== 'object')
+        return
+
+    if(typeof d[0] !== 'string' || typeof d[1] !== 'number')
+        return
+
+    if(!IpRegex.test(`${d[0]}:${d[1]}`))
+        return
+
     this.request.address = d[0]
     this.request.port = d[1]
     

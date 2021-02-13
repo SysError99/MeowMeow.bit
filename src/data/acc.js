@@ -52,18 +52,36 @@ const Acc = function(d){
      * Import array
      */
     let _import = () => {
-        if(typeof d[0] === 'string') _.description = d[0]
-        if(Array.isArray(d[1])) _.follower = d[1]
-        if(Array.isArray(d[2])) _.key = new SignKey(d[2])
-        else _.key = new SignKey()
-        if(typeof d[3] === 'string') _.name = d[3]
+        if(typeof d[0] === 'string')
+            _.description = d[0]
+
+        if(Array.isArray(d[1]))
+            _.follower = d[1]
+
+        if(Array.isArray(d[2]))
+            _.key = new SignKey(d[2])
+        else
+            _.key = new SignKey()
+
+        if(typeof d[3] === 'string')
+            _.name = d[3]
+
         if(Array.isArray(d[4])){
-            if(typeof d[4][0] === 'string') _.pic.cover = d[4][0]
-            if(typeof d[4][1] === 'string') _.pic.profile = d[4][1]
+            if(typeof d[4][0] === 'string')
+                _.pic.cover = d[4][0]
+
+            if(typeof d[4][1] === 'string')
+                _.pic.profile = d[4][1]
         }
-        if(typeof d[5] === 'number') _.posts = d[5]
-        if(typeof d[6] === 'boolean') _.posts = d[6]
-        if(Array.isArray(d[7])) _.tag = d[7]
+
+        if(typeof d[5] === 'number')
+            _.posts = d[5]
+
+        if(typeof d[6] === 'boolean')
+            _.posts = d[6]
+
+        if(Array.isArray(d[7]))
+            _.tag = d[7]
     }
     /**
      * Export to array
@@ -102,8 +120,10 @@ const Acc = function(d){
         e[2] = _.key.exportPub()
         return e
     }
-    if(Array.isArray(d)) _import()
-    else _new()
+    if(Array.isArray(d))
+        _import()
+    else
+        _new()
 }
 
 module.exports = Acc

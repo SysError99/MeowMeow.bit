@@ -29,12 +29,16 @@ module.exports = {
      */
     import: d => {
         if(isAny(d.blocked)){
-            if(Array.isArray(d.blocked.acc)) blocked.acc = d.blocked.acc
-            if(Array.isArray(d.blocked.word)) blocked.word = d.blocked.word
+            if(Array.isArray(d.blocked.acc))
+                blocked.acc = d.blocked.acc
+            if(Array.isArray(d.blocked.word))
+                blocked.word = d.blocked.word
         }
         if(isAny(d.limit)){
-            if(Array.isArray(d.limit.range)) limit.range = d.limit.range
-            if(typeof d.limit.size === 'number') limit.size = d.limit.size
+            if(Array.isArray(d.limit.range))
+                limit.range = d.limit.range
+            if(typeof d.limit.size === 'number')
+                limit.size = d.limit.size
         }
     },
 

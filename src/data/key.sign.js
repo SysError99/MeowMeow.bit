@@ -25,7 +25,8 @@ const SignKey = function(d){
      * @returns {string} Base64-based signature
      */
     this.sign = str => {
-        if(private.length === 0 || str.length === 0) return ''
+        if(private.length === 0 || str.length === 0)
+            return ''
         return Try(() => Crypt.sign.perform(str, private, password), '')
     }
 
@@ -36,7 +37,8 @@ const SignKey = function(d){
      * @returns {boolean} Is this legit?
      */
     this.verify = (str, signature) => {
-        if(public.length === 0 || str.length === 0) return false
+        if(public.length === 0 || str.length === 0)
+            return false
         return Try(() => Crypt.sign.verify(str, public, signature), '')
     }
     
@@ -55,9 +57,14 @@ const SignKey = function(d){
      * Import array object
      */
     let _import = () => {
-        if(typeof d[0] === 'string') password = d[0]
-        if(typeof d[1] === 'string') private = d[1]
-        if(typeof d[2] === 'string') public = d[2]
+        if(typeof d[0] === 'string')
+            password = d[0]
+
+        if(typeof d[1] === 'string')
+            private = d[1]
+
+        if(typeof d[2] === 'string')
+            public = d[2]
     }
 
     /**
@@ -80,9 +87,12 @@ const SignKey = function(d){
         return public
     }
 
-    if(Array.isArray(d)) _import()
-    else if(typeof d === 'string') _newKey(d)
-    else _newKey('')
+    if(Array.isArray(d))
+        _import()
+    else if(typeof d === 'string')
+        _newKey(d)
+    else
+        _newKey('')
 
 }
 

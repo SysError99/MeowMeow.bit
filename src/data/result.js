@@ -23,9 +23,14 @@ const Result = function(d){
      * Import JSON
      */
     let _import = () => {
-        if(typeof d.data !== 'undefined') _.data = d.data
-        if(typeof d.message === 'string') _.message = d.message
-        if(typeof d.success === 'boolean') _.success = d.success
+        if(typeof d.data !== 'undefined') 
+            _.data = d.data
+
+        if(typeof d.message === 'string')
+            _.message = d.message
+
+        if(typeof d.success === 'boolean')
+            _.success = d.success
     }
 
     /**
@@ -40,7 +45,8 @@ const Result = function(d){
         }
     }
 
-    if(isAny(d)) _import()
+    if(isAny(d))
+        _import()
     
 }
 

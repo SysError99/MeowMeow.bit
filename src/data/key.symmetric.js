@@ -18,7 +18,8 @@ const SymmetricKey = function(d){
      * @returns {Buffer} Encrypted string
      */
     this.encrypt = str => {
-        if(str.length === 0) return Buffer.from([])
+        if(str.length === 0)
+            return Buffer.from([])
         return Try(() => Crypt.symmetric.encrypt(str, key), '')
     }
 
@@ -28,7 +29,8 @@ const SymmetricKey = function(d){
      * @returns {string} Decrypted string
      */
     this.decrypt = buf => {
-        if(buf.length === 0) return ''
+        if(buf.length === 0)
+            return ''
         return Try(() => Crypt.symmetric.decrypt(buf, key), '')
     }
 
@@ -40,9 +42,12 @@ const SymmetricKey = function(d){
         return key.toString('base64')
     }
 
-    if(typeof d === 'string') Try(() => key = Buffer.from(d, 'base64'))
-    else if(Buffer.isBuffer(d)) key = d
-    else key = Crypt.newKey.symmetric()
+    if(typeof d === 'string')
+        Try(() => key = Buffer.from(d, 'base64'))
+    else if(Buffer.isBuffer(d))
+        key = d
+    else
+        key = Crypt.newKey.symmetric()
 
 }
 

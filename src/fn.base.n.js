@@ -80,8 +80,10 @@ module.exports = {
             i++;
         }
         digits = digits.reverse()
-        if(type === "62") digits = digits.map(convertToText62);
-        else digits = digits.map(convertToText);
+        if(type === "62")
+            digits = digits.map(convertToText62);
+        else
+            digits = digits.map(convertToText);
         return digits.join("");
     },
     /**

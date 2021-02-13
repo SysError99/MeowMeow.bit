@@ -18,8 +18,11 @@ const PostPointer = function(d){
      * Import from array
      */
     let _import = () => {
-        if(typeof d[0] === 'number') _.pos = d[0]
-        if(typeof d[1] === 'string') _.owner = d[1]
+        if(typeof d[0] === 'number')
+            _.pos = d[0]
+
+        if(typeof d[1] === 'string')
+            _.owner = d[1]
     }
     /**
      * Export to array
@@ -31,6 +34,8 @@ const PostPointer = function(d){
             _.owner
         ]
     }
-    if(Array.isArray(d)) _import()
+
+    if(Array.isArray(d))
+        _import()
 }
 module.exports = PostPointer

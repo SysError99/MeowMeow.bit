@@ -42,17 +42,34 @@ const Post = function(d){
     let _import = () => {
         if(Array.isArray(d[0])){
             d[0].forEach(el => {
-                if(Array.isArray(el)) _.comment.push(new PostPointer(el))
+                if(Array.isArray(el))
+                    _.comment.push(new PostPointer(el))
             })
         }
-        if(Array.isArray(d[1])) _.like = d[1]
-        if(Array.isArray(d[2])) _.likeSignature = d[2]
-        if(Array.isArray(d[3])) _.media = d[3]
-        if(Array.isArray(d[4])) _.mention = d[4]
-        if(typeof d[5] === 'string') _.owner = d[5]
-        if(typeof d[6] === 'string') _.signature = d[6]
-        if(Array.isArray(d[7])) _.tag = d[7]
-        if(typeof d[8] === 'string') _.text = d[8]
+        
+        if(Array.isArray(d[1]))
+            _.like = d[1]
+
+        if(Array.isArray(d[2]))
+            _.likeSignature = d[2]
+
+        if(Array.isArray(d[3]))
+            _.media = d[3]
+
+        if(Array.isArray(d[4]))
+            _.mention = d[4]
+
+        if(typeof d[5] === 'string')
+            _.owner = d[5]
+
+        if(typeof d[6] === 'string')
+            _.signature = d[6]
+
+        if(Array.isArray(d[7]))
+            _.tag = d[7]
+
+        if(typeof d[8] === 'string')
+            _.text = d[8]
     }
     /**
      * Export to array
@@ -76,7 +93,9 @@ const Post = function(d){
             _.text
         ]
     }
-    if(Array.isArray(d)) _import()
+
+    if(Array.isArray(d))
+        _import()
 }
 
 module.exports = Post

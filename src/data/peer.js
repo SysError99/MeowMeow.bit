@@ -52,13 +52,25 @@ const Peer = function(d){
      * Import JSON
      */
     let _import = () => {
-        if(typeof d[0] === 'string') _.ip = d[0]
-        if(typeof d[1] === 'number') _.port = d[1]
+        if(typeof d[0] === 'string')
+            _.ip = d[0]
+
+        if(typeof d[1] === 'number')
+            _.port = d[1]
+
         Try(() => {
-            if(typeof d[2] === 'string') d[2] = Buffer.from(d[2], 'base64')
-            if(typeof d[3] === 'boolean') _.nat = d[3]
-            if(typeof d[4] === 'string') _.lastAccess = Date.parse(d[4])
-            if(!Buffer.isBuffer(d[2])) return
+            if(typeof d[2] === 'string')
+                d[2] = Buffer.from(d[2], 'base64')
+
+            if(typeof d[3] === 'boolean')
+                _.nat = d[3]
+
+            if(typeof d[4] === 'string')
+                _.lastAccess = Date.parse(d[4])
+
+            if(!Buffer.isBuffer(d[2]))
+                return
+
             let newECDH = new ECDHKey()
             _.key = newECDH.computeSecret(d[2])
             _.myPub = newECDH.get.pub()
@@ -80,7 +92,8 @@ const Peer = function(d){
         ]
     }
 
-    if(Array.isArray(d)) _import()
+    if(Array.isArray(d))
+        _import()
 
 }
 

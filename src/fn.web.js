@@ -40,10 +40,13 @@ const WebRequest = function(req,d){
      * Import JSON
      */
     let _import = () => {
-        if(isAny(d.params)) _.params = d.params
-        if(isAny(d.query))  _.query = d.query
+        if(isAny(d.params))
+            _.params = d.params
+        if(isAny(d.query)) 
+            _.query = d.query
     }
-    if(isAny(d)) _import()
+    if(isAny(d))
+        _import()
 }
 
 /**
@@ -114,11 +117,15 @@ const WebEvent = function(d){
      * Import JSON
      */
     let _import = () => {
-        if(typeof d.callback === 'function') _.callback = d.callback
-        if(typeof d.method === 'string') _.method = d.method.toLowerCase()
-        if(typeof d.params === 'string') _.params = d.params.split('/')
+        if(typeof d.callback === 'function')
+            _.callback = d.callback
+        if(typeof d.method === 'string')
+            _.method = d.method.toLowerCase()
+        if(typeof d.params === 'string')
+            _.params = d.params.split('/')
     }
-    if(isAny(d)) _import()
+    if(isAny(d))
+        _import()
 }
 
 /**
@@ -231,10 +238,14 @@ const Web = function(d){
                     let query = url[1].split('&')
                     for(let q=0; q<query.length; q++){
                         let elQuery = query[q].split('=')
-                        if(elQuery.length === 1) webQuery[elQuery[0]] = true
-                        else webQuery[elQuery[0]] = elQuery[1]
+
+                        if(elQuery.length === 1)
+                            webQuery[elQuery[0]] = true
+                        else
+                            webQuery[elQuery[0]] = elQuery[1]
                     }
-                }else if(url.length > 2){
+                }
+                else if(url.length > 2){
                     res.writeHead(400).end('Bad request.')
                     return
                 }
@@ -243,8 +254,12 @@ const Web = function(d){
                     webEvent = event[ev]
                     webEventParam = webEvent.params
                     webParams = {}
-                    if(webEvent.method !== req.method.toLowerCase()) continue
-                    if(webEventParam.length !== params.length) continue
+
+                    if(webEvent.method !== req.method.toLowerCase())
+                        continue
+                    if(webEventParam.length !== params.length)
+                        continue
+
                     for(p=0; p<params.length; p++){
                         if(webEventParam[p][0] === ':' && webEventParam[p].length > 1)
                             webParams[webEventParam[p].slice(1,webEventParam[p].length)] = params[p]
@@ -253,7 +268,8 @@ const Web = function(d){
                             break
                         }
                     }
-                    if(!thisEvent) continue
+                    if(!thisEvent)
+                        continue
                     webEvent.callback(new WebRequest(req,{
                         params: webParams,
                         query: webQuery,
@@ -279,10 +295,12 @@ const Web = function(d){
      * Import JSON
      */
     let _import = () => {
-        if(typeof d.port === 'number') _.port = d.port
+        if(typeof d.port === 'number')
+            _.port = d.port
         _server()
     }
-    if(isAny(d)) _import()
+    if(isAny(d))
+        _import()
     else _server()
 }
 
