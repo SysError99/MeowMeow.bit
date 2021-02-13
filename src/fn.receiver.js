@@ -36,6 +36,19 @@ if(trackers === null)
 const IpRegex = require('./data/ip.regex')
 
 /**
+ * Extract IP address to array of ip address
+ * @param {string|string[]} message message to be extracted
+ * @returns {{ip:string,port:number}} IP and port
+ */
+const ipExtract = message => {
+    message = message.split(':')
+    return {
+        ip: message[0],
+        port: parseInt(message[1])
+    }
+}
+
+/**
  * @param {Error} err 
  */
 const showError = err => err ? console.error(err) : 0
@@ -82,24 +95,24 @@ const handleIncomingMessage = (receiver, peer, message, remote) => {
                     receiver.peers[remoteAddress] = peer
             })
 
-        if(typeof trackers[remoteAddress] !== 'undefined') //receive data
-            switch(message[0]){ // tracker responses
-                case '*': // peer response back
-                    message = message.slice(1, message.length)
+        if(typeof trackers[remoteAddress] !== 'undefined'){ //receive data
+            let cmd = message[0]
+            message = message.slice(1, message.length)
 
+            switch(cmd){ // tracker responses
+                case '*': // peer response back
                     if(!IpRegex.test(message))
                         return
 
-                    message = message.split(':')
-                    message[1] = parseInt(message[1])
-
                     let randomResponse = Crypt.rand(32)
-                    socket.send(randomResponse, 0, randomResponse.length, message[1], message[0], showError)
+                    let responseAddress = ipExtract(message)
+                    socket.send(randomResponse, 0, randomResponse.length, responseAddress.port, responseAddress.ip, showError)
                     return
                 case ':': //port set
                     receiver.port = Try(() => parseInt(message.slice(1,message.length)), 0)
                     return
             }
+        }
         else{
             message = Try(() => JSON.parse(message))
             if(Array.isArray(message))
@@ -111,7 +124,15 @@ const handleIncomingMessage = (receiver, peer, message, remote) => {
     }
     else{
         if(typeof trackers[remoteAddress] !== 'undefined'){ // outgoing connection
+            if(!IpRegex.test(message))
+                return
+
             let pubKey = peer.myPub
+            let responseAddress = ipExtract(message)
+
+            peer.ip = responseAddress.ip
+            peer.port = responseAddress.port
+            
             socket.send(pubKey, 0, pubKey.length, peer.port, peer.ip, showError)
         }
         else if(remoteAddress === `${peer.ip}:${peer.port}`){
