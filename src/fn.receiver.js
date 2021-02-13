@@ -128,13 +128,11 @@ const randTracker = () => trackers[Math.floor(Math.random() * trackers.length)]
  * @param {string|Array|Buffer} message Message to be sent
  */
 const sendMessage = (receiver, peer, message) => {
-    let fullAddress = `${peer.ip}:${peer.port}`
-    let tracker = randTracker()
     /** @type {Datagram.Socket} */
     let conn
     let date = new Date()
-    let encryptedFullAddress
     let messageSent = false
+    let tracker = randTracker()
 
     if(peer.connected || !peer.nat){
         conn = peer.socket
@@ -146,7 +144,9 @@ const sendMessage = (receiver, peer, message) => {
         return
     }
 
-    if(Try(() => encryptedFullAddress = tracker.key.encrypt(`>${fullAddress}`))) return
+    /** @type {Buffer} */
+    let encryptedPeerPub
+    if(Try(() => encryptedPeerPub = tracker.key.encrypt(`>${BaseN.encode(peer.pub)}`))) return
 
     conn = Datagram.createSocket({
         type: 'udp4',
@@ -160,7 +160,7 @@ const sendMessage = (receiver, peer, message) => {
         }
     })
     conn.send(
-        encryptedFullAddress, 0, encryptedFullAddress.length,
+        encryptedPeerPub, 0, encryptedPeerPub.length,
         tracker.port,
         tracker.ip,
         showError
@@ -199,6 +199,9 @@ const Receiver = function(callback){
 
     /** @type {RequestFunction} Callback function for this object */
     this.callback = typeof callback === 'function' ? callback : () => false
+
+    /** @type {string} This is local IP address to be used with handleIncomingMessage() */
+    this.ip = '127.0.0.1'
 
      /** @type {ECDHKey} Receiver generated key, always brand-new */
     this.key = new ECDHKey()

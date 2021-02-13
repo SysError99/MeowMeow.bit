@@ -6,16 +6,17 @@ const Datagram = require('dgram')
 
 const __ = require('./const')
 const Try = require('./fn.try.catch')
+const BaseN = require('./fn.base.n')
 const Locale = require('./locale/locale')
 const Storage = require('./fn.storage')(new Locale())
 
 const Announcement = require('./data/announcement')
 const ECDHkey = require('./data/key.ecdh')
-const IpRegex = require('./data/ip.regex')
 const Peer = require('./data/peer')
 
 const announcement = {}
 const knownPeers = {}
+const knownPeersByKey = {}
 const myKey = Try(() => new ECDHkey(Storage.read('key.server')))
 
 /**
@@ -31,7 +32,7 @@ const udp = Datagram.createSocket('udp4')
 
 /**
  * Make an announcement to both peers
- * @param {Datagram.RemoteInfo} remote Remote address of target
+ * @param {{address:string, port:number}} remote Remote address of target
  */
 const announce = remote => {
     let remoteAddress = `${remote.address}:${remote.port}`
@@ -50,19 +51,14 @@ udp.on('listening', () => console.log(`Server is running on port `+udp.address()
 udp.on('error', error)
 udp.on('message', (msg, remote) => {
     let remoteAddress = `${remote.address}:${remote.port}`
-    
-    if(typeof announcement[remoteAddress] === 'object')
-        announce(remote)
-
-    if(msg.length === 0) return
-    
     /** @type {string|string[]} */
     let message
     /** @type {Peer} */
-    let peer
+    let peer = knownPeers[remoteAddress]
 
     let identifyPeer = reset => {
-        if(reset) delete knownPeers[remoteAddress]
+        if(reset)
+            delete knownPeers[remoteAddress]
         if(typeof knownPeers[remoteAddress] === 'undefined'){
             peer = new Peer([
                     remote.ip,
@@ -71,16 +67,26 @@ udp.on('message', (msg, remote) => {
                 ])
             if(peer.key !== null){
                 knownPeers[remoteAddress] = peer
+                knownPeersByKey[encodedPublicKey] = peer
+                if(typeof announcement[BaseN.encode(peer.pub)] === 'object') 
+                    announce({
+                        address: peer.ip,
+                        port: peer.port
+                    })
                 return true
             }
         }
-        if(new Date() - peer.lastAccess > __.LAST_ACCESS_LIMIT) return identifyPeer(true)
         peer = knownPeers[remoteAddress]
+        if(new Date() - peer.lastAccess > __.LAST_ACCESS_LIMIT)
+            return identifyPeer(true)
+        peer.lastAccess = new Date()
     }
 
-    if(Try(identifyPeer)) return
+    if(identifyPeer())
+        return
 
-    peer.lastAccess = new Date()
+    if(msg.length === 0)
+        return
 
     message = peer.key.decrypt(msg)
     let cmd = message[0]
@@ -96,28 +102,25 @@ udp.on('message', (msg, remote) => {
             udp.send(remotePort, 0, remotePort.length, remote.port, remote.address, error)
             return
         case '>':
-            if(!IpRegex.test(message)) return
             if(typeof announcement[message] !== 'object')
                 announcement[message] = new Announcement()
-            
-                /** @type {Announcement} */
+            /** @type {Announcement} */
             let ann = announcement[message]
             ann.request.address = remote.address
             ann.request.port = remote.port
             console.log(`Request ${remoteAddress} -> ${message}`)
 
-            if(knownPeers[message] === 'object'){
-                let destinationAddress = message.split(':')
-                destinationAddress[1] = parseInt(destinationAddress[1])
+            /** @type {Peer} */
+            let peerToAnnounce = knownPeersByKey[message]
+            if(typeof peerToAnnounce === 'object')
                 announce({
-                    address: destinationAddress[0],
-                    port: destinationAddress[1]
+                    address: peerToAnnounce.ip,
+                    port: peerToAnnounce.port
                 })
-            }
             return
         default:
-            message = Try(() => JSON.parse(message), null)
-            if(!Array.isArray(message)) return identifyPeer(true)
+            if(Try(() => message = JSON.parse(messge)))
+                return
     }
 
     //Tracker
