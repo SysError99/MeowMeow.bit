@@ -90,7 +90,7 @@ udp.on('message', (msg, remote) => {
 
     message = peer.key.decrypt(msg)
     let cmd = message[0]
-    message = message.slice(0,1)
+    message = message.slice(1,message.length)
 
     //Announcer
     switch(cmd){
