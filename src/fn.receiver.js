@@ -116,7 +116,11 @@ const handleIncomingMessage = (receiver, peer, message, remote) => {
                 }
             })
         
-        if(new Date() - peer.lastAccess > __.LAST_ACCESS_LIMIT){
+        let deltaTime = new Date() - peer.lastAccess
+
+        if(deltaTime < 20000 && !__.TEST)
+            return
+        else if(deltaTime > __.LAST_ACCESS_LIMIT){
             clearInterval(peer.keepAlive)
             delete receiver.peers[remoteAddress]
             return handleIncomingMessage(receiver,peer, message, remote)
