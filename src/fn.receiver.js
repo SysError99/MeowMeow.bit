@@ -1,6 +1,7 @@
 // UNSTABLE, NOT TESTED
 const Datagram = require('dgram')
 
+const __ = require('./const')
 const BaseN = require('./fn.base.n')
 const Crypt = require('./fn.crypt')
 const Try = require('./fn.try.catch')
@@ -102,18 +103,24 @@ const handleIncomingMessage = (receiver, peer, message, remote) => {
 
         if(typeof peer === 'undefined')
             return Try(() => {
-                setInterval(() => socket.send('', 0, 0, remote.port, remote.address, showError), 10000)
-
                 peer = new Peer([
                     remote.address,
                     remote.port
                 ])
-                peer.connected = true
                 peer.key = receiver.key.computeSecret(message)
-                
-                if(peer.key !== null)
+
+                if(peer.key !== null){
+                    peer.connected = true
+                    peer.keepAlive = setInterval(() => socket.send('', 0, 0, remote.port, remote.address, showError), 10000)
                     receiver.peers[remoteAddress] = peer
+                }
             })
+        
+        if(new Date() - peer.lastAccess > __.LAST_ACCESS_LIMIT){
+            clearInterval(peer.keepAlive)
+            delete receiver.peers[remoteAddress]
+            return handleIncomingMessage(receiver,peer, message, remote)
+        }
 
         if(Try(() => message = peer.key.decrypt(message)))
             return
