@@ -51,6 +51,9 @@ udp.bind(12345)
 udp.on('listening', () => console.log(`Server is running on port `+udp.address().port))
 udp.on('error', error)
 udp.on('message', (msg, remote) => {
+    if(msg.length === 0)
+        return
+
     let remoteAddress = `${remote.address}:${remote.port}`
     /** @type {string|string[]} */
     let message
@@ -84,9 +87,6 @@ udp.on('message', (msg, remote) => {
     }
 
     if(identifyPeer())
-        return
-
-    if(msg.length === 0)
         return
 
     message = peer.key.decrypt(msg)
