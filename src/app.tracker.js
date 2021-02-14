@@ -7,6 +7,7 @@ const Datagram = require('dgram')
 const __ = require('./const')
 const Try = require('./fn.try.catch')
 const BaseN = require('./fn.base.n')
+const Crypt = require('./fn.crypt')
 const Locale = require('./locale/locale')
 const Storage = require('./fn.storage')(new Locale())
 
@@ -47,42 +48,64 @@ const announce = remote => {
     console.log(`Announce ${ann.request.address}:${ann.request.port} -> ${remoteAddress}`)
 }
 
-udp.bind(12345)
-udp.on('listening', () => console.log(`Server is running on port `+udp.address().port))
-udp.on('error', error)
-udp.on('message', (msg, remote) => {
-    if(msg.length === 0)
-        return
-
+/**
+ * Handle incoming message from peers
+ * @param {Buffer} msg Received message
+ * @param {Datagram.RemoteInfo} remote Remote peer info
+ */
+const handleIncomingMessage = (msg, remote) => {
     let remoteAddress = `${remote.address}:${remote.port}`
     /** @type {string|string[]} */
     let message
     /** @type {Peer} */
     let peer = knownPeers[remoteAddress]
 
+    if(msg.length === 0){
+        if(typeof peer === 'undefined'){
+            let randomBytes = Crypt.rand(Math.floor(Math.random() * 33))
+            return udp.send(randomBytes, 0, randomBytes.length, remote.port, remote.address, error)
+        }
+        else if(new Date() - peer.lastAccess > __.LAST_ACCESS_LIMIT){
+            delete knownPeers[remoteAddress]
+            return handleIncomingMessage(msg, remote)
+        }
+        return udp.send('', 0, 0, remote.port, remote.address, error)
+    }
+
+    /**
+     * Identify peer
+     * @param {boolean} reset Delete this peer? 
+     */
     let identifyPeer = reset => {
         if(reset)
             delete knownPeers[remoteAddress]
+
         if(typeof knownPeers[remoteAddress] === 'undefined'){
             peer = new Peer([
                     remote.ip,
                     remote.port,
                     msg
                 ])
+
             if(peer.key !== null){
                 knownPeers[remoteAddress] = peer
                 knownPeersByKey[encodedPublicKey] = peer
+
                 if(typeof announcement[BaseN.encode(peer.pub)] === 'object') 
                     announce({
                         address: peer.ip,
                         port: peer.port
                     })
+
                 return true
             }
         }
+
         peer = knownPeers[remoteAddress]
+
         if(new Date() - peer.lastAccess > __.LAST_ACCESS_LIMIT)
             return identifyPeer(true)
+
         peer.lastAccess = new Date()
     }
 
@@ -146,6 +169,11 @@ udp.on('message', (msg, remote) => {
     switch(message[0]){
         
     }
-})
+}
+
+udp.bind(12345)
+udp.on('listening', () => console.log(`Server is running on port `+udp.address().port))
+udp.on('error', error)
+udp.on('message', handleIncomingMessage)
 
 console.log(`Tracker is now on! \n\nPublic key: <${myKey.get.pub().toString('base64')}>`)

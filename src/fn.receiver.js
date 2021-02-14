@@ -149,6 +149,9 @@ const handleIncomingMessage = (receiver, peer, message, remote) => {
                 case ':': //port set
                     receiver.port = Try(() => parseInt(message.slice(1,message.length)), 0)
                     return
+
+                default: //tracker told to send pub again
+                    return receiver.sendPubToTrackers()
             }
         }
         else{
@@ -300,23 +303,28 @@ const Receiver = function(callback){
      */
     this.send = (peer, message) => sendMessage(self, peer, message)
 
+    /**
+     * Send public key to trackers
+     */
+    this.sendPubToTrackers = () => {
+        for(t in trackers){
+            let tracker = trackers[t]
+            let myPub = tracker.myPub
+            socket.send(
+                myPub, 0, myPub.length,
+                tracker.port,
+                tracker.ip,
+                showError
+            )
+            this.peers[t] = tracker
+        }
+    }
+
     /** Socket from receiver module */
     this.socket = socket
 
     socket.on('error', showError)
     socket.on('message', (msg, remote) => handleIncomingMessage(self, self, msg, remote))    
-
-    for(t in trackers){
-        let tracker = trackers[t]
-        let myPub = tracker.myPub
-        socket.send(
-            myPub, 0, myPub.length,
-            tracker.port,
-            tracker.ip,
-            showError
-        )
-        this.peers[t] = tracker
-    }
 
     let askForSocketPort = setInterval(() => {
         if(self.port > 0)
@@ -331,6 +339,8 @@ const Receiver = function(callback){
             showError
         )
     }, 1000)
+
+    this.sendPubToTrackers()
 
     setInterval(() => { 
         for(t in trackers){
