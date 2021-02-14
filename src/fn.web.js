@@ -27,7 +27,7 @@ const WebRequest = function(req,d){
     /** @type {boolean} This is 'WebRequest' object*/
     this.isWebRequest = true
     /** @type {HTTP.IncomingMessage} Unimplemented features live here*/
-    this._ = req
+    this.HTTP = req
     /** @type {HTTP.IncomingHttpHeaders} Request headers*/
     this.header = req.headers
     /** @type {Object} Request URL parameters*/
@@ -59,7 +59,7 @@ const WebResponse = function(res){
     /** This is 'WebResponse' object*/
     this.isWebResponse = true
     /** @type {HTTP.ServerResponse} Unimplemented features live here*/
-    this._ = res
+    this.HTTP = res
     /**
      * Set response content type
      * @param {string} contentType parameter for content type

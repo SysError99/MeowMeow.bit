@@ -265,13 +265,13 @@ const Receiver = function(callback){
      * @param {Peer} peer Peer to send data to
      * @param {string|Array} message 
      */
-    this.send = (peer, message) => sendMessage(_, peer, message)
+    this.send = (peer, message) => sendMessage(self, peer, message)
 
     /** Socket from receiver module */
     this.socket = socket
 
     socket.on('error', showError)
-    socket.on('message', (msg, remote) => handleIncomingMessage(_, _, msg, remote))    
+    socket.on('message', (msg, remote) => handleIncomingMessage(self, self, msg, remote))    
 
     for(t in trackers){
         let tracker = trackers[t]
