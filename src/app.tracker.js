@@ -115,6 +115,7 @@ udp.on('message', (msg, remote) => {
         case '>':
             if(typeof announcement[message] !== 'object')
                 announcement[message] = new Announcement()
+
             /** @type {Announcement} */
             let ann = announcement[message]
             ann.request.address = remote.address
@@ -123,11 +124,18 @@ udp.on('message', (msg, remote) => {
 
             /** @type {Peer} */
             let peerToAnnounce = knownPeersByKey[message]
-            if(typeof peerToAnnounce === 'object')
+            if(typeof peerToAnnounce === 'object'){
+                if(new Date() - peerToAnnounce.lastAccess > __.LAST_ACCESS_LIMIT){ //peer is too old to connect
+                    let msgTooOldPeerError = peer.key.encrypt(`-${message}`)
+                    udp.send(msgTooOldPeerError, 0, msgTooOldPeerError.length, ann.request.port, ann.request.address, error)
+                    delete knownPeersByKey[message]
+                    return
+                }
                 announce({
                     address: peerToAnnounce.ip,
                     port: peerToAnnounce.port
                 })
+            } 
             return
         default:
             if(Try(() => message = JSON.parse(messge)))

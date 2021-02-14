@@ -69,7 +69,7 @@ const showError = err => err ? console.error(err) : 0
  */
 const handleIncomingMessage = (receiver, peer, message, remote) => {
     if(message.length === 0)
-        return
+        return 'emptyMessage'
 
     let remoteAddress = `${remote.address}:${remote.port}`
     let socket = peer.socket
@@ -80,10 +80,15 @@ const handleIncomingMessage = (receiver, peer, message, remote) => {
 
         if(typeof tracker === 'object'){ // outgoing connection
             if(Try(() => message = tracker.key.decrypt(message)))
-                return
+                return 'trackerDecryptError'
+
+            if(message[0] === '-'){ //peer is too old
+                delete receiver.peers[BaseN.encode(peer.pub)]
+                return 'peerTooOld'
+            }
 
             if(!IpRegex.test(message))
-                return
+                return 'peerIpRegexErr'
 
             let pubKey = peer.myPub
             let responseAddress = ipExtract(message)
@@ -95,7 +100,7 @@ const handleIncomingMessage = (receiver, peer, message, remote) => {
         }
         else if(remoteAddress === `${peer.ip}:${peer.port}`){
             peer.connected = true
-            return true //outgoing connection established
+            return 'connected' //outgoing connection established
         }
     }
     else{
@@ -119,7 +124,7 @@ const handleIncomingMessage = (receiver, peer, message, remote) => {
         let deltaTime = new Date() - peer.lastAccess
 
         if(deltaTime < 20000 && !__.TEST)
-            return
+            return 'peerTooFast'
         else if(deltaTime > __.LAST_ACCESS_LIMIT){
             clearInterval(peer.keepAlive)
             delete receiver.peers[remoteAddress]
@@ -127,7 +132,7 @@ const handleIncomingMessage = (receiver, peer, message, remote) => {
         }
 
         if(Try(() => message = peer.key.decrypt(message)))
-            return
+            return 'peerDecryptErr'
 
         if(typeof trackers[remoteAddress] !== 'undefined'){ //receive data
             let cmd = message[0]
@@ -136,12 +141,13 @@ const handleIncomingMessage = (receiver, peer, message, remote) => {
             switch(cmd){ // tracker responses
                 case '*': // peer response back
                     if(!IpRegex.test(message))
-                        return
+                        return 'trackerIpRegexErr'
 
                     let randomResponse = Crypt.rand(32)
                     let responseAddress = ipExtract(message)
                     socket.send(randomResponse, 0, randomResponse.length, responseAddress.port, responseAddress.ip, showError)
                     return
+
                 case ':': //port set
                     receiver.port = Try(() => parseInt(message.slice(1,message.length)), 0)
                     return
@@ -156,7 +162,7 @@ const handleIncomingMessage = (receiver, peer, message, remote) => {
                 }))
         }
     }
-    
+
 }
 
 /**
@@ -204,9 +210,14 @@ const sendMessage = (receiver, peer, message) => {
     })
     conn.on('error', showError)
     conn.on('message', (msg, remote) => {
-        if(handleIncomingMessage(receiver, peer, msg, remote)){
-            sendMessage(receiver, peer, message)
-            messageSent = true
+        let connectionResponse = handleIncomingMessage(receiver, peer, msg, remote)
+
+        switch(connectionResponse){
+            case 'connected':
+                sendMessage(receiver, peer, message)
+            case 'peerTooOld':
+                messageSent = true
+                return
         }
     })
     conn.send(
