@@ -40,7 +40,7 @@ const Peer = function(d){
     this.key = null
 
     /** @type {number} Peer quality indicator*/
-    this.quality = 5
+    this.quality = 30
 
     /** @type {Datagram.Socket} Network socket*/
     this.socket = null
