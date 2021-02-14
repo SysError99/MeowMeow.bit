@@ -72,12 +72,32 @@ const handleIncomingMessage = (receiver, peer, message, remote) => {
 
     let remoteAddress = `${remote.address}:${remote.port}`
     let socket = peer.socket
-
-    if(peer.key.isSymmetricKey)
-        if(Try(() => message = peer.key.decrypt(message)))
-            return
     
-    if(peer.isReceiver){ //incoming connection
+    if(peer.isPeer){ //incoming connection
+        /** @type {Peer} */
+        let tracker = trackers[remoteAddress]
+
+        if(typeof tracker === 'object'){ // outgoing connection
+            if(Try(() => message = tracker.key.decrypt(message)))
+                return
+
+            if(!IpRegex.test(message))
+                return
+
+            let pubKey = peer.myPub
+            let responseAddress = ipExtract(message)
+
+            peer.ip = responseAddress.ip
+            peer.port = responseAddress.port
+            
+            socket.send(pubKey, 0, pubKey.length, peer.port, peer.ip, showError)
+        }
+        else if(remoteAddress === `${peer.ip}:${peer.port}`){
+            peer.connected = true
+            return true //outgoing connection established
+        }
+    }
+    else{
         peer = receiver.peers[remoteAddress]
 
         if(typeof peer === 'undefined')
@@ -94,6 +114,9 @@ const handleIncomingMessage = (receiver, peer, message, remote) => {
                 if(peer.key !== null)
                     receiver.peers[remoteAddress] = peer
             })
+
+        if(Try(() => message = peer.key.decrypt(message)))
+            return
 
         if(typeof trackers[remoteAddress] !== 'undefined'){ //receive data
             let cmd = message[0]
@@ -120,24 +143,6 @@ const handleIncomingMessage = (receiver, peer, message, remote) => {
                     success: true,
                     data: received
                 }))
-        }
-    }
-    else{
-        if(typeof trackers[remoteAddress] !== 'undefined'){ // outgoing connection
-            if(!IpRegex.test(message))
-                return
-
-            let pubKey = peer.myPub
-            let responseAddress = ipExtract(message)
-
-            peer.ip = responseAddress.ip
-            peer.port = responseAddress.port
-            
-            socket.send(pubKey, 0, pubKey.length, peer.port, peer.ip, showError)
-        }
-        else if(remoteAddress === `${peer.ip}:${peer.port}`){
-            peer.connected = true
-            return true //outgoing connection established
         }
     }
     
