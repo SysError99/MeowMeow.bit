@@ -38,8 +38,8 @@ const announce = remote => {
     let remoteAddress = `${remote.address}:${remote.port}`
     /** @type {Announcement} */
     let ann = announcement[remoteAddress]
-    let payload  = `${ann.request.address}:${ann.request.port}`
-    let payload2 = `*${remoteAddress}`
+    let payload  = `*${ann.request.address}:${ann.request.port}`
+    let payload2 = `${remoteAddress}`
     delete announcement[remoteAddress]
     udp.send(payload, 0, payload.length, remote.port, remote.address, error)
     udp.send(payload2, 0, payload2.length, ann.request.port, ann.request.address, error)
