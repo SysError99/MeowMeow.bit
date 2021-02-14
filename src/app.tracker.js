@@ -96,8 +96,15 @@ udp.on('message', (msg, remote) => {
     //Announcer
     switch(cmd){
         case '@':
+            let previousPort = peer.port
+
             if(Try(() => peer.port = parseInt(message), remote.port))
                 return
+
+            if(peer.port === NaN){
+                peer.port = previousPort
+                return
+            }
             
             peer.nat = true
             break
