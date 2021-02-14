@@ -106,7 +106,7 @@ udp.on('message', (msg, remote) => {
                 return
             }
             
-            peer.nat = true
+            peer.nat = false
             break
         case '?':
             let remotePort = peer.key.encrypt(`${remote.port}`)
