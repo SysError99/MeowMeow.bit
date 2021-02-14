@@ -80,15 +80,13 @@ const handleIncomingMessage = (receiver, peer, message, remote) => {
 
         if(typeof tracker === 'object'){ // outgoing connection
             if(Try(() => message = tracker.key.decrypt(message)))
-                return 'trackerDecryptError'
+                return 'decryptErr'
 
-            if(message[0] === '-'){ //peer is too old
-                delete receiver.peers[BaseN.encode(peer.pub)]
-                return 'peerTooOld'
-            }
+            if(message[0] === '-') //peer is too old
+                return 'tooOld'
 
             if(!IpRegex.test(message))
-                return 'peerIpRegexErr'
+                return 'ipRegexErr'
 
             let pubKey = peer.myPub
             let responseAddress = ipExtract(message)
@@ -215,8 +213,12 @@ const sendMessage = (receiver, peer, message) => {
         switch(connectionResponse){
             case 'connected':
                 sendMessage(receiver, peer, message)
-            case 'peerTooOld':
                 messageSent = true
+                return
+            case 'decryptErr':
+            case 'ipRegexError':
+            case 'tooOld':
+                peer.quality = 0
                 return
         }
     })
@@ -234,7 +236,11 @@ const sendMessage = (receiver, peer, message) => {
     console.log(`Announcing ${fullAddress}`)
 
     setTimeout(() => {
-        if(!messageSent)
+        peer.quality--
+
+        if(peer.quality <= 0)
+            delete receiver.peers[`${peer.ip}:${peer.port}`]
+        else if(!messageSent)
             sendMessage(receiver, peer, message)
     }, 4000)
 }
