@@ -27,6 +27,9 @@ const Peer = function(d){
     /** @type {Buffer} Peer public key.*/
     this.pub = Buffer.from([])
 
+    /** @type {NodeJS.Timeout} */
+    this.keepAlive = null
+
     /** @type {Buffer} Randomly generated public key to be shared with another peer*/
     this.myPub = Buffer.from([])
 
