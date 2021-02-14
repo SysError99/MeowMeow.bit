@@ -17,6 +17,7 @@ const Peer = require('./data/peer')
 const announcement = {}
 const knownPeers = {}
 const knownPeersByKey = {}
+/** @type {ECDHKey} ECDH key being used on the tracker */
 const myKey = Try(() => new ECDHkey(Storage.read('key.server')))
 
 /**
