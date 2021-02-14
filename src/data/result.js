@@ -6,7 +6,7 @@ const isAny = require('../fn.is.any')
  */
 const Result = function(d){
     /** This object */
-    let _ = this
+    let self = this
     /** @type {boolean} This is 'Result' object*/
     this.isResult = true
 
@@ -24,13 +24,13 @@ const Result = function(d){
      */
     let _import = () => {
         if(typeof d.data !== 'undefined') 
-            _.data = d.data
+            self.data = d.data
 
         if(typeof d.message === 'string')
-            _.message = d.message
+            self.message = d.message
 
         if(typeof d.success === 'boolean')
-            _.success = d.success
+            self.success = d.success
     }
 
     /**
@@ -39,9 +39,9 @@ const Result = function(d){
      */
     this.export = () => {
         return {
-            data: _.data,
-            message: _.message,
-            success: _.success
+            data: self.data,
+            message: self.message,
+            success: self.success
         }
     }
 

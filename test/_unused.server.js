@@ -96,7 +96,7 @@ const sendMessage = params => {
  */
 const Server = function(callback){
     /** This object.*/
-    let _ = this
+    let self = this
 
     /** @type {boolean} This is 'Server' object*/
     this.isServer = true
@@ -111,8 +111,8 @@ const Server = function(callback){
          */
         load: location => {
             let keyRead = storage.read(typeof location === 'string' ? location : __.KEY.LOCATION)
-            if(keyRead.success) _.key.current = new ECDHKey(keyRead.data)
-            else _.key.new()
+            if(keyRead.success) self.key.current = new ECDHKey(keyRead.data)
+            else self.key.new()
         },
         /**
          * Create a new key for this server
@@ -120,8 +120,8 @@ const Server = function(callback){
          * @param {string} password Passphrase for this key
          */
         new: location => {
-            _.key.current = new ECDHKey()
-            let keyWrite = storage.write(typeof location === 'string' ? location : __.KEY.LOCATION, _.key.current.export())
+            self.key.current = new ECDHKey()
+            let keyWrite = storage.write(typeof location === 'string' ? location : __.KEY.LOCATION, self.key.current.export())
             if(!keyWrite.success) throw keyWrite.message
         }
     }
@@ -142,7 +142,7 @@ const Server = function(callback){
                 options.ip,
                 options.port
             ])
-            _.peer.list.push(newPeer)
+            self.peer.list.push(newPeer)
             return newPeer
         },
         /**
@@ -153,8 +153,8 @@ const Server = function(callback){
         find: key => {
             /** @type {Peer} Current peer*/
             let thisPeer
-            for(let f=0; f < _.peer.list.length; f++){
-                thisPeer = _.peer.list[f]
+            for(let f=0; f < self.peer.list.length; f++){
+                thisPeer = self.peer.list[f]
                 if(key.ip === thisPeer.ip || key.port === thisPeer.port) return thisPeer
             }
             return null
@@ -205,7 +205,7 @@ const Server = function(callback){
                         if(keyExchange[0].decrypt(keyExchangeResult.data) === 'nice2meetu')
                             peer.key = keyExchange[0]
                     }
-                    resolve(await _.peer.send(peer,message,keyExchange))
+                    resolve(await self.peer.send(peer,message,keyExchange))
                     return
                 }
                 if(Try(() => {
@@ -227,7 +227,7 @@ const Server = function(callback){
                     data: message
                 })
                 if(received.data === null){
-                    resolve(await _.peer.send(peer,message, true))
+                    resolve(await self.peer.send(peer,message, true))
                     return
                 }
                 resolve(Try(() => 
@@ -274,8 +274,8 @@ const Server = function(callback){
             ip: addr.address,
             port: addr.port
         }
-        let peer = _.peer.find(peerProperties)
-        if(peer === null) peer = _.peer.add(peerProperties)
+        let peer = self.peer.find(peerProperties)
+        if(peer === null) peer = self.peer.add(peerProperties)
         peer.socket = socket
         /** @type {string} Data received */
         let body = ''
@@ -289,14 +289,14 @@ const Server = function(callback){
                 if(body.length === 0) throw 'Bad Peer'
                 if(peer.key === null){
                     if(body.length !== 194) throw 'Illegal key length'
-                    peer.key = _.key.current.computeSecret(BaseN.decode(body, '62'))
-                    _.response(peer, 'nice2meetu')
+                    peer.key = self.key.current.computeSecret(BaseN.decode(body, '62'))
+                    self.response(peer, 'nice2meetu')
                     return
                 }
                 body = JSON.parse(peer.key.decrypt(body))
             })) peer.key = null
             if(!Array.isArray(body)){
-                _.response(peer)
+                self.response(peer)
                 return
             }
             callback(peer, body)
@@ -310,14 +310,14 @@ const Server = function(callback){
      * Start a server.
      */
     this.start = () => {
-        server.listen(_.port)
-        _.port = server.address().port
-        console.log('Server is now listening on port '+String(_.port))
+        server.listen(self.port)
+        self.port = server.address().port
+        console.log('Server is now listening on port '+String(self.port))
     }
 
     if(typeof callback === 'function') {
-        _.key.load()
-        _.start()
+        self.key.load()
+        self.start()
     }
 }
 

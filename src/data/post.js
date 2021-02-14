@@ -5,7 +5,7 @@ const PostPointer = require('./post.pointer')
  */
 const Post = function(d){
     /** This object*/
-    let _ = this
+    let self = this
     /** @type {boolean} This is 'Post' object*/
     this.isPost = true
 
@@ -43,33 +43,33 @@ const Post = function(d){
         if(Array.isArray(d[0])){
             d[0].forEach(el => {
                 if(Array.isArray(el))
-                    _.comment.push(new PostPointer(el))
+                    self.comment.push(new PostPointer(el))
             })
         }
         
         if(Array.isArray(d[1]))
-            _.like = d[1]
+            self.like = d[1]
 
         if(Array.isArray(d[2]))
-            _.likeSignature = d[2]
+            self.likeSignature = d[2]
 
         if(Array.isArray(d[3]))
-            _.media = d[3]
+            self.media = d[3]
 
         if(Array.isArray(d[4]))
-            _.mention = d[4]
+            self.mention = d[4]
 
         if(typeof d[5] === 'string')
-            _.owner = d[5]
+            self.owner = d[5]
 
         if(typeof d[6] === 'string')
-            _.signature = d[6]
+            self.signature = d[6]
 
         if(Array.isArray(d[7]))
-            _.tag = d[7]
+            self.tag = d[7]
 
         if(typeof d[8] === 'string')
-            _.text = d[8]
+            self.text = d[8]
     }
     /**
      * Export to array
@@ -78,19 +78,19 @@ const Post = function(d){
     this.export = () => {
         /** @type {PostPointer[]}*/
         let comments = []
-        _.comment.forEach(el => {
+        self.comment.forEach(el => {
             comments.push(el.export())
         })
         return [
             comments,
-            _.like,
-            _.likeSignature,
-            _.media,
-            _.mention,
-            _.owner,
-            _.signature,
-            _.tag,
-            _.text
+            self.like,
+            self.likeSignature,
+            self.media,
+            self.mention,
+            self.owner,
+            self.signature,
+            self.tag,
+            self.text
         ]
     }
 

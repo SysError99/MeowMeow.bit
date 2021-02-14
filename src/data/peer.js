@@ -11,7 +11,7 @@ const SymmetricKey = require('./key.symmetric')
  */
 const Peer = function(d){
     /** This object */
-    let _ = this
+    let self = this
     /** @type {boolean} This is 'Peer' object*/
     this.isPeer = true
 
@@ -53,28 +53,28 @@ const Peer = function(d){
      */
     let _import = () => {
         if(typeof d[0] === 'string')
-            _.ip = d[0]
+            self.ip = d[0]
 
         if(typeof d[1] === 'number')
-            _.port = d[1]
+            self.port = d[1]
 
         Try(() => {
             if(typeof d[2] === 'string')
                 d[2] = Buffer.from(d[2], 'base64')
 
             if(typeof d[3] === 'boolean')
-                _.nat = d[3]
+                self.nat = d[3]
 
             if(typeof d[4] === 'string')
-                _.lastAccess = Date.parse(d[4])
+                self.lastAccess = Date.parse(d[4])
 
             if(!Buffer.isBuffer(d[2]))
                 return
 
             let newECDH = new ECDHKey()
-            _.key = newECDH.computeSecret(d[2])
-            _.myPub = newECDH.get.pub()
-            _.pub = d[2]
+            self.key = newECDH.computeSecret(d[2])
+            self.myPub = newECDH.get.pub()
+            self.pub = d[2]
         })
     }
 
@@ -84,11 +84,11 @@ const Peer = function(d){
      */
     this.export = () => {
         return [
-            _.ip,
-            _.port,
-            _.pub.toString('base64'),
-            _.nat,
-            _.lastAccess.toUTCString(),
+            self.ip,
+            self.port,
+            self.pub.toString('base64'),
+            self.nat,
+            self.lastAccess.toUTCString(),
         ]
     }
 

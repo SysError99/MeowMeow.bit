@@ -4,7 +4,7 @@
  */
 const PostPointer = function(d){
     /** This Object*/
-    let _ = this
+    let self = this
     /** This is a 'PostPointer' Object*/
     this.isPostPointer = true
 
@@ -19,10 +19,10 @@ const PostPointer = function(d){
      */
     let _import = () => {
         if(typeof d[0] === 'number')
-            _.pos = d[0]
+            self.pos = d[0]
 
         if(typeof d[1] === 'string')
-            _.owner = d[1]
+            self.owner = d[1]
     }
     /**
      * Export to array
@@ -30,8 +30,8 @@ const PostPointer = function(d){
      */
     this.export = () => {
         return [
-            _.pos,
-            _.owner
+            self.pos,
+            self.owner
         ]
     }
 

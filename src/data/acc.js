@@ -5,7 +5,7 @@ const SignKey = require('./key.sign')
  */
 const Acc = function(d){
     /** This object*/
-    let _ = this
+    let self = this
     /** @type {boolean} This is 'Account' object*/
     this.isAcc = true
 
@@ -45,7 +45,7 @@ const Acc = function(d){
      * Create a new account
      */
     let _new = () => {
-        _.key = new SignKey()
+        self.key = new SignKey()
     }
 
     /**
@@ -53,35 +53,35 @@ const Acc = function(d){
      */
     let _import = () => {
         if(typeof d[0] === 'string')
-            _.description = d[0]
+            self.description = d[0]
 
         if(Array.isArray(d[1]))
-            _.follower = d[1]
+            self.follower = d[1]
 
         if(Array.isArray(d[2]))
-            _.key = new SignKey(d[2])
+            self.key = new SignKey(d[2])
         else
-            _.key = new SignKey()
+            self.key = new SignKey()
 
         if(typeof d[3] === 'string')
-            _.name = d[3]
+            self.name = d[3]
 
         if(Array.isArray(d[4])){
             if(typeof d[4][0] === 'string')
-                _.pic.cover = d[4][0]
+                self.pic.cover = d[4][0]
 
             if(typeof d[4][1] === 'string')
-                _.pic.profile = d[4][1]
+                self.pic.profile = d[4][1]
         }
 
         if(typeof d[5] === 'number')
-            _.posts = d[5]
+            self.posts = d[5]
 
         if(typeof d[6] === 'boolean')
-            _.posts = d[6]
+            self.posts = d[6]
 
         if(Array.isArray(d[7]))
-            _.tag = d[7]
+            self.tag = d[7]
     }
     /**
      * Export to array
@@ -89,17 +89,17 @@ const Acc = function(d){
      */
     let exportBase = () => {
         return [
-            _.description,
-            _.follower,
+            self.description,
+            self.follower,
             null,
-            _.name,
+            self.name,
             [
-                _.pic.cover,
-                _.pic.profile
+                self.pic.cover,
+                self.pic.profile
             ],
-            _.posts,
-            _.public,
-            _.tag
+            self.posts,
+            self.public,
+            self.tag
         ]
     }
     /**
@@ -108,7 +108,7 @@ const Acc = function(d){
      */
     this.export = () => {
         let e = exportBase()
-        e[2] = _.key.export()
+        e[2] = self.key.export()
         return e
     }
     /**
@@ -117,7 +117,7 @@ const Acc = function(d){
      */
     this.exportPub = () => {
         let e = exportBase()
-        e[2] = _.key.exportPub()
+        e[2] = self.key.exportPub()
         return e
     }
     if(Array.isArray(d))

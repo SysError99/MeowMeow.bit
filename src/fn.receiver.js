@@ -218,7 +218,7 @@ const sendMessage = (receiver, peer, message) => {
  */
 const Receiver = function(callback){
     /** This object*/
-    let _ = this
+    let self = this
     /** @type {string} This is 'Receiver' object*/
     this.isReceiver = true
 
@@ -271,8 +271,7 @@ const Receiver = function(callback){
     this.socket = socket
 
     socket.on('error', showError)
-    socket.on('message', (msg, remote) => 
-        handleIncomingMessage(_, _, msg, remote))    
+    socket.on('message', (msg, remote) => handleIncomingMessage(_, _, msg, remote))    
 
     for(t in trackers){
         let tracker = trackers[t]
@@ -283,11 +282,11 @@ const Receiver = function(callback){
             tracker.ip,
             showError
         )
-        _.peers[t] = tracker
+        this.peers[t] = tracker
     }
 
     let askForSocketPort = setInterval(() => {
-        if(_.port > 0)
+        if(self.port > 0)
             return clearInterval(askForSocketPort)
 
         let tracker = randTracker()
