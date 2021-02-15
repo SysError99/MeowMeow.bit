@@ -11,28 +11,6 @@ const ECDHKey = require('./data/key.ecdh')
 const Peer = require('./data/peer')
 const Result = require('./data/result')
 
-/** @type {Peer[]} List of trackers*/
-const trackers = Try(() => {
-    /** @type {Array} */
-    let trackersLoaded = require('./fn.storage')().read('trackers').data
-    /** @type {Peer[]} */
-    let trackersImported = {}
-
-    trackersLoaded.forEach((el, ind) => {
-        trackersImported [`${el.ip}:${el.port}`] = new Peer([
-            el.ip,
-            el.port,
-            el.pub,
-        ])
-        delete trackersLoaded [ind]
-    })
-    
-    return trackersImported
-}, null)
-
-if(trackers === null)
-    throw Error('No trackers has been set')
-
 /** @type {RegExp} IP address regular expression*/
 const IpRegex = require('./data/ip.regex')
 
@@ -76,7 +54,7 @@ const handleIncomingMessage = (receiver, peer, message, remote) => {
     
     if(peer.isPeer){ // incoming message while sendMessage()...
         /** @type {Peer} */
-        let tracker = trackers[remoteAddress]
+        let tracker = receiver.trackers[remoteAddress]
 
         if(typeof tracker === 'object'){ // outgoing connection
             if(Try(() => message = tracker.key.decrypt(message)))
@@ -138,7 +116,7 @@ const handleIncomingMessage = (receiver, peer, message, remote) => {
         if(Try(() => message = peer.key.decrypt(message)))
             return 'peerDecryptErr'
 
-        if(typeof trackers[remoteAddress] !== 'undefined'){ //receive data
+        if(typeof receiver.trackers[remoteAddress] !== 'undefined'){ //receive data
             let cmd = message[0]
             message = message.slice(1, message.length)
 
@@ -174,9 +152,10 @@ const handleIncomingMessage = (receiver, peer, message, remote) => {
 
 /**
  * Retrieve a tracker randomly
+ * @param {Receiver} receiver Receiver object
  * @returns {Peer} An annoucer
  */
-const randTracker = () => trackers[Math.floor(Math.random() * trackers.length)]
+const randTracker = receiver => receiver.trackers[receiver.trackerList[Math.floor(Math.random() * receiver.trackerList.length)]]
 
 /**
  * Send message to target
@@ -189,7 +168,7 @@ const sendMessage = (receiver, peer, message) => {
     let conn
     let date = new Date()
     let messageSent = false
-    let tracker = randTracker()
+    let tracker = randTracker(receiver)
 
     if(peer.connected || !peer.nat){
         conn = peer.socket
@@ -283,7 +262,7 @@ const Receiver = function(callback){
         if(self.port > 0)
             return clearInterval(askForSocketPort)
 
-        let tracker = randTracker()
+        let tracker = randTracker(self)
         let askForSocketPortPacket = tracker.key.encrypt(`:${BaseN.encode(Crypt.rand(8))}`)
         socket.send(
             askForSocketPortPacket, 0, askForSocketPortPacket,
@@ -311,12 +290,18 @@ const Receiver = function(callback){
     /** @type {Peer[]} Connected peers */
     this.peers = {}
 
+    /** @type {Peer} List of all trackers */
+    this.trackers = {}
+
+    /** @type {string[]} List of trackers, as array of string to be pointed at this.trackers */
+    this.trackerList = []
+
     /**
      * Do port forwarding and avoid NAT.
      * @param {number} p Port to forward to
      */
     this.forwardPort = p => {
-        let tracker = randTracker()
+        let tracker = randTracker(self)
         let tellPortStr = tracker.key.encrypt(`@${p}`)
         socket.bind(p)
         socket.send(tellPortStr, 0, tellPortStr.length, tracker.port, tracker.ip, showError)
@@ -335,9 +320,38 @@ const Receiver = function(callback){
     this.sendPubToTrackers = () => {
         self.key = new ECDHKey()
         self.peers = {}
+        self.trackerList = []
+        self.trackers = Try(() => {
+            /** @type {Array} */
+            let trackersLoaded = require('./fn.storage')().read('trackers').data
+            /** @type {Peer[]} */
+            let trackersImported = {}
+        
+            trackersLoaded.forEach((el, ind) => {
+                let trackerAddress = `${el.ip}:${el.port}`
+                let newTracker = new Peer([
+                    el.ip,
+                    el.port,
+                    el.pub,
+                ])
 
-        for(t in trackers){
-            let tracker = trackers[t]
+                delete trackersLoaded [ind]
+
+                if(newTracker.key === null)
+                    return
+
+                trackersImported [trackerAddress] = newTracker
+                self.trackerList.push(trackerAddress)
+            })
+            
+            return trackersImported
+        }, null)
+        
+        if(self.trackerList.length === 0)
+            throw Error('No trackers has been set')
+
+        for(t in this.trackers){
+            let tracker = this.trackers[t]
             let myPub = tracker.myPub
             socket.send(
                 myPub, 0, myPub.length,
@@ -360,8 +374,8 @@ const Receiver = function(callback){
     this.sendPubToTrackers()
 
     setInterval(() => { 
-        for(t in trackers){
-            let tracker = trackers[t]
+        for(t in self.trackers){
+            let tracker = self.trackers[t]
             socket.send(
                 '', 0, 0,
                 tracker.port,

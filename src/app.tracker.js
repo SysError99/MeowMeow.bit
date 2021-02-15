@@ -60,21 +60,23 @@ const handleIncomingMessage = (msg, remote) => {
             delete knownPeers[remoteAddress]
 
         if(typeof knownPeers[remoteAddress] === 'undefined'){
+            let encodedPublicKey = BaseN.encode(msg)
+
+            if(knownPeersByKey[encodedPublicKey] === 'object')
+                return sendRandomBytes(remote)
+
             peer = new Peer([
                 remote.ip,
                 remote.port,
                 msg
             ])
 
-            if(peer.key !== null){
-                let encodedPublicKey = BaseN.encode(msg)
-                
-                knownPeers[remoteAddress] = peer
-                knownPeersByKey[encodedPublicKey] = peer
-                return true
-            }
-            else
+            if(peer.key === null)
                 return sendRandomBytes(remote)
+
+            knownPeers[remoteAddress] = peer
+            knownPeersByKey[encodedPublicKey] = peer
+            return true
         }
 
         peer = knownPeers[remoteAddress]
@@ -141,7 +143,7 @@ const handleIncomingMessage = (msg, remote) => {
 
         default:
             if(Try(() => message = JSON.parse(messge)))
-                return sendRandomBytes(remote)
+                return
 
     }
 
