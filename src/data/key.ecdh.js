@@ -22,7 +22,7 @@ const ECDHKey = function(d){
      * @returns {SymmetricKey} Symmetric key
      */
     this.computeSecret = pub => {
-        return Try(() => new SymmetricKey(Crypt.ecdh.computeSecret(ecdh, pub)))
+        return Try(() => new SymmetricKey(Crypt.ecdh.computeSecret(ecdh, pub)), null)
     }
 
     this.get = {
@@ -47,7 +47,7 @@ const ECDHKey = function(d){
      * @returns {string} Private key
      */
     this.export = () => {
-        return Try(() => ecdh.getPrivateKey().toString('base64'))
+        return Try(() => ecdh.getPrivateKey().toString('base64'), Buffer.from([]))
     }
 
 }
