@@ -335,7 +335,7 @@ const Receiver = function(callback){
             return clearInterval(askForSocketPort)
 
         let tracker = randTracker()
-        let askForSocketPortPacket = tracker.key.encrypt(`?${BaseN.encode(Crypt.rand(8))}`)
+        let askForSocketPortPacket = tracker.key.encrypt(`:${BaseN.encode(Crypt.rand(8))}`)
         socket.send(
             askForSocketPortPacket, 0, askForSocketPortPacket,
             tracker.port,
