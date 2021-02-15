@@ -131,18 +131,31 @@ const handleIncomingMessage = (msg, remote) => {
             
             peer.nat = false
             break
+
         case '?':
             let remotePort = peer.key.encrypt(`${remote.port}`)
             udp.send(remotePort, 0, remotePort.length, remote.port, remote.address, error)
             return
+
         case '>':
-            if(typeof announcement[message] !== 'object')
-                announcement[message] = new Announcement()
+            if(typeof announcement[message] !== 'object'){
+                let newAnn = new Announcement()
+                newAnn.request.address = remote.address
+                newAnn.request.port = remote.port
+                announcement[remoteAddress] = newAnn
+            }
 
             /** @type {Announcement} */
             let ann = announcement[message]
-            ann.request.address = remote.address
-            ann.request.port = remote.port
+
+            if(ann.time <= 0){ //peer time out
+                delete announcement[message]
+                let peerTimeoutMessage = peer.key.encrypt(`!${message}`)
+                udp.send(peerTimeoutMessage, 0, peerTimeoutMessage.length, remote.port, remote.address, error)
+                return
+            }
+
+            ann.timeout--
             console.log(`Request ${remoteAddress} -> ${message}`)
 
             /** @type {Peer} */
@@ -150,7 +163,7 @@ const handleIncomingMessage = (msg, remote) => {
             if(typeof peerToAnnounce === 'object'){
                 if(new Date() - peerToAnnounce.lastAccess > __.LAST_ACCESS_LIMIT){ //peer is too old to connect
                     let msgTooOldPeerError = peer.key.encrypt(`-${message}`)
-                    udp.send(msgTooOldPeerError, 0, msgTooOldPeerError.length, ann.request.port, ann.request.address, error)
+                    udp.send(msgTooOldPeerError, 0, msgTooOldPeerError.length, remote.port, remote.address, error)
                     delete knownPeersByKey[message]
                     return
                 }
@@ -160,9 +173,11 @@ const handleIncomingMessage = (msg, remote) => {
                 })
             } 
             return
+
         default:
             if(Try(() => message = JSON.parse(messge)))
                 return
+
     }
 
     //Tracker

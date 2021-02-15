@@ -85,6 +85,9 @@ const handleIncomingMessage = (receiver, peer, message, remote) => {
             if(message[0] === '-') //peer is too old
                 return 'tooOld'
 
+            if(message[0] === '!')
+                return 'timeOut'
+
             if(!IpRegex.test(message))
                 return 'ipRegexErr'
 
@@ -220,6 +223,7 @@ const sendMessage = (receiver, peer, message) => {
                 return
             case 'decryptErr':
             case 'ipRegexError':
+            case 'timeOut':
             case 'tooOld':
                 peer.quality = 0
                 return

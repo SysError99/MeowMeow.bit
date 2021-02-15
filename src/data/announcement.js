@@ -12,6 +12,9 @@ const Announcement = function(d){
         port: 0
     }
 
+    /** @type {number} Timeout countdown * 4000 ms */
+    this.timeout = 5
+
     if(typeof d !== 'object')
         return
 
