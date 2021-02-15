@@ -63,7 +63,7 @@ const showError = err => err ? console.error(err) : 0
 /**
  * Handle incoming message from other peers
  * @param {Receiver} receiver Receiver object
- * @param {Peer} peer Peer called
+ * @param {Peer|Receiver} peer Peer called
  * @param {Buffer|string} message Incoming message
  * @param {Datagram.RemoteInfo} remote Remote target
  */
