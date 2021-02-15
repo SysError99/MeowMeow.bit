@@ -276,6 +276,23 @@ const Receiver = function(callback){
         reuseAddr: true
     })
 
+    /**
+     * Ask trackers to find running port
+     */
+    let askForSocketPort = setInterval(() => {
+        if(self.port > 0)
+            return clearInterval(askForSocketPort)
+
+        let tracker = randTracker()
+        let askForSocketPortPacket = tracker.key.encrypt(`:${BaseN.encode(Crypt.rand(8))}`)
+        socket.send(
+            askForSocketPortPacket, 0, askForSocketPortPacket,
+            tracker.port,
+            tracker.ip,
+            showError
+        )
+    }, 1000)
+
     /** @type {RequestFunction} Callback function for this object */
     this.callback = typeof callback === 'function' ? callback : () => false
 
@@ -338,20 +355,6 @@ const Receiver = function(callback){
 
     socket.on('error', showError)
     socket.on('message', (msg, remote) => handleIncomingMessage(self, self, msg, remote))    
-
-    let askForSocketPort = setInterval(() => {
-        if(self.port > 0)
-            return clearInterval(askForSocketPort)
-
-        let tracker = randTracker()
-        let askForSocketPortPacket = tracker.key.encrypt(`:${BaseN.encode(Crypt.rand(8))}`)
-        socket.send(
-            askForSocketPortPacket, 0, askForSocketPortPacket,
-            tracker.port,
-            tracker.ip,
-            showError
-        )
-    }, 1000)
 
     this.sendPubToTrackers()
 
