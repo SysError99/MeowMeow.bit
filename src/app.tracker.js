@@ -31,6 +31,12 @@ const error = err => err ? console.error(err) : 0
 const udp = Datagram.createSocket('udp4')
 
 /**
+ * Send random bytes to target
+ * @param {Datagram.RemoteInfo} remote Target remote to send random bytes to
+ */
+const sendRandomBytes = remote => udp.send(Crypt.rand(8), 0, 8, remote.port, remote.address, error)
+
+/**
  * Handle incoming message from peers
  * @param {Buffer} msg Received message
  * @param {Datagram.RemoteInfo} remote Remote peer info
@@ -42,17 +48,8 @@ const handleIncomingMessage = (msg, remote) => {
     /** @type {Peer} */
     let peer = knownPeers[remoteAddress]
 
-    if(msg.length === 0){
-        if(typeof peer === 'undefined'){
-            let randomBytes = Crypt.rand(Math.floor(Math.random() * 33))
-            return udp.send(randomBytes, 0, randomBytes.length, remote.port, remote.address, error)
-        }
-        else if(new Date() - peer.lastAccess > __.LAST_ACCESS_LIMIT){
-            delete knownPeers[remoteAddress]
-            return handleIncomingMessage(msg, remote)
-        }
+    if(msg.length === 0)
         return udp.send('', 0, 0, remote.port, remote.address, error)
-    }
 
     /**
      * Identify peer
@@ -76,6 +73,8 @@ const handleIncomingMessage = (msg, remote) => {
                 knownPeersByKey[encodedPublicKey] = peer
                 return true
             }
+            else
+                return sendRandomBytes(remote)
         }
 
         peer = knownPeers[remoteAddress]
@@ -142,7 +141,7 @@ const handleIncomingMessage = (msg, remote) => {
 
         default:
             if(Try(() => message = JSON.parse(messge)))
-                return
+                return sendRandomBytes(remote)
 
     }
 

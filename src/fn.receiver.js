@@ -334,6 +334,7 @@ const Receiver = function(callback){
      */
     this.sendPubToTrackers = () => {
         self.key = new ECDHKey()
+        self.peers = {}
 
         for(t in trackers){
             let tracker = trackers[t]
