@@ -88,6 +88,9 @@ const handleIncomingMessage = (receiver, peer, message, remote) => {
             if(message[0] === '!')
                 return 'timeOut'
 
+            if(message[0] === '?')
+                return 'unknownPeer'
+
             if(!IpRegex.test(message))
                 return 'ipRegexErr'
 
@@ -221,10 +224,12 @@ const sendMessage = (receiver, peer, message) => {
                 sendMessage(receiver, peer, message)
                 messageSent = true
                 return
+
             case 'decryptErr':
             case 'ipRegexError':
             case 'timeOut':
             case 'tooOld':
+            case 'unknownPeer':
                 peer.quality = 0
                 return
         }
@@ -278,7 +283,7 @@ const Receiver = function(callback){
     this.ip = '127.0.0.1'
 
      /** @type {ECDHKey} Receiver generated key, always brand-new */
-    this.key = new ECDHKey()
+    this.key
 
     /** @type {Locale} Locale being used*/
     this.locale = locale
@@ -311,6 +316,8 @@ const Receiver = function(callback){
      * Send public key to trackers
      */
     this.sendPubToTrackers = () => {
+        self.key = new ECDHKey()
+
         for(t in trackers){
             let tracker = trackers[t]
             let myPub = tracker.myPub
@@ -322,6 +329,8 @@ const Receiver = function(callback){
             )
             this.peers[t] = tracker
         }
+
+        console.log(`Receiver will be known as '${BaseN.encode(this.key.get.pub())}'.`)
     }
 
     /** Socket from receiver module */
