@@ -74,7 +74,7 @@ const handleIncomingMessage = (receiver, peer, message, remote) => {
     let remoteAddress = `${remote.address}:${remote.port}`
     let socket = peer.socket
     
-    if(peer.isPeer){ //incoming connection
+    if(peer.isPeer){ // incoming message while sendMessage()...
         /** @type {Peer} */
         let tracker = trackers[remoteAddress]
 
@@ -107,7 +107,7 @@ const handleIncomingMessage = (receiver, peer, message, remote) => {
             return 'connected' //outgoing connection established
         }
     }
-    else{
+    else{ // incoming message from socket
         peer = receiver.peers[remoteAddress]
 
         if(typeof peer === 'undefined')
