@@ -129,7 +129,7 @@ const handleIncomingMessage = (msg, remote) => {
             break
 
         case ':': //peer port ask
-            let remotePort = peer.key.encrypt(`${remote.port}`)
+            let remotePort = peer.key.encrypt(`:${remote.port}`)
             udp.send(remotePort, 0, remotePort.length, remote.port, remote.address, error)
             return
 
