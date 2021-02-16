@@ -15,7 +15,7 @@ const ECDHKey = require('./data/key.ecdh')
 const Peer = require('./data/peer')
 
 const knownPeers = {}
-const knownPeersByKey = {}
+const knownPeersByPub = {}
 /** @type {ECDHKey} ECDH key being used on the tracker */
 const myKey = (() => {
     /** @type {ECDHKey} */
@@ -80,7 +80,7 @@ const handleIncomingMessage = (msg, remote) => {
         if(typeof knownPeers[remoteAddress] === 'undefined'){
             let encodedPublicKey = BaseN.encode(msg)
 
-            if(knownPeersByKey[encodedPublicKey] === 'object')
+            if(knownPeersByPub[encodedPublicKey] === 'object')
                 return sendRandomBytes(remote)
 
             peer = new Peer([
@@ -93,7 +93,7 @@ const handleIncomingMessage = (msg, remote) => {
                 return sendRandomBytes(remote)
 
             knownPeers[remoteAddress] = peer
-            knownPeersByKey[encodedPublicKey] = peer
+            knownPeersByPub[encodedPublicKey] = peer
             return true
         }
 
@@ -137,13 +137,13 @@ const handleIncomingMessage = (msg, remote) => {
             console.log(`Announce Request ${remoteAddress} -> ${message}`)
 
             /** @type {Peer} */
-            let peerToAnnounce = knownPeersByKey[message]
+            let peerToAnnounce = knownPeersByPub[message]
 
             if(typeof peerToAnnounce === 'object'){
                 if(new Date() - peerToAnnounce.lastAccess > __.LAST_ACCESS_LIMIT){ //peer is too old to connect
                     let msgTooOldPeerError = peer.key.encrypt(`-${message}`)
                     udp.send(msgTooOldPeerError, 0, msgTooOldPeerError.length, remote.port, remote.address, error)
-                    delete knownPeersByKey[message]
+                    delete knownPeersByPub[message]
                     return
                 }
 
