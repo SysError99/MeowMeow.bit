@@ -328,7 +328,6 @@ const Receiver = function(callback){
             let trackersImported = {}
         
             trackersLoaded.forEach((el, ind) => {
-                let trackerAddress = `${el.ip}:${el.port}`
                 let newTracker = new Peer([
                     el.ip,
                     el.port,
@@ -340,6 +339,7 @@ const Receiver = function(callback){
                 if(newTracker.key === null)
                     return
 
+                let trackerAddress = `${el.ip}:${el.port}`
                 trackersImported [trackerAddress] = newTracker
                 self.trackerList.push(trackerAddress)
             })
