@@ -14,7 +14,7 @@ const ECDHKey = function(d){
     this.isECDHKey = true
 
     /** @type {Crypto.ECDH} ECDH key object*/
-    let ecdh = Try(() => Crypt.newKey.ecdh(d), Crypt.newKey.ecdh())
+    let ecdh = Try(() => Crypt.newKey.ecdh(d), null)
 
     /**
      * Compute a secret key
