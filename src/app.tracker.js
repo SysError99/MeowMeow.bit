@@ -11,13 +11,25 @@ const Crypt = require('./fn.crypt')
 const Locale = require('./locale/locale')
 const Storage = require('./fn.storage')(new Locale())
 
-const ECDHkey = require('./data/key.ecdh')
+const ECDHKey = require('./data/key.ecdh')
 const Peer = require('./data/peer')
 
 const knownPeers = {}
 const knownPeersByKey = {}
 /** @type {ECDHKey} ECDH key being used on the tracker */
-const myKey = Try(() => new ECDHkey(Storage.read('key.server')))
+const myKey = Try(() => {
+    /** @type {ECDHKey} */
+    let ecdhKey
+    let keySaved = Storage.read('key.server')
+
+    if(keySaved.data === null){
+        ecdhKey = new ECDHKey()
+        Storage.write('key.server', newKey.export())
+        return newKey
+    }
+    
+    return ECDHKey(Storage.read('key.server'))
+})
 
 /**
  * Shows error via log
