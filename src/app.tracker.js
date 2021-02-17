@@ -22,7 +22,7 @@ const myKey = (() => {
     let ecdhKey = null
     let keySaved = Storage.read('key.server').data
 
-    if(keySaved.data === null){
+    if(keySaved === null){
         ecdhKey = new ECDHKey()
         Storage.write('key.server', ecdhKey.export())
         console.log(`Server key is now generated.`)
