@@ -55,6 +55,13 @@ const udp = Datagram.createSocket('udp4')
 const sendRandomBytes = remote => udp.send(Crypt.rand(8), 0, 8, remote.port, remote.address, error)
 
 /**
+ * Stringify Array of JSON object
+ * @param {Array|Object} obj Object to be stringified
+ * @returns {string} converted string
+ */
+const str = obj => Try(() => JSON.stringify(obj), `["error"]`)
+
+/**
  * Handle incoming message from peers
  * @param {Buffer} msg Received message
  * @param {Datagram.RemoteInfo} remote Remote peer info
@@ -78,11 +85,6 @@ const handleIncomingMessage = (msg, remote) => {
             delete knownPeers[remoteAddress]
 
         if(typeof knownPeers[remoteAddress] === 'undefined'){
-            let encodedPublicKey = BaseN.encode(msg)
-
-            if(knownPeersByPub[encodedPublicKey] === 'object')
-                return sendRandomBytes(remote)
-
             peer = new Peer([
                 remote.ip,
                 remote.port,
@@ -93,7 +95,6 @@ const handleIncomingMessage = (msg, remote) => {
                 return sendRandomBytes(remote)
 
             knownPeers[remoteAddress] = peer
-            knownPeersByPub[encodedPublicKey] = peer
             return true
         }
 
@@ -167,7 +168,25 @@ const handleIncomingMessage = (msg, remote) => {
 
     //Tracker
     switch(message[0]){
-        
+        case 'hello': //Peer add pub
+            let publicKey = BaseN.decode(message[1])
+            peer = new Peer([
+                remote.ip,
+                remote.port,
+                publicKey
+            ])
+
+            if(peer.key === null){
+                let keyExistsMessage = peer.key.encrypt(str( [`keyExists`] ))
+                udp.send(keyExistsMessage, 0, keyExistsMessage.length, peer.port, peer.ip, error)
+                return
+            }
+            
+            knownPeersByPub[remoteAddress] = peer
+            
+            let helloMessage = peer.key.encrypt(str( [`hello`] ))
+            udp.send(helloMessage, 0, helloMessage.length, peer.port, peer.address, error)
+            return
     }
 }
 
