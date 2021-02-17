@@ -52,7 +52,6 @@ const handleIncomingMessage = (receiver, peer, message, remote) => {
     let remoteAddress = `${remote.address}:${remote.port}`
     let socket = peer.socket
     
-    if(peer.isPeer){ // incoming message while sendMessage()...
         /** @type {Peer} */
         let tracker = receiver.trackers[remoteAddress]
 
@@ -84,71 +83,8 @@ const handleIncomingMessage = (receiver, peer, message, remote) => {
             peer.connected = true
             return 'connected' //outgoing connection established
         }
-    }
-    else{ // incoming message from socket
-        peer = receiver.peers[remoteAddress]
-
-        if(typeof peer === 'undefined')
-            return Try(() => {
-                peer = new Peer([
-                    remote.address,
-                    remote.port
-                ])
-                peer.key = receiver.key.computeSecret(message)
-
-                if(peer.key !== null){
-                    peer.connected = true
-                    peer.keepAlive = setInterval(() => socket.send('', 0, 0, remote.port, remote.address, showError), 10000)
-                    receiver.peers[remoteAddress] = peer
-                }
-            })
         
-        let lastAccess = new Date() - peer.lastAccess
-
-        if(lastAccess <= __.ACCESS_COOLDOWN && !__.TEST)
-            return 'peerTooFast'
-        else if(lastAccess >= __.LAST_ACCESS_LIMIT){
-            clearInterval(peer.keepAlive)
-            delete receiver.peers[remoteAddress]
-            return handleIncomingMessage(receiver,peer, message, remote)
         }
-
-        if(Try(() => message = peer.key.decrypt(message)))
-            return 'peerDecryptErr'
-
-        if(typeof receiver.trackers[remoteAddress] !== 'undefined'){ //receive data
-            let cmd = message[0]
-            message = message.slice(1, message.length)
-
-            switch(cmd){ // tracker responses
-                case '*': // peer response back
-                    if(!IpRegex.test(message))
-                        return 'trackerIpRegexErr'
-
-                    let randomResponse = Crypt.rand(32)
-                    let responseAddress = ipExtract(message)
-                    socket.send(randomResponse, 0, randomResponse.length, responseAddress.port, responseAddress.ip, showError)
-                    return
-
-                case ':': //port set
-                    receiver.port = Try(() => parseInt(message.slice(1,message.length)), 0)
-                    return
-
-                default: //tracker told to send pub again
-                    return receiver.sendPubToTrackers()
-            }
-        }
-        else{
-            message = Try(() => JSON.parse(message))
-            if(Array.isArray(message))
-                receiver.callback(peer, new Result({
-                    success: true,
-                    data: received
-                }))
-        }
-    }
-
-}
 
 /**
  * Retrieve a tracker randomly
@@ -272,6 +208,79 @@ const Receiver = function(callback){
         )
     }, 1000)
 
+    /**
+     * Handle socket incoming message
+     * @param {Buffer|string} message 
+     * @param {Datagram.RemoteInfo} remote 
+     */
+    let handleSocketMessage = (message, remote) => {
+        if(message.length === 0)
+            return 'emptyMessage'
+
+        let remoteAddress = `${remote.address}:${remote.port}`
+        let peer = self.peers[remoteAddress]
+        let socket = peer.socket
+
+        if(typeof peer === 'undefined')
+            return Try(() => {
+                peer = new Peer([
+                    remote.address,
+                    remote.port
+                ])
+                peer.key = self.key.computeSecret(message)
+
+                if(peer.key !== null){
+                    peer.connected = true
+                    peer.keepAlive = setInterval(() => socket.send('', 0, 0, remote.port, remote.address, showError), 8000)
+                    self.peers[remoteAddress] = peer
+                }
+            })
+        
+        let lastAccess = new Date() - peer.lastAccess
+
+        if(lastAccess <= __.ACCESS_COOLDOWN && !__.TEST)
+            return 'peerTooFast'
+        else if(lastAccess >= __.LAST_ACCESS_LIMIT){
+            clearInterval(peer.keepAlive)
+            delete self.peers[remoteAddress]
+            return handleSocketMessage(receiver,peer, message, remote)
+        }
+
+        if(Try(() => message = peer.key.decrypt(message)))
+            return 'peerDecryptErr'
+
+        if(typeof self.trackers[remoteAddress] !== 'undefined'){ //receive data
+            let cmd = message[0]
+            message = message.slice(1, message.length)
+
+            switch(cmd){ // tracker responses
+                case '*': // peer response back
+                    if(!IpRegex.test(message))
+                        return 'trackerIpRegexErr'
+
+                    let randomResponse = Crypt.rand(32)
+                    let responseAddress = ipExtract(message)
+                    socket.send(randomResponse, 0, randomResponse.length, responseAddress.port, responseAddress.ip, showError)
+                    return
+
+                case ':': //port set
+                    self.port = Try(() => parseInt(message.slice(1,message.length)), 0)
+                    return
+
+                default: //tracker told to send pub again
+                    return self.sendPubToTrackers()
+            }
+        }
+        else{
+            message = Try(() => JSON.parse(message))
+            if(Array.isArray(message))
+                self.callback(peer, new Result({
+                    success: true,
+                    data: received
+                }))
+        }
+    }
+
     /** @type {RequestFunction} Callback function for this object */
     this.callback = typeof callback === 'function' ? callback : () => false
 
@@ -312,7 +321,116 @@ const Receiver = function(callback){
      * @param {Peer} peer Peer to send data to
      * @param {string|Array} message 
      */
-    this.send = (peer, message) => sendMessage(self, peer, message)
+    this.send = (peer, message) => {
+        /** @type {Datagram.Socket} */
+        let conn
+        let date = new Date()
+        let messageSent = false
+        let tracker = randTracker(receiver)
+    
+        if(peer.connected || !peer.nat){
+            conn = peer.socket
+    
+            if(Array.isArray(message))
+                message = JSON.stringify(message)
+            else if(typeof message !== 'string')
+                return
+                
+            Try(() => {
+                message = peer.key.encrypt(message)
+                conn.send(message, 0, message.length, peer.port, peer.ip, showError)
+            })
+            return
+        }
+    
+        /** @type {Buffer} */
+        let encryptedPeerPub
+        if(Try(() => encryptedPeerPub = tracker.key.encrypt(`>${BaseN.encode(peer.pub)}`)))
+            return
+    
+        conn = Datagram.createSocket({
+            type: 'udp4',
+            reuseAddr: true
+        })
+        conn.on('error', showError)
+        conn.on('message', (message, remote) => {
+            let connectionResponse = (() => {    
+                if(message.length === 0)
+                    return 'emptyMessage'
+            
+                let remoteAddress = `${remote.address}:${remote.port}`
+                let socket = peer.socket
+                
+                /** @type {Peer} */
+                let tracker = receiver.trackers[remoteAddress]
+            
+                if(typeof tracker === 'object'){ // outgoing connection
+                    if(Try(() => message = tracker.key.decrypt(message)))
+                        return 'decryptErr'
+            
+                    if(message[0] === '-') //peer is too old
+                        return 'tooOld'
+            
+                    if(message[0] === '!')
+                        return 'timeOut'
+            
+                    if(message[0] === '?')
+                        return 'unknownPeer'
+            
+                    if(!IpRegex.test(message))
+                        return 'ipRegexErr'
+            
+                    let pubKey = peer.myPub
+                    let responseAddress = ipExtract(message)
+            
+                    peer.ip = responseAddress.ip
+                    peer.port = responseAddress.port
+                    
+                    socket.send(pubKey, 0, pubKey.length, peer.port, peer.ip, showError)
+                }
+                else if(remoteAddress === `${peer.ip}:${peer.port}`){
+                    peer.connected = true
+                    return 'connected' //outgoing connection established
+                }
+            })()
+    
+            switch(connectionResponse){
+                case 'connected':
+                    self.send(receiver, peer, message)
+                    messageSent = true
+                    return
+    
+                case 'decryptErr':
+                case 'ipRegexError':
+                case 'timeOut':
+                case 'tooOld':
+                case 'unknownPeer':
+                    peer.quality = 0
+                    return
+            }
+        })
+        conn.send(
+            encryptedPeerPub, 0, encryptedPeerPub.length,
+            tracker.port,
+            tracker.ip,
+            showError
+        )
+    
+        peer.socket = conn
+        peer.lastAccess = date
+        tracker.lastAccess = date
+    
+        console.log(`Announcing ${fullAddress}`)
+    
+        setTimeout(() => {
+            peer.quality--
+    
+            if(peer.quality <= 0)
+                delete receiver.peers[`${peer.ip}:${peer.port}`]
+            else if(!messageSent)
+                self.send(receiver, peer, message)
+        }, 4000)
+    }
 
     /**
      * Send public key to trackers
@@ -369,7 +487,7 @@ const Receiver = function(callback){
     this.socket = socket
 
     socket.on('error', showError)
-    socket.on('message', (msg, remote) => handleIncomingMessage(self, self, msg, remote))    
+    socket.on('message', handleSocketMessage)    
 
     this.sendPubToTrackers()
 
