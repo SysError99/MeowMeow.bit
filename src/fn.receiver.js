@@ -82,6 +82,57 @@ const Receiver = function(callback){
     }, 1000)
 
     /**
+     * Handshake to trackers
+     */
+    let helloTrackers = () => {
+        self.key = new ECDHKey()
+        self.peers = {}
+        self.trackerList = []
+        self.trackers = Try(() => {
+            /** @type {Array} */
+            let trackersLoaded = require('./fn.storage')().read('trackers').data
+            /** @type {Peer[]} */
+            let trackersImported = {}
+        
+            trackersLoaded.forEach((el, ind) => {
+                let newTracker = new Peer([
+                    el.ip,
+                    el.port,
+                    el.pub,
+                ])
+
+                delete trackersLoaded [ind]
+
+                if(newTracker.key === null)
+                    return
+
+                let trackerAddress = `${el.ip}:${el.port}`
+                trackersImported [trackerAddress] = newTracker
+                self.trackerList.push(trackerAddress)
+            })
+            
+            return trackersImported
+        }, null)
+        
+        if(self.trackerList.length === 0)
+            throw Error('No trackers has been set')
+
+        for(t in this.trackers){
+            let tracker = this.trackers[t]
+            let myPub = tracker.myPub
+            socket.send(
+                myPub, 0, myPub.length,
+                tracker.port,
+                tracker.ip,
+                showError
+            )
+            this.peers[t] = tracker
+        }
+
+        console.log(`Receiver will be known as '${BaseN.encode(this.key.get.pub())}'.`)
+    }
+
+    /**
      * Handle socket incoming message
      * @param {Buffer|string} message 
      * @param {Datagram.RemoteInfo} remote 
@@ -141,7 +192,7 @@ const Receiver = function(callback){
                     return
 
                 default: //tracker told to send pub again
-                    return self.sendPubToTrackers()
+                    return helloTrackers()
             }
         }
         else{
@@ -305,64 +356,13 @@ const Receiver = function(callback){
         }, 4000)
     }
 
-    /**
-     * Send public key to trackers
-     */
-    this.sendPubToTrackers = () => {
-        self.key = new ECDHKey()
-        self.peers = {}
-        self.trackerList = []
-        self.trackers = Try(() => {
-            /** @type {Array} */
-            let trackersLoaded = require('./fn.storage')().read('trackers').data
-            /** @type {Peer[]} */
-            let trackersImported = {}
-        
-            trackersLoaded.forEach((el, ind) => {
-                let newTracker = new Peer([
-                    el.ip,
-                    el.port,
-                    el.pub,
-                ])
-
-                delete trackersLoaded [ind]
-
-                if(newTracker.key === null)
-                    return
-
-                let trackerAddress = `${el.ip}:${el.port}`
-                trackersImported [trackerAddress] = newTracker
-                self.trackerList.push(trackerAddress)
-            })
-            
-            return trackersImported
-        }, null)
-        
-        if(self.trackerList.length === 0)
-            throw Error('No trackers has been set')
-
-        for(t in this.trackers){
-            let tracker = this.trackers[t]
-            let myPub = tracker.myPub
-            socket.send(
-                myPub, 0, myPub.length,
-                tracker.port,
-                tracker.ip,
-                showError
-            )
-            this.peers[t] = tracker
-        }
-
-        console.log(`Receiver will be known as '${BaseN.encode(this.key.get.pub())}'.`)
-    }
-
     /** Socket from receiver module */
     this.socket = socket
 
     socket.on('error', showError)
     socket.on('message', handleSocketMessage)    
 
-    this.sendPubToTrackers()
+    helloTrackers()
 
     setInterval(() => { 
         for(t in self.trackers){
