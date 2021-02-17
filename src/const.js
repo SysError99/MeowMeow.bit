@@ -5,6 +5,9 @@ const constants = {
         LOCATION: 'key.server'
     },
 
+    /** @type {number} Access cooldown (in milliseconds, default: 30 seconds)*/
+    ACCESS_COOLDOWN: 1000 * 30,
+
     /** @type {number} Max amount of data accepted (default: 32 MB)*/
     MAX_PAYLOAD: 1048576 * 32,
 
