@@ -100,7 +100,10 @@ const handleIncomingMessage = (msg, remote) => {
 
         peer = knownPeers[remoteAddress]
 
-        if(new Date() - peer.lastAccess > __.LAST_ACCESS_LIMIT)
+        let lastAccess = new Date() - peer.lastAccess
+        if(lastAccess <= __.ACCESS_COOLDOWN)
+            return
+        else if(lastAccess > __.LAST_ACCESS_LIMIT)
             return identifyPeer(true)
 
         peer.lastAccess = new Date()
