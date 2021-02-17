@@ -157,7 +157,7 @@ const Receiver = function(callback){
     /** @type {RequestFunction} Callback function for this object */
     this.callback = typeof callback === 'function' ? callback : () => false
 
-    /** @type {string} This is local IP address to be used with handleIncomingMessage() */
+    /** @type {string} This is local IP address to be used with handle...Message() */
     this.ip = '127.0.0.1'
 
      /** @type {ECDHKey} Receiver generated key, always brand-new */
