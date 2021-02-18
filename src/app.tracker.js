@@ -91,7 +91,7 @@ udp.announcer.on('message', (msg, remote) => {
                 remote.ip,
                 remote.port,
             ])
-            peer.key = myKey.computeSecret(message) //not using random generated key
+            peer.key = myKey.computeSecret(msg) //not using random generated key
 
             if(peer.key === null)
                 return sendRandomBytes(remote)
@@ -192,7 +192,7 @@ udp.tracker.on('message', (msg, remote) => {
                 remote.address,
                 remote.port,
             ])
-            peer.key = myKey.computeSecret(message) //not using random generated key
+            peer.key = myKey.computeSecret(msg) //not using random generated key
 
             if(peer.key === null)
                 return sendRandomBytes(remote)
