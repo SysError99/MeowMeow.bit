@@ -199,7 +199,7 @@ udp.tracker.on('message', (msg, remote) => {
 
             knownPeers[remoteAddress] = peer
 
-            console.log(`Welcome ${remoteAddress}!`)
+            console.log(`${remoteAddress}, joined!`)
             let successMessage = peer.key.encrypt(str( [`welcome`] ))
             udp.tracker.send(successMessage, 0, successMessage.length, peer.port, peer.ip, error)
             return true
@@ -234,6 +234,7 @@ udp.tracker.on('message', (msg, remote) => {
 
             knownPeersByPub[remoteAddress] = peer
             
+            console.log(`${remoteAddress}: Hello, my pub is ${message[1]}`)
             let helloMessage = peer.key.encrypt(str( [`hello`] ))
             udp.tracker.send(helloMessage, 0, helloMessage.length, remote.port, remote.address, error)
             return
