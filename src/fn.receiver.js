@@ -152,7 +152,6 @@ const Receiver = function(callback){
         let remoteAddress = `${remote.address}:${remote.port}`
         /** @type {Peer} */
         let peer = self.peers[remoteAddress]
-        let socket = peer.socket
 
         if(typeof peer === 'undefined')
             return Try(() => {
@@ -201,7 +200,21 @@ const Receiver = function(callback){
 
                 //tracker
                 case '[': //array type
-                    break
+                    if(Try(() => message = JSON.parse('[' +message)) === null)
+                        return
+
+                    if(Array.isArray(message))
+                        switch(message[0]){
+                            case 'welcome': //tracker connected
+                                /** @type {Buffer} */
+                                let helloMessage
+                                if(Try(() => helloMessage = peer.key.encrypt(str( [`hello`, BaseN.encode(self.key.get.pub())] ))) === null)
+                                    return
+            
+                                socket.send(helloMessage, 0, helloMessage.length, remote.port, remote.address, showError)
+                                return
+                        }
+                    return
 
                 default: //tracker told to send pub again
                     return helloTrackers()
@@ -212,22 +225,10 @@ const Receiver = function(callback){
             return
 
         if(Array.isArray(message))
-            switch(message[0]){
-                case 'welcome': //tracker connected
-                    /** @type {Buffer} */
-                    let helloMessage
-                    if(Try(() => helloMessage = peer.key.encrypt(str( [`hello`, BaseN.encode(self.key.get.pub())] ))) === null)
-                        return
-
-                    socket.send(helloMessage, 0, helloMessage.length, remote.port, remote.address, showError)
-                    return
-
-                default:
-                    callback(peer, new Result({
-                        success: true,
-                        data: received
-                    }))
-            }
+                callback(peer, new Result({
+                    success: true,
+                    data: message
+                }))
 
     }
 
@@ -277,7 +278,7 @@ const Receiver = function(callback){
         let date = new Date()
         let messageSendFailed = false
         let messageSendFailedReason = ``
-        let tracker = randTracker(receiver)
+        let tracker = randTracker(self)
     
         if(peer.connected || !peer.nat){
             conn = peer.socket
@@ -391,7 +392,7 @@ const Receiver = function(callback){
         peer.socket = conn
         tracker.lastAccess = date
 
-        console.log(`Announcing ${fullAddress}`)
+        console.log(`Announcing ${peer.ip}:${peer.port}`)
 
         setTimeout(() => {
             peer.quality--
