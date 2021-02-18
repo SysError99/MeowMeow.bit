@@ -97,6 +97,9 @@ udp.announcer.on('message', (msg, remote) => {
                 return sendRandomBytes(remote)
 
             announcing[remoteAddress] = peer
+
+            let successMessage = peer.key.encrypt(`+${BaseN.encode(Crypt.rand(16))}`)
+            udp.announcer.send(successMessage, 0, successMessage, peer.port, peer.ip, error)
             return true
         }
 
