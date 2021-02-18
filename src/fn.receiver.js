@@ -33,6 +33,12 @@ const ipExtract = message => {
 const showError = err => err ? console.error(err) : 0
 
 /**
+ * Convert JSON object to string
+ * @param {Array|Object} obj JSON object
+ */
+const str = obj => JSON.stringify(obj)
+
+/**
  * @callback RequestFunction Event handler function
  * @param {Peer} peer Peer object
  * @param {any[]} data Data object
@@ -135,7 +141,7 @@ const Receiver = function(callback){
 
     /**
      * Handle socket incoming message
-     * @param {Buffer|string} message 
+     * @param {Array|Buffer|string} message 
      * @param {Datagram.RemoteInfo} remote 
      */
     let handleSocketMessage = (message, remote) => {
@@ -179,7 +185,8 @@ const Receiver = function(callback){
             let cmd = message[0]
             message = message.slice(1, message.length)
 
-            switch(cmd){ // tracker responses
+            switch(cmd){
+                //announcer
                 case '*': // peer response back
                     if(!IpRegex.test(message))
                         return
@@ -193,18 +200,35 @@ const Receiver = function(callback){
                     self.port = Try(() => parseInt(message.slice(1,message.length)), 0)
                     return
 
+                //tracker
+                case '[': //array type
+                    return
+
                 default: //tracker told to send pub again
                     return helloTrackers()
             }
         }
-        else{ //message from peer
-            message = Try(() => JSON.parse(message))
-            if(Array.isArray(message))
-                callback(peer, new Result({
-                    success: true,
-                    data: received
-                }))
-        }
+
+        message = Try(() => JSON.parse(message))
+
+        if(Array.isArray(message))
+            switch(message[0]){
+                case 'welcome': //tracker connected
+                    /** @type {Buffer} */
+                    let helloMessage
+                    if(Try(() => helloMessage = peer.key.encrypt(str( [`hello`, BaseN.encode(self.key.get.pub())] ))))
+                        return
+
+                    socket.send(helloMessage, 0, helloMessage.length, remote.port, remote.address, showError)
+                    return
+
+                default:
+                    callback(peer, new Result({
+                        success: true,
+                        data: received
+                    }))
+            }
+
     }
 
     /** @type {RequestFunction} Callback function for this object */
@@ -259,7 +283,7 @@ const Receiver = function(callback){
             conn = peer.socket
     
             if(Array.isArray(message))
-                if(Try(() => message = JSON.stringify(message)))
+                if(Try(() => message = str(message)))
                     return
             
             if(typeof message !== 'string')
