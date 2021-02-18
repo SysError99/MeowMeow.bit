@@ -104,7 +104,7 @@ const Receiver = function(callback){
                 let newTracker = new Peer([
                     el.ip,
                     el.port,
-                    el.pub,
+                    el.pub
                 ])
                 newTracker.portAnnouncer = el.portAnnouncer
 
@@ -125,6 +125,7 @@ const Receiver = function(callback){
             throw Error('No trackers has been set')
 
         for(t in this.trackers){
+            /** @type {Peer} */
             let tracker = this.trackers[t]
             let myPub = tracker.myPub
             socket.send(
@@ -170,12 +171,10 @@ const Receiver = function(callback){
         
         let lastAccess = new Date() - peer.lastAccess
 
-        if(lastAccess <= __.ACCESS_COOLDOWN && !__.TEST)
-            return 'peerTooFast'
-        else if(lastAccess >= __.LAST_ACCESS_LIMIT){
+        if(lastAccess >= __.LAST_ACCESS_LIMIT){
             clearInterval(peer.keepAlive)
             delete self.peers[remoteAddress]
-            return handleSocketMessage(receiver,peer, message, remote)
+            return handleSocketMessage(message, remote)
         }
 
         if(Try(() => message = peer.key.decrypt(message)))
@@ -202,14 +201,15 @@ const Receiver = function(callback){
 
                 //tracker
                 case '[': //array type
-                    return
+                    break
 
                 default: //tracker told to send pub again
                     return helloTrackers()
             }
         }
 
-        message = Try(() => JSON.parse(message))
+        if(Try(() => message = JSON.parse(message)))
+            return
 
         if(Array.isArray(message))
             switch(message[0]){
