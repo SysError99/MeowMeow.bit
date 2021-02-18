@@ -121,7 +121,7 @@ udp.announcer.on('message', (msg, remote) => {
         case '@': //peer forward port
             let previousPort = peer.port
 
-            if(Try(() => peer.port = parseInt(message), remote.port))
+            if(Try(() => peer.port = parseInt(message), remote.port) === null)
                 return
 
             if(peer.port === NaN){
@@ -220,7 +220,7 @@ udp.tracker.on('message', (msg, remote) => {
     if(identifyPeer())
         return
 
-    if(Try(() => message = JSON.parse(peer.key.decrypt(msg))))
+    if(Try(() => message = JSON.parse(peer.key.decrypt(msg))) === null)
         return
 
     //Tracker

@@ -9,10 +9,10 @@ const tryCatch = (fn, errreturn) => {
     if(typeof fn === 'function'){
         try{
             let result = fn()
-            return typeof result === 'undefined' ? false : result
+            return result
         }catch(e){
             let err = new Error(e)
-            errreturn = typeof errreturn === 'undefined' ? true : errreturn
+            errreturn = typeof errreturn === 'undefined' ? null : errreturn
             for(let i = 0; i < ignore.length; i++){
                 if(err.stack.indexOf(ignore[i]) >= 0)
                     return errreturn

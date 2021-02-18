@@ -177,7 +177,7 @@ const Receiver = function(callback){
             return handleSocketMessage(message, remote)
         }
 
-        if(Try(() => message = peer.key.decrypt(message)))
+        if(Try(() => message = peer.key.decrypt(message)) === null)
             return
 
         if(typeof self.trackers[remoteAddress] !== 'undefined'){ // message from tracker
@@ -208,7 +208,7 @@ const Receiver = function(callback){
             }
         }
 
-        if(Try(() => message = JSON.parse(message)))
+        if(Try(() => message = JSON.parse(message)) === null)
             return
 
         if(Array.isArray(message))
@@ -216,7 +216,7 @@ const Receiver = function(callback){
                 case 'welcome': //tracker connected
                     /** @type {Buffer} */
                     let helloMessage
-                    if(Try(() => helloMessage = peer.key.encrypt(str( [`hello`, BaseN.encode(self.key.get.pub())] ))))
+                    if(Try(() => helloMessage = peer.key.encrypt(str( [`hello`, BaseN.encode(self.key.get.pub())] ))) === null)
                         return
 
                     socket.send(helloMessage, 0, helloMessage.length, remote.port, remote.address, showError)
@@ -283,7 +283,7 @@ const Receiver = function(callback){
             conn = peer.socket
     
             if(Array.isArray(message))
-                if(Try(() => message = str(message)))
+                if(Try(() => message = str(message)) === null)
                     return
             
             if(typeof message !== 'string')
@@ -331,7 +331,7 @@ const Receiver = function(callback){
             let tracker = self.trackers[remoteAddress]
         
             if(typeof tracker === 'object'){ // outgoing connection
-                if(Try(() => message = tracker.key.decrypt(message)))
+                if(Try(() => message = tracker.key.decrypt(message)) === null)
                     return conn.close(() => {
                         messageSendFailed = true
                         messageSendFailedReason = `Decryption from tracker failed.` //LOCALE_NEEDED
