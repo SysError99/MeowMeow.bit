@@ -100,6 +100,7 @@ const Receiver = function(callback){
                     el.port,
                     el.pub,
                 ])
+                newTracker.portAnnouncer = el.portAnnouncer
 
                 delete trackersLoaded [ind]
 
@@ -249,110 +250,143 @@ const Receiver = function(callback){
         /** @type {Datagram.Socket} */
         let conn
         let date = new Date()
-        let messageSent = false
+        let messageSendFailed = false
+        let messageSendFailedReason = ``
         let tracker = randTracker(receiver)
     
         if(peer.connected || !peer.nat){
             conn = peer.socket
     
             if(Array.isArray(message))
-                message = JSON.stringify(message)
-            else if(typeof message !== 'string')
+                if(Try(() => message = JSON.stringify(message)))
+                    return
+            
+            if(typeof message !== 'string')
                 return
                 
             Try(() => {
+                peer.lastAccess = date
                 message = peer.key.encrypt(message)
                 conn.send(message, 0, message.length, peer.port, peer.ip, showError)
             })
+            
             return
         }
+
+        /**
+         * conn.on('message'): Tracker connection
+         * @param {Buffer|string} message 
+         * @param {Datagram.RemoteInfo} remote 
+         */
+        let connMessage_tracker = (message, remote) => {
+            if(message.length === 0)
+                return
+        
+            if(typeof self.trackers[`${remote.address}:${remote.port}`] === 'undefined')
+                return
+            
+            message = tracker.key.decrypt(message)
+            
+            if(message[0] === '+')
+                conn.on('message', (message, remote) => connMessage_announce(message,remote))
+        }
+
+        /**
+         * conn.on('message'): Tracker announcemnt
+         * @param {Buffer|string} message 
+         * @param {Datagram.RemoteInfo} remote 
+         */
+        let connMessage_announce = (message, remote) => {
+            if(message.length === 0)
+                return
     
-        /** @type {Buffer} */
-        let encryptedPeerPub
-        if(Try(() => encryptedPeerPub = tracker.key.encrypt(`>${BaseN.encode(peer.pub)}`)))
-            return
+            let remoteAddress = `${remote.address}:${remote.port}`
+            
+            /** @type {Peer} */
+            let tracker = self.trackers[remoteAddress]
+        
+            if(typeof tracker === 'object'){ // outgoing connection
+                if(Try(() => message = tracker.key.decrypt(message)))
+                    return conn.close(() => {
+                        messageSendFailed = true
+                        messageSendFailedReason = `Decryption from tracker failed.` //LOCALE_NEEDED
+                    })
+        
+                if(message[0] === '-')
+                    return conn.close(() => {
+                        messageSendFailed = true
+                        messageSendFailedReason = `Peer is outdated.` //LOCALE_NEEDED
+                    })
+        
+                if(message[0] === '!')
+                    return conn.close(() => {
+                        messageSendFailed = true
+                        messageSendFailedReason = `Tracker told 'Connection timed out'`
+                    })
+        
+                if(message[0] === '?')
+                    return conn.close(() => {
+                        messageSendFailed = true
+                        messageSendFailedReason = `Tracker does not know specified peer`
+                    })
+        
+                if(!IpRegex.test(message))
+                    return conn.close(() => {
+                        messageSendFa
+                    })
+        
+                let pubKey = peer.myPub
+                let responseAddress = ipExtract(message)
+        
+                peer.ip = responseAddress.ip
+                peer.port = responseAddress.port
+                
+                conn.send(pubKey, 0, pubKey.length, peer.port, peer.ip, showError)
+            }
+            else if(remoteAddress === `${peer.ip}:${peer.port}`){
+                peer.connected = true
+                self.send(peer,message)
+            }
+        }
     
         conn = Datagram.createSocket({
             type: 'udp4',
             reuseAddr: true
         })
         conn.on('error', showError)
-        conn.on('message', (message, remote) => {
-            let connectionResponse = (() => {    
-                if(message.length === 0)
-                    return 'emptyMessage'
-            
-                let remoteAddress = `${remote.address}:${remote.port}`
-                let socket = peer.socket
-                
-                /** @type {Peer} */
-                let tracker = receiver.trackers[remoteAddress]
-            
-                if(typeof tracker === 'object'){ // outgoing connection
-                    if(Try(() => message = tracker.key.decrypt(message)))
-                        return 'decryptErr'
-            
-                    if(message[0] === '-') //peer is too old
-                        return 'tooOld'
-            
-                    if(message[0] === '!')
-                        return 'timeOut'
-            
-                    if(message[0] === '?')
-                        return 'unknownPeer'
-            
-                    if(!IpRegex.test(message))
-                        return 'ipRegexErr'
-            
-                    let pubKey = peer.myPub
-                    let responseAddress = ipExtract(message)
-            
-                    peer.ip = responseAddress.ip
-                    peer.port = responseAddress.port
-                    
-                    socket.send(pubKey, 0, pubKey.length, peer.port, peer.ip, showError)
-                }
-                else if(remoteAddress === `${peer.ip}:${peer.port}`){
-                    peer.connected = true
-                    return 'connected' //outgoing connection established
-                }
-            })()
-    
-            switch(connectionResponse){
-                case 'connected':
-                    self.send(receiver, peer, message)
-                    messageSent = true
-                    return
-    
-                case 'decryptErr':
-                case 'ipRegexError':
-                case 'timeOut':
-                case 'tooOld':
-                case 'unknownPeer':
-                    peer.quality = 0
-                    return
-            }
-        })
+        conn.on('message', (message, remote) => connMessage_tracker(message,remote))
+
         conn.send(
-            encryptedPeerPub, 0, encryptedPeerPub.length,
-            tracker.port,
+            peer.myPub, 0, peer.myPub.length,
+            tracker.portAnnouncer,
             tracker.ip,
             showError
         )
     
         peer.socket = conn
-        peer.lastAccess = date
         tracker.lastAccess = date
-    
+
         console.log(`Announcing ${fullAddress}`)
-    
+
         setTimeout(() => {
             peer.quality--
-    
+
             if(peer.quality <= 0)
-                delete receiver.peers[`${peer.ip}:${peer.port}`]
-            else if(!messageSent)
-                self.send(receiver, peer, message)
+                return conn.close(() => {
+                    delete self.peers[`${peer.ip}:${peer.port}`]
+                    self.callback(null, new Result({
+                        message: `Connection to peer '${BaseN.encode(peer.pub)}' timed out.` //LOCALE_NEEDED
+                    }))
+                })
+            else if(messageSendFailed)
+                return conn.close(() => {
+                    self.callback(null, new Result({
+                        message: `Message to '${BaseN.encode(peer.pub)}' failed to send due to: ${messageSendFailedReason}` //LOCALE_NEEDED
+                    }))
+                })
+            else if(!peer.connected)
+                self.send(peer, message)
+
         }, 4000)
     }
 
