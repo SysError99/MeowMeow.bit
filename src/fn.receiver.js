@@ -140,9 +140,10 @@ const Receiver = function(callback){
      */
     let handleSocketMessage = (message, remote) => {
         if(message.length === 0)
-            return 'emptyMessage'
+            return
 
         let remoteAddress = `${remote.address}:${remote.port}`
+        /** @type {Peer} */
         let peer = self.peers[remoteAddress]
         let socket = peer.socket
 
@@ -172,16 +173,16 @@ const Receiver = function(callback){
         }
 
         if(Try(() => message = peer.key.decrypt(message)))
-            return 'peerDecryptErr'
+            return
 
-        if(typeof self.trackers[remoteAddress] !== 'undefined'){ //receive data
+        if(typeof self.trackers[remoteAddress] !== 'undefined'){ // message from tracker
             let cmd = message[0]
             message = message.slice(1, message.length)
 
             switch(cmd){ // tracker responses
                 case '*': // peer response back
                     if(!IpRegex.test(message))
-                        return 'trackerIpRegexErr'
+                        return
 
                     let randomResponse = Crypt.rand(32)
                     let responseAddress = ipExtract(message)
@@ -196,10 +197,10 @@ const Receiver = function(callback){
                     return helloTrackers()
             }
         }
-        else{
+        else{ //message from peer
             message = Try(() => JSON.parse(message))
             if(Array.isArray(message))
-                self.callback(peer, new Result({
+                callback(peer, new Result({
                     success: true,
                     data: received
                 }))
@@ -374,13 +375,13 @@ const Receiver = function(callback){
             if(peer.quality <= 0)
                 return conn.close(() => {
                     delete self.peers[`${peer.ip}:${peer.port}`]
-                    self.callback(null, new Result({
+                    callback(null, new Result({
                         message: `Connection to peer '${BaseN.encode(peer.pub)}' timed out.` //LOCALE_NEEDED
                     }))
                 })
             else if(messageSendFailed)
                 return conn.close(() => {
-                    self.callback(null, new Result({
+                    callback(null, new Result({
                         message: `Message to '${BaseN.encode(peer.pub)}' failed to send due to: ${messageSendFailedReason}` //LOCALE_NEEDED
                     }))
                 })
