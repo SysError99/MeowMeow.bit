@@ -189,7 +189,7 @@ udp.tracker.on('message', (msg, remote) => {
 
         if(typeof knownPeers[remoteAddress] === 'undefined'){
             peer = new Peer([
-                remote.ip,
+                remote.address,
                 remote.port,
                 msg
             ])
@@ -198,18 +198,23 @@ udp.tracker.on('message', (msg, remote) => {
                 return sendRandomBytes(remote)
 
             knownPeers[remoteAddress] = peer
+
+            console.log(`Welcome ${remoteAddress}!`)
+            let successMessage = peer.key.encrypt(`+${remoteAddress}`)
+            udp.tracker.send(successMessage, 0, successMessage.length, peer.port, peer.ip, error)
             return true
         }
 
         peer = knownPeers[remoteAddress]
 
-        let lastAccess = new Date() - peer.lastAccess
+        let currentTime = new Date()
+        let lastAccess = currentTime - peer.lastAccess
         if(lastAccess <= __.ACCESS_COOLDOWN)
             return
         else if(lastAccess > __.LAST_ACCESS_LIMIT)
             return identifyPeer(true)
 
-        peer.lastAccess = new Date()
+        peer.lastAccess = currentTime
     }
 
     if(identifyPeer())
@@ -221,13 +226,27 @@ udp.tracker.on('message', (msg, remote) => {
     //Tracker
     switch(message[0]){
         case 'hello': //Peer add pub
-            if(typeof knownPeersByPub[message[1]] !== 'string'){
+            if(typeof knownPeersByPub[message[1]] !== 'undefined'){
                 let keyExistsMessage = peer.key.encrypt(str( [`keyExists`] ))
                 udp.tracker.send(keyExistsMessage, 0, keyExistsMessage.length, peer.port, peer.ip, error)
                 return
             }
+
+            /** @type {Buffer} */
+            let peerPub
+            if(Try(() => peerPub = BaseN.decode(message[1]))){
+                let keyInvalidMessage = peer.key.encrypt(str( [`keyInvalid`] ))
+                udp.tracker.send(keyInvalidMessage, 0, keyInvalidMessage.length, peer.port, peer.ip, error)
+                return
+            }
+
+            let newPeer = new Peer([
+                remote.address,
+                remote.port
+            ])
+            newPeer.pub = peerPub //do not calculate ECDH
             
-            knownPeersByPub[remoteAddress] = peer
+            knownPeersByPub[remoteAddress] = newPeer
             
             let helloMessage = peer.key.encrypt(str( [`hello`] ))
             udp.tracker.send(helloMessage, 0, helloMessage.length, peer.port, peer.address, error)
