@@ -118,20 +118,6 @@ udp.announcer.on('message', (msg, remote) => {
 
     //Announcer
     switch(cmd){
-        case '@': //peer forward port
-            let previousPort = peer.port
-
-            if(Try(() => peer.port = parseInt(message), remote.port) === null)
-                return
-
-            if(peer.port === NaN){
-                peer.port = previousPort
-                return
-            }
-            
-            peer.nat = false
-            break
-
         case '>': //peer announce
             console.log(`Announce Request ${remoteAddress} -> ${message}`)
 
@@ -218,6 +204,14 @@ udp.tracker.on('message', (msg, remote) => {
 
     //Tracker
     switch(message[0]){
+        case 'forwardPort':
+            if(typeof message[1] !== 'number')
+                return
+
+            peer.port = message[1]
+            peer.nat = false
+            return
+
         case 'hello': //Peer add pub
             if(typeof knownPeersByPub[message[1]] !== 'undefined'){
                 let keyExistsMessage = peer.key.encrypt(str( [`keyExists`] ))
