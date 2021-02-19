@@ -276,7 +276,6 @@ const Receiver = function(callback){
     this.send = (peer, message) => {
         /** @type {Datagram.Socket} */
         let conn
-        let date = new Date()
         let messageSendFailed = false
         let messageSendFailedReason = ``
         let tracker = randTracker(self)
