@@ -152,6 +152,7 @@ const Receiver = function(callback){
         let remoteAddress = `${remote.address}:${remote.port}`
         /** @type {Peer} */
         let peer = self.peers[remoteAddress]
+        let isTracker = typeof self.trackers[remoteAddress] !== 'undefined'
 
         if(typeof peer === 'undefined')
             return Try(() => {
@@ -167,19 +168,29 @@ const Receiver = function(callback){
                     self.peers[remoteAddress] = peer
                 }
             })
-        
-        let lastAccess = new Date() - peer.lastAccess
 
-        if(lastAccess >= __.LAST_ACCESS_LIMIT){
-            clearInterval(peer.keepAlive)
-            delete self.peers[remoteAddress]
-            return handleSocketMessage(message, remote)
+        if(!isTracker){
+            //check last access time from peer
+            let currentTime = new Date()
+            let lastAccess = currentTime - peer.lastAccess
+    
+            if(peer.lastAccess.getTime() !== 0){
+                if(lastAccess <= __.ACCESS_COOLDOWN)
+                    return
+                else if(lastAccess >= __.LAST_ACCESS_LIMIT){
+                    clearInterval(peer.keepAlive)
+                    delete self.peers[remoteAddress]
+                    return handleSocketMessage(message, remote)
+                }
+            }
+    
+            peer.lastAccess = currentTime
         }
 
         if(Try(() => message = peer.key.decrypt(message)) === null)
             return
 
-        if(typeof self.trackers[remoteAddress] !== 'undefined'){ // message from tracker
+        if(isTracker){ // message from tracker
             let cmd = message[0]
             message = message.slice(1, message.length)
 
@@ -192,10 +203,6 @@ const Receiver = function(callback){
                     let randomResponse = Crypt.rand(32)
                     let responseAddress = ipExtract(message)
                     socket.send(randomResponse, 0, randomResponse.length, responseAddress.port, responseAddress.ip, showError)
-                    return
-
-                case ':': //port set
-                    self.port = Try(() => parseInt(message.slice(1,message.length)), 0)
                     return
 
                 //tracker
@@ -225,27 +232,21 @@ const Receiver = function(callback){
             return
 
         if(Array.isArray(message))
-                callback(peer, new Result({
-                    success: true,
-                    data: message
-                }))
+            callback(peer, new Result({
+                success: true,
+                data: message
+            }))
 
     }
 
     /** @type {RequestFunction} Callback function for this object */
     this.callback = typeof callback === 'function' ? callback : () => false
 
-    /** @type {string} This is local IP address to be used with handle...Message() */
-    this.ip = '127.0.0.1'
-
      /** @type {ECDHKey} Receiver generated key, always brand-new */
     this.key
 
     /** @type {Locale} Locale being used*/
     this.locale = locale
-
-    /** @type {number} Currently used port*/
-    this.port = 0
 
     /** @type {Peer[]} Connected peers */
     this.peers = {}
@@ -291,7 +292,6 @@ const Receiver = function(callback){
                 return
                 
             Try(() => {
-                peer.lastAccess = date
                 message = peer.key.encrypt(message)
                 conn.send(message, 0, message.length, peer.port, peer.ip, showError)
             })
@@ -390,7 +390,6 @@ const Receiver = function(callback){
         )
     
         peer.socket = conn
-        tracker.lastAccess = date
 
         console.log(`Announcing ${peer.ip}:${peer.port}`)
 
