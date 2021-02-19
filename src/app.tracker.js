@@ -79,8 +79,10 @@ udp.on('message', (msg, remote) => {
      * @param {boolean} reset Delete this peer? 
      */
     let identifyPeer = reset => {
-        if(reset)
+        if(reset){
             delete knownPeers[remoteAddress]
+            delete knownPeersByPub[BaseN.encode(peer.pub)]
+        }
 
         let currentTime = new Date()
 
@@ -164,7 +166,9 @@ udp.on('message', (msg, remote) => {
                 return
             }
 
-            knownPeersByPub[remoteAddress] = peer
+            delete knownPeersByPub[BaseN.encode(peer.pub)]
+            knownPeersByPub[message[1]] = peer
+            peer.pub = BaseN.decode(message[1])
             
             console.log(`${remoteAddress}: Hello, my pub is ${message[1]}`)
             let helloMessage = peer.key.encrypt(str( [`hello`] ))
