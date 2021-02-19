@@ -248,10 +248,13 @@ const Receiver = function(callback){
      * @param {number} p Port to forward to
      */
     this.forwardPort = p => {
-        let tracker = randTracker(self)
-        let tellPortStr = tracker.key.encrypt(`@${p}`)
         socket.bind(p)
-        socket.send(tellPortStr, 0, tellPortStr.length, tracker.port, tracker.ip, showError)
+        for(t in self.trackers){
+            /** @type {Peer} */
+            let tracker = self.trackers[t]
+            let tellPortStr = tracker.key.encrypt(str( [`forwardPort`, p] ))
+            socket.send(tellPortStr, 0, tellPortStr.length, tracker.port, tracker.ip, showError)
+        }
     }
 
     /**
