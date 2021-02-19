@@ -19,7 +19,7 @@ const Peer = function(d){
     this.ip = ''
 
     /** @type {Date} Last accessed time*/
-    this.lastAccess = new Date()
+    this.lastAccess = new Date(0)
 
     /** @type {number} Peer connected port*/
     this.port = 8080
