@@ -164,7 +164,7 @@ const Receiver = function(callback){
 
                 if(peer.key !== null){
                     peer.connected = true
-                    peer.keepAlive = setInterval(() => socket.send('', 0, 0, remote.port, remote.address, showError), 8000)
+                    peer.keepAlive = setInterval(() => socket.send('', 0, 0, remote.port, remote.address, showError), 10000)
                     self.peers[remoteAddress] = peer
                 }
             })
@@ -219,7 +219,7 @@ const Receiver = function(callback){
                                     return
             
                                 socket.send(helloMessage, 0, helloMessage.length, remote.port, remote.address, showError)
-                                peer.keepAlive = setInterval(() => socket.send('', 0, 0, remote.port, remote.address, showError))
+                                peer.keepAlive = setInterval(() => socket.send('', 0, 0, remote.port, remote.address, showError), 10000)
                                 return
                         }
                     return
