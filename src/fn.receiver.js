@@ -66,23 +66,6 @@ const Receiver = function(callback){
     })
 
     /**
-     * Ask trackers to find running port
-     */
-    let askForSocketPort = setInterval(() => {
-        if(self.port > 0)
-            return clearInterval(askForSocketPort)
-
-        let tracker = randTracker(self)
-        let askForSocketPortPacket = tracker.key.encrypt(`:${BaseN.encode(Crypt.rand(8))}`)
-        socket.send(
-            askForSocketPortPacket, 0, askForSocketPortPacket,
-            tracker.port,
-            tracker.ip,
-            showError
-        )
-    }, 1000)
-
-    /**
      * Handshake to trackers
      */
     let helloTrackers = () => {
@@ -146,7 +129,7 @@ const Receiver = function(callback){
         let remoteAddress = `${remote.address}:${remote.port}`
         /** @type {Peer} */
         let peer = self.peers[remoteAddress]
-        let isTracker = typeof self.trackers[remoteAddress] !== 'undefined'
+        let isTracker = typeof self.trackers[remoteAddress] === 'object'
 
         if(typeof peer === 'undefined')
             return Try(() => {
@@ -211,10 +194,13 @@ const Receiver = function(callback){
                         return
 
                     socket.send(helloMessage, 0, helloMessage.length, remote.port, remote.address, showError)
-                    peer.keepAlive = setInterval(() => socket.send('', 0, 0, remote.port, remote.address, showError), 10000)
                     return
 
+                case 'hello':
+                    peer.keepAlive = setInterval(() => socket.send('', 0, 0, remote.port, remote.address, showError), 10000)
+                    return
             }
+            return
         }
 
         if(Array.isArray(message))
@@ -413,18 +399,6 @@ const Receiver = function(callback){
     socket.on('message', handleSocketMessage)    
 
     helloTrackers()
-
-    setInterval(() => { 
-        for(t in self.trackers){
-            let tracker = self.trackers[t]
-            socket.send(
-                '', 0, 0,
-                tracker.port,
-                tracker.ip,
-                showError
-            )
-        }   
-    }, 10000)
 }
 
 module.exports = Receiver

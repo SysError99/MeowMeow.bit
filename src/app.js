@@ -24,13 +24,5 @@ app.get('/find/:id', (req,res) => {
 
 /** Receiver Object*/
 const receiver = new Receiver((peer, data) => {
-    if(typeof data[0] !== 'string'){
-        receiver.send(peer)
-        return
-    }
-    switch(data[0]){
-        default:
-            receiver.send(peer, ['what'])
-            break
-    }
+    console.log(`${peer}: ${data}`)
 })

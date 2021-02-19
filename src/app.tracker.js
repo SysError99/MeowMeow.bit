@@ -146,7 +146,7 @@ udp.on('message', (msg, remote) => {
             udp.send(unknownPeerMessage, 0, unknownPeerMessage.length, remote.port, remote.address, showError)
 
             console.log(`Announce Request ${remoteAddress} -> ${message}`)
-            break
+            return
 
         //tracker
         case 'forwardPort':
