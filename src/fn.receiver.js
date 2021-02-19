@@ -15,17 +15,11 @@ const Result = require('./data/result')
 const IpRegex = require('./data/ip.regex')
 
 /**
- * Extract IP address to array of ip address
- * @param {string|string[]} message message to be extracted
- * @returns {{ip:string,port:number}} IP and port
+ * Convert JSON string to object or array
+ * @param {string} str String to be converted
+ * @returns {Array} JSON object
  */
-const ipExtract = message => {
-    message = message.split(':')
-    return {
-        ip: message[0],
-        port: parseInt(message[1])
-    }
-}
+const json = str => JSON.parse(str)
 
 /**
  * @param {Error} err 
@@ -35,6 +29,7 @@ const showError = err => err ? console.error(err) : 0
 /**
  * Convert JSON object to string
  * @param {Array|Object} obj JSON object
+ * @returns {string} 
  */
 const str = obj => JSON.stringify(obj)
 
@@ -106,7 +101,6 @@ const Receiver = function(callback){
                     el.port,
                     el.pub
                 ])
-                newTracker.portAnnouncer = el.portAnnouncer
 
                 delete trackersLoaded [ind]
 
@@ -169,8 +163,7 @@ const Receiver = function(callback){
                 }
             })
 
-        if(!isTracker){
-            //check last access time from peer
+        if(!isTracker){ //check last access time from peer
             let currentTime = new Date()
             let lastAccess = currentTime - peer.lastAccess
     
@@ -187,50 +180,42 @@ const Receiver = function(callback){
             peer.lastAccess = currentTime
         }
 
-        if(Try(() => message = peer.key.decrypt(message)) === null)
-            return
+        if(Try(() => message = json(peer.key.decrypt(message))) === null){
+            if(isTracker)
+                return helloTrackers()
+        }
 
         if(isTracker){ // message from tracker
-            let cmd = message[0]
-            message = message.slice(1, message.length)
+            switch(message[0]){
 
-            switch(cmd){
                 //announcer
-                case '*': // peer response back
-                    if(!IpRegex.test(message))
+                case 'announce': // peer response back
+                    if(typeof message[1] !== 'string' || typeof message[2] !== 'number')
+                        return
+
+                    if(!IpRegex.test(message[1]))
                         return
 
                     let randomResponse = Crypt.rand(32)
-                    let responseAddress = ipExtract(message)
-                    socket.send(randomResponse, 0, randomResponse.length, responseAddress.port, responseAddress.ip, showError)
+                    socket.send(randomResponse, 0, randomResponse.length, message[2], message[1], showError)
                     return
-
+                
                 //tracker
-                case '[': //array type
-                    if(Try(() => message = JSON.parse('[' +message)) === null)
+                case 'keyExists':
+                    self.key = new ECDHKey()
+
+                case 'welcome':
+                    /** @type {Buffer} */
+                    let helloMessage
+                    if(Try(() => helloMessage = peer.key.encrypt(str( [`hello`, BaseN.encode(self.key.get.pub())] ))) === null)
                         return
 
-                    if(Array.isArray(message))
-                        switch(message[0]){
-                            case 'welcome': //tracker connected
-                                /** @type {Buffer} */
-                                let helloMessage
-                                if(Try(() => helloMessage = peer.key.encrypt(str( [`hello`, BaseN.encode(self.key.get.pub())] ))) === null)
-                                    return
-            
-                                socket.send(helloMessage, 0, helloMessage.length, remote.port, remote.address, showError)
-                                peer.keepAlive = setInterval(() => socket.send('', 0, 0, remote.port, remote.address, showError), 10000)
-                                return
-                        }
+                    socket.send(helloMessage, 0, helloMessage.length, remote.port, remote.address, showError)
+                    peer.keepAlive = setInterval(() => socket.send('', 0, 0, remote.port, remote.address, showError), 10000)
                     return
 
-                default: //tracker told to send pub again
-                    return helloTrackers()
             }
         }
-
-        if(Try(() => message = JSON.parse(message)) === null)
-            return
 
         if(Array.isArray(message))
             callback(peer, new Result({
@@ -311,10 +296,19 @@ const Receiver = function(callback){
             if(typeof self.trackers[`${remote.address}:${remote.port}`] === 'undefined')
                 return
             
-            message = tracker.key.decrypt(message)
+            if(Try(() => message = json(tracker.key.decrypt(message))) === null)
+                return
             
-            if(message[0] === '+')
+            if(message[0] === 'welcome'){
+                let announceMessage = peer.key.encrypt(str( [`announce`, peer.ip, peer.port] ))
+                conn.send(announceMessage, 0, announceMessage.length, tracker.port, tracker.ip, showError)
                 conn.on('message', (message, remote) => connMessage_announce(message,remote))
+            }
+            else
+                return conn.close(() => {
+                    messageSendFailed = true
+                    messageSendFailedReason = `Communication interrupted` //LOCALE_NEEDED
+                })
         }
 
         /**
@@ -332,40 +326,34 @@ const Receiver = function(callback){
             let tracker = self.trackers[remoteAddress]
         
             if(typeof tracker === 'object'){ // outgoing connection
-                if(Try(() => message = tracker.key.decrypt(message)) === null)
+                if(Try(() => message = json(tracker.key.decrypt(message))) === null)
                     return conn.close(() => {
                         messageSendFailed = true
                         messageSendFailedReason = `Decryption from tracker failed.` //LOCALE_NEEDED
                     })
         
-                if(message[0] === '-')
+                if(message[0] === 'tooOld')
                     return conn.close(() => {
                         messageSendFailed = true
                         messageSendFailedReason = `Peer is outdated.` //LOCALE_NEEDED
                     })
         
-                if(message[0] === '!')
-                    return conn.close(() => {
-                        messageSendFailed = true
-                        messageSendFailedReason = `Tracker told 'Connection timed out'`
-                    })
-        
-                if(message[0] === '?')
+                if(message[0] === 'unknown')
                     return conn.close(() => {
                         messageSendFailed = true
                         messageSendFailedReason = `Tracker does not know specified peer`
                     })
         
-                if(!IpRegex.test(message))
+                if(!IpRegex.test(message[0]) || typeof message[1] === 'number')
                     return conn.close(() => {
-                        messageSendFa
+                        messageSendFailed = true
+                        messageSendFailedReason = `Invalid target address from tracker` //LOCALE_NEEDED
                     })
         
                 let pubKey = peer.myPub
-                let responseAddress = ipExtract(message)
-        
-                peer.ip = responseAddress.ip
-                peer.port = responseAddress.port
+
+                peer.ip = message[0]
+                peer.port = message[1]
                 
                 conn.send(pubKey, 0, pubKey.length, peer.port, peer.ip, showError)
             }
@@ -384,7 +372,7 @@ const Receiver = function(callback){
 
         conn.send(
             peer.myPub, 0, peer.myPub.length,
-            tracker.portAnnouncer,
+            tracker.port,
             tracker.ip,
             showError
         )

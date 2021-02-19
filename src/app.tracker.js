@@ -14,7 +14,6 @@ const Storage = require('./fn.storage')(new Locale())
 const ECDHKey = require('./data/key.ecdh')
 const Peer = require('./data/peer')
 
-const announcing = {}
 const knownPeers = {}
 const knownPeersByPub = {}
 /** @type {ECDHKey} ECDH key being used on the tracker */
@@ -47,16 +46,13 @@ const showError = err => err ? console.error(err) : 0
 /**
  * Datagram object
  */
-const udp = {
-    announcer: Datagram.createSocket('udp4'),
-    tracker: Datagram.createSocket('udp4')
-}
+const udp = Datagram.createSocket('udp4')
 
 /**
  * Send random bytes to target
  * @param {Datagram.RemoteInfo} remote Target remote to send random bytes to
  */
-const sendRandomBytes = remote => udp.tracker.send(Crypt.rand(8), 0, 8, remote.port, remote.address, showError)
+const sendRandomBytes = remote => udp.send(Crypt.rand(8), 0, 8, remote.port, remote.address, showError)
 
 /**
  * Stringify Array of JSON object
@@ -65,100 +61,18 @@ const sendRandomBytes = remote => udp.tracker.send(Crypt.rand(8), 0, 8, remote.p
  */
 const str = obj => Try(() => JSON.stringify(obj), `["error"]`)
 
-udp.announcer.bind(23456)
-udp.announcer.on('listening', () => console.log(`Server is running on port `+udp.announcer.address().port))
-udp.announcer.on('error', showError)
-udp.announcer.on('message', (msg, remote) => {
-    let remoteAddress = `${remote.address}:${remote.port}`
-    /** @type {string|string[]} */
-    let message
-    /** @type {Peer} */
-    let peer
-
+udp.bind(12345)
+udp.on('listening', () => console.log(`Server is running on port `+udp.address().port))
+udp.on('error', showError)
+udp.on('message', (msg, remote) => {
     if(msg.length === 0)
-        return udp.announcer.send('', 0, 0, remote.port, remote.address, showError)
+        return 
 
-    /**
-     * Identify peer
-     * @param {boolean} reset Delete this peer? 
-     */
-    let identifyPeer = reset => {
-        if(reset)
-            delete announcing[remoteAddress]
-
-        if(typeof announcing[remoteAddress] === 'undefined'){
-            peer = new Peer([
-                remote.ip,
-                remote.port,
-            ])
-            peer.key = myKey.computeSecret(msg) //not using random generated key
-
-            if(peer.key === null)
-                return sendRandomBytes(remote)
-
-            announcing[remoteAddress] = peer
-
-            let successMessage = peer.key.encrypt(`+${BaseN.encode(Crypt.rand(16))}`)
-            udp.announcer.send(successMessage, 0, successMessage, peer.port, peer.ip, showError)
-            return true
-        }
-
-        peer = announcing[remoteAddress]
-
-        if(new Date() - peer.lastAccess > __.ACCESS_COOLDOWN)
-            return identifyPeer(true)
-    }
-
-    if(identifyPeer())
-        return
-
-    message = peer.key.decrypt(msg)
-    let cmd = message[0]
-    message = message.slice(1,message.length)
-
-    //Announcer
-    switch(cmd){
-        case '>': //peer announce
-            console.log(`Announce Request ${remoteAddress} -> ${message}`)
-
-            /** @type {Peer} */
-            let peerToAnnounce = knownPeersByPub[message]
-
-            if(typeof peerToAnnounce === 'object'){
-                if(new Date() - peerToAnnounce.lastAccess > __.LAST_ACCESS_LIMIT){ //peer is too old to connect
-                    let msgTooOldPeerError = peer.key.encrypt(`-${message}`)
-                    udp.announcer.send(msgTooOldPeerError, 0, msgTooOldPeerError.length, remote.port, remote.address, showError)
-                    delete knownPeersByPub[message]
-                    return
-                }
-
-                let payload = peer.key.encrypt(`${peerToAnnounce.ip}:${peerToAnnounce.port}`)
-                let payload2  = peerToAnnounce.key.encrypt(`*${remote.address}:${remote.port}`)
-                udp.announcer.send(payload, 0, payload.length, remote.port, remote.address, showError)
-                udp.announcer.send(payload2, 0, payload2.length, peerToAnnounce.port, peerToAnnounce.ip, showError)
-                console.log(`Announce ${remote.address}:${remote.port} -> ${peerToAnnounce.ip}:${peerToAnnounce.port}`)
-                return
-            }
-            
-            let unknownPeerMessage = peer.key.encrypt(`?${message}`)
-            udp.announcer.send(unknownPeerMessage, 0, unknownPeerMessage.length, remote.port, remote.address, showError)
-            return
-    }
-
-})
-
-udp.tracker.bind(12345)
-udp.tracker.on('listening', () => console.log(`Server is running on port `+udp.tracker.address().port))
-udp.tracker.on('error', showError)
-udp.tracker.on('message', (msg, remote) => {
     let remoteAddress = `${remote.address}:${remote.port}`
     /** @type {Buffer|message} */
     let message
     /** @type {Peer} */
     let peer
-
-    if(msg.length === 0)
-        return udp.tracker.send('', 0, 0, remote.port, remote.address, showError)
 
     /**
      * Identify peer
@@ -168,29 +82,31 @@ udp.tracker.on('message', (msg, remote) => {
         if(reset)
             delete knownPeers[remoteAddress]
 
+        let currentTime = new Date()
+
         if(typeof knownPeers[remoteAddress] === 'undefined'){
             peer = new Peer([
                 remote.address,
                 remote.port,
             ])
             peer.key = myKey.computeSecret(msg) //not using random generated key
+            
 
             if(peer.key === null)
                 return sendRandomBytes(remote)
 
+            peer.lastAccess = currentTime
             knownPeers[remoteAddress] = peer
 
-            console.log(`${remoteAddress}, joined!`)
             let successMessage = peer.key.encrypt(str( [`welcome`] ))
-            udp.tracker.send(successMessage, 0, successMessage.length, peer.port, peer.ip, showError)
+            udp.send(successMessage, 0, successMessage.length, peer.port, peer.ip, showError)
+            console.log(`${remoteAddress}, joined!`)
             return true
         }
 
         peer = knownPeers[remoteAddress]
 
-        let currentTime = new Date()
-        let lastAccess = currentTime - peer.lastAccess
-        if(lastAccess > __.LAST_ACCESS_LIMIT)
+        if(currentTime - peer.lastAccess > __.ACCESS_COOLDOWN)
             return identifyPeer(true)
 
         peer.lastAccess = currentTime
@@ -204,6 +120,35 @@ udp.tracker.on('message', (msg, remote) => {
 
     //Tracker
     switch(message[0]){
+
+        //announcer
+        case 'announce':
+            /** @type {Peer} */
+            let peerToAnnounce = knownPeersByPub[message]
+
+            if(typeof peerToAnnounce === 'object'){
+                if(new Date() - peerToAnnounce.lastAccess > __.LAST_ACCESS_LIMIT){ //peer is too old to connect
+                    let msgTooOldPeerError = peer.key.encrypt(str( [`tooOld`] ))
+                    udp.send(msgTooOldPeerError, 0, msgTooOldPeerError.length, remote.port, remote.address, showError)
+                    delete knownPeersByPub[message]
+                    return
+                }
+
+                let payload = peer.key.encrypt(str( [peerToAnnounce.ip, peerToAnnounce.port] ))
+                let payload2  = peerToAnnounce.key.encrypt(str( [`announce`, remote.address, remote.port] ))
+                udp.send(payload, 0, payload.length, remote.port, remote.address, showError)
+                udp.send(payload2, 0, payload2.length, peerToAnnounce.port, peerToAnnounce.ip, showError)
+                console.log(`Announce ${remote.address}:${remote.port} -> ${peerToAnnounce.ip}:${peerToAnnounce.port}`)
+                return
+            }
+            
+            let unknownPeerMessage = peer.key.encrypt(str( [`unknown`] ))
+            udp.send(unknownPeerMessage, 0, unknownPeerMessage.length, remote.port, remote.address, showError)
+
+            console.log(`Announce Request ${remoteAddress} -> ${message}`)
+            break
+
+        //tracker
         case 'forwardPort':
             if(typeof message[1] !== 'number')
                 return
@@ -215,7 +160,7 @@ udp.tracker.on('message', (msg, remote) => {
         case 'hello': //Peer add pub
             if(typeof knownPeersByPub[message[1]] !== 'undefined'){
                 let keyExistsMessage = peer.key.encrypt(str( [`keyExists`] ))
-                udp.tracker.send(keyExistsMessage, 0, keyExistsMessage.length, remote.port, remote.address, showError)
+                udp.send(keyExistsMessage, 0, keyExistsMessage.length, remote.port, remote.address, showError)
                 return
             }
 
@@ -223,8 +168,9 @@ udp.tracker.on('message', (msg, remote) => {
             
             console.log(`${remoteAddress}: Hello, my pub is ${message[1]}`)
             let helloMessage = peer.key.encrypt(str( [`hello`] ))
-            udp.tracker.send(helloMessage, 0, helloMessage.length, remote.port, remote.address, showError)
+            udp.send(helloMessage, 0, helloMessage.length, remote.port, remote.address, showError)
             return
+
     }
 })
 
