@@ -132,11 +132,6 @@ udp.announcer.on('message', (msg, remote) => {
             peer.nat = false
             break
 
-        case ':': //peer port ask
-            let remotePort = peer.key.encrypt(`:${remote.port}`)
-            udp.announcer.send(remotePort, 0, remotePort.length, remote.port, remote.address, showError)
-            return
-
         case '>': //peer announce
             console.log(`Announce Request ${remoteAddress} -> ${message}`)
 
