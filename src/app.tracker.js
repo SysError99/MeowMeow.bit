@@ -209,9 +209,7 @@ udp.tracker.on('message', (msg, remote) => {
 
         let currentTime = new Date()
         let lastAccess = currentTime - peer.lastAccess
-        if(lastAccess <= __.ACCESS_COOLDOWN)
-            return
-        else if(lastAccess > __.LAST_ACCESS_LIMIT)
+        if(lastAccess > __.LAST_ACCESS_LIMIT)
             return identifyPeer(true)
 
         peer.lastAccess = currentTime
