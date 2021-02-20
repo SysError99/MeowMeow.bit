@@ -10,7 +10,7 @@ const Result = function(d){
     /** @type {boolean} This is 'Result' object*/
     this.isResult = true
 
-    /** @type {Object} Data received*/
+    /** @type {Array} Data received*/
     this.data = null
 
     /** @type {string} Result message*/

@@ -36,7 +36,7 @@ const str = obj => JSON.stringify(obj)
 /**
  * @callback RequestFunction Event handler function
  * @param {Peer} peer Peer object
- * @param {any[]} data Data object
+ * @param {Result} data Data object
  */
 
 /**
