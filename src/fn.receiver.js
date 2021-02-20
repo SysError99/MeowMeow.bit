@@ -293,9 +293,9 @@ const Receiver = function(callback){
             
             if(Try(() => message = json(tempTracker.key.decrypt(message))) === null)
                 return
-            
+
             if(message[0] === 'welcome'){
-                let announceMessage = peer.key.encrypt(str( [`announce`, peer.ip, peer.port] ))
+                let announceMessage = tempTracker.key.encrypt(str( [`announce`, BaseN.encode(peer.myPub)] ))
                 conn.send(announceMessage, 0, announceMessage.length, tempTracker.port, tempTracker.ip, showError)
                 conn.on('message', (message, remote) => connMessage_announce(message,remote))
             }

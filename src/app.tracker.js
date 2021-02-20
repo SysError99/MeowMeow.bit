@@ -128,13 +128,13 @@ udp.on('message', (msg, remote) => {
         //announcer
         case 'announce':
             /** @type {Peer} */
-            let peerToAnnounce = knownPeersByPub[message]
+            let peerToAnnounce = knownPeersByPub[message[1]]
 
             if(typeof peerToAnnounce === 'object'){
                 if(new Date() - peerToAnnounce.lastAccess > __.LAST_ACCESS_LIMIT){ //peer is too old to connect
                     let msgTooOldPeerError = peer.key.encrypt(str( [`tooOld`] ))
                     udp.send(msgTooOldPeerError, 0, msgTooOldPeerError.length, remote.port, remote.address, showError)
-                    delete knownPeersByPub[message]
+                    delete knownPeersByPub[message[1]]
                     return
                 }
 
@@ -149,7 +149,7 @@ udp.on('message', (msg, remote) => {
             let unknownPeerMessage = peer.key.encrypt(str( [`unknown`] ))
             udp.send(unknownPeerMessage, 0, unknownPeerMessage.length, remote.port, remote.address, showError)
 
-            console.log(`Announce Request ${remoteAddress} -> ${message}`)
+            console.log(`Announce Request ${remoteAddress} -> ${message[1]}`)
             return
 
         //tracker
