@@ -24,5 +24,5 @@ app.get('/find/:id', (req,res) => {
 
 /** Receiver Object*/
 const receiver = new Receiver((peer, data) => {
-    console.log(`${peer}: ${data}`)
+    console.log(`${data.data}`)
 })
