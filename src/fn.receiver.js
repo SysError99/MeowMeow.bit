@@ -124,7 +124,7 @@ const Receiver = function(callback){
      */
     let handleSocketMessage = (message, remote) => {
         if(message.length === 0)
-            return
+            return socket.send('', 0, 0, remote.port, remote.address, showError)
 
         let remoteAddress = `${remote.address}:${remote.port}`
         /** @type {Peer} */
@@ -141,8 +141,8 @@ const Receiver = function(callback){
 
                 if(peer.key !== null){
                     peer.connected = true
-                    peer.keepAlive = setInterval(() => socket.send('', 0, 0, remote.port, remote.address, showError), 10000)
                     self.peers[remoteAddress] = peer
+                    socket.send(Crypt.rand(16), 0, 16, remote.port, remote.address, showError)
                 }
             })
 
@@ -253,10 +253,15 @@ const Receiver = function(callback){
         let conn
         let messageSendFailed = false
         let messageSendFailedReason = ``
-        let myPubKey = peer.myPub
         let tracker = randTracker(self)
 
-        if(peer.connected || !peer.nat){
+        let tempTracker = new Peer(
+            tracker.ip,
+            tracker.port,
+            tracker.pub
+        )
+
+        if(peer.connected){
             conn = peer.socket
     
             if(Array.isArray(message))
@@ -286,12 +291,12 @@ const Receiver = function(callback){
             if(typeof self.trackers[`${remote.address}:${remote.port}`] === 'undefined')
                 return
             
-            if(Try(() => message = json(tracker.key.decrypt(message))) === null)
+            if(Try(() => message = json(tempTracker.key.decrypt(message))) === null)
                 return
             
             if(message[0] === 'welcome'){
                 let announceMessage = peer.key.encrypt(str( [`announce`, peer.ip, peer.port] ))
-                conn.send(announceMessage, 0, announceMessage.length, tracker.port, tracker.ip, showError)
+                conn.send(announceMessage, 0, announceMessage.length, tempTracker.port, tempTracker.ip, showError)
                 conn.on('message', (message, remote) => connMessage_announce(message,remote))
             }
             else
@@ -316,7 +321,7 @@ const Receiver = function(callback){
             let tracker = self.trackers[remoteAddress]
         
             if(typeof tracker === 'object'){ // outgoing connection
-                if(Try(() => message = json(tracker.key.decrypt(message))) === null)
+                if(Try(() => message = json(tempTracker.key.decrypt(message))) === null)
                     return conn.close(() => {
                         messageSendFailed = true
                         messageSendFailedReason = `Decryption from tracker failed.` //LOCALE_NEEDED
@@ -343,29 +348,39 @@ const Receiver = function(callback){
                 peer.ip = message[0]
                 peer.port = message[1]
                 
-                conn.send(myPubKey, 0, myPubKey.length, peer.port, peer.ip, showError)
+                conn.send(peer.myPub, 0, peer.myPub.length, peer.port, peer.ip, showError)
             }
             else if(remoteAddress === `${peer.ip}:${peer.port}`){
                 peer.connected = true
                 self.send(peer,message)
             }
         }
-    
+
         conn = Datagram.createSocket({
             type: 'udp4',
             reuseAddr: true
         })
         conn.on('error', showError)
-        conn.on('message', (message, remote) => connMessage_tracker(message,remote))
+        peer.socket = conn
 
+        if(!peer.nat){
+            conn.on('message', connMessage_announce)
+            conn.send(
+                peer.myPub, 0, peer.myPub.length,
+                peer.port,
+                peer.ip,
+                showError
+            )
+            return
+        }
+
+        conn.on('message', (message, remote) => connMessage_tracker(message,remote))
         conn.send(
-            myPubKey, 0, myPubKey.length,
-            tracker.port,
-            tracker.ip,
+            tempTracker.myPub, 0, tempTracker.myPub.length,
+            tempTracker.port,
+            tempTracker.ip,
             showError
         )
-    
-        peer.socket = conn
 
         console.log(`Announcing ${peer.ip}:${peer.port}`)
 
