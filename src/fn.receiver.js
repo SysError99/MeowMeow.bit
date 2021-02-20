@@ -295,15 +295,15 @@ const Receiver = function(callback){
                 return
 
             if(message[0] === 'welcome'){
-                let announceMessage = tempTracker.key.encrypt(str( [`announce`, BaseN.encode(peer.myPub)] ))
+                let announceMessage = tempTracker.key.encrypt(str( [`announce`, BaseN.encode(peer.pub)] ))
                 conn.send(announceMessage, 0, announceMessage.length, tempTracker.port, tempTracker.ip, showError)
                 conn.on('message', (message, remote) => connMessage_announce(message,remote))
             }
-            else
-                return conn.close(() => {
-                    messageSendFailed = true
-                    messageSendFailedReason = `Communication interrupted` //LOCALE_NEEDED
-                })
+            else{
+                messageSendFailed = true
+                messageSendFailedReason = `Communication interrupted` //LOCALE_NEEDED
+                return
+            }
         }
 
         /**
@@ -321,29 +321,29 @@ const Receiver = function(callback){
             let tracker = self.trackers[remoteAddress]
         
             if(typeof tracker === 'object'){ // outgoing connection
-                if(Try(() => message = json(tempTracker.key.decrypt(message))) === null)
-                    return conn.close(() => {
-                        messageSendFailed = true
-                        messageSendFailedReason = `Decryption from tracker failed.` //LOCALE_NEEDED
-                    })
+                if(Try(() => message = json(tempTracker.key.decrypt(message))) === null){
+                    messageSendFailed = true
+                    messageSendFailedReason = `Decryption from tracker failed.` //LOCALE_NEEDED
+                    return
+                }
         
-                if(message[0] === 'tooOld')
-                    return conn.close(() => {
-                        messageSendFailed = true
-                        messageSendFailedReason = `Peer is outdated.` //LOCALE_NEEDED
-                    })
+                if(message[0] === 'tooOld'){
+                    messageSendFailed = true
+                    messageSendFailedReason = `Peer is outdated.` //LOCALE_NEEDED
+                    return
+                }
         
-                if(message[0] === 'unknown')
-                    return conn.close(() => {
-                        messageSendFailed = true
-                        messageSendFailedReason = `Tracker does not know specified peer`
-                    })
+                if(message[0] === 'unknown'){
+                    messageSendFailed = true
+                    messageSendFailedReason = `Tracker does not know specified peer` //LOCALE_NEEDED
+                    return
+                }
         
-                if(!IpRegex.test(message[0]) || typeof message[1] === 'number')
-                    return conn.close(() => {
-                        messageSendFailed = true
-                        messageSendFailedReason = `Invalid target address from tracker` //LOCALE_NEEDED
-                    })
+                if(!IpRegex.test(message[0]) || typeof message[1] === 'number'){
+                    messageSendFailed = true
+                    messageSendFailedReason = `Invalid target address from tracker` //LOCALE_NEEDED
+                    return
+                }
 
                 peer.ip = message[0]
                 peer.port = message[1]
@@ -387,19 +387,17 @@ const Receiver = function(callback){
         setTimeout(() => {
             peer.quality--
 
-            if(peer.quality <= 0)
-                return conn.close(() => {
-                    delete self.peers[`${peer.ip}:${peer.port}`]
-                    callback(null, new Result({
-                        message: `Connection to peer '${BaseN.encode(peer.pub)}' timed out.` //LOCALE_NEEDED
-                    }))
-                })
+            if(peer.quality <= 0){
+                delete self.peers[`${peer.ip}:${peer.port}`]
+                callback(null, new Result({
+                    message: `Connection to peer '${BaseN.encode(peer.pub)}' timed out.` //LOCALE_NEEDED
+                }))
+                return
+            }
             else if(messageSendFailed)
-                return conn.close(() => {
-                    callback(null, new Result({
-                        message: `Message to '${BaseN.encode(peer.pub)}' failed to send due to: ${messageSendFailedReason}` //LOCALE_NEEDED
-                    }))
-                })
+                return callback(null, new Result({
+                    message: `Message to '${BaseN.encode(peer.pub)}' failed to send due to: ${messageSendFailedReason}` //LOCALE_NEEDED
+                }))
             else if(!peer.connected)
                 self.send(peer, message)
 
