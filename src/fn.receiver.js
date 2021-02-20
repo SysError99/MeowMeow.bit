@@ -255,11 +255,11 @@ const Receiver = function(callback){
         let messageSendFailedReason = ``
         let tracker = randTracker(self)
 
-        let tempTracker = new Peer(
+        let tempTracker = new Peer([
             tracker.ip,
             tracker.port,
             tracker.pub
-        )
+        ])
 
         if(peer.connected){
             conn = peer.socket
