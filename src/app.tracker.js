@@ -101,15 +101,17 @@ udp.on('message', (msg, remote) => {
             knownPeers[remoteAddress] = peer
 
             let successMessage = peer.key.encrypt(str( [`welcome`] ))
-            udp.send(successMessage, 0, successMessage.length, peer.port, peer.ip, showError)
+            udp.send(successMessage, 0, successMessage.length, remote.port, remote.address, showError)
             console.log(`${remoteAddress}, joined!`)
             return true
         }
 
         peer = knownPeers[remoteAddress]
 
-        if(currentTime - peer.lastAccess > __.ACCESS_COOLDOWN)
-            return identifyPeer(true)
+        if(peer.lastAccess.getTime() > 0){
+            if(currentTime - peer.lastAccess > __.ACCESS_COOLDOWN)
+                return identifyPeer(true)
+        }
 
         peer.lastAccess = currentTime
     }
