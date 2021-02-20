@@ -253,8 +253,9 @@ const Receiver = function(callback){
         let conn
         let messageSendFailed = false
         let messageSendFailedReason = ``
+        let myPubKey = peer.myPub
         let tracker = randTracker(self)
-    
+
         if(peer.connected || !peer.nat){
             conn = peer.socket
     
@@ -338,13 +339,11 @@ const Receiver = function(callback){
                         messageSendFailed = true
                         messageSendFailedReason = `Invalid target address from tracker` //LOCALE_NEEDED
                     })
-        
-                let pubKey = peer.myPub
 
                 peer.ip = message[0]
                 peer.port = message[1]
                 
-                conn.send(pubKey, 0, pubKey.length, peer.port, peer.ip, showError)
+                conn.send(myPubKey, 0, myPubKey.length, peer.port, peer.ip, showError)
             }
             else if(remoteAddress === `${peer.ip}:${peer.port}`){
                 peer.connected = true
@@ -360,7 +359,7 @@ const Receiver = function(callback){
         conn.on('message', (message, remote) => connMessage_tracker(message,remote))
 
         conn.send(
-            peer.myPub, 0, peer.myPub.length,
+            myPubKey, 0, myPubKey.length,
             tracker.port,
             tracker.ip,
             showError
