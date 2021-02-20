@@ -251,6 +251,7 @@ const Receiver = function(callback){
     this.send = (peer, message) => {
         /** @type {Datagram.Socket} */
         let conn
+        let connState = 0
         let messageSendFailed = false
         let messageSendFailedReason = ``
         let tracker = randTracker(self)
@@ -284,75 +285,72 @@ const Receiver = function(callback){
          * @param {Buffer|string} message 
          * @param {Datagram.RemoteInfo} remote 
          */
-        let connMessage_tracker = (message, remote) => {
+        let connMessage = (message, remote) => {
             if(message.length === 0)
                 return
-        
-            if(typeof self.trackers[`${remote.address}:${remote.port}`] === 'undefined')
-                return
-            
-            if(Try(() => message = json(tempTracker.key.decrypt(message))) === null)
-                return
 
-            if(message[0] === 'welcome'){
-                let announceMessage = tempTracker.key.encrypt(str( [`announce`, BaseN.encode(peer.pub)] ))
-                conn.send(announceMessage, 0, announceMessage.length, tempTracker.port, tempTracker.ip, showError)
-                conn.on('message', (message, remote) => connMessage_announce(message,remote))
-            }
-            else{
-                messageSendFailed = true
-                messageSendFailedReason = `Communication interrupted` //LOCALE_NEEDED
-                return
-            }
-        }
-
-        /**
-         * conn.on('message'): Tracker announcemnt
-         * @param {Buffer|string} message 
-         * @param {Datagram.RemoteInfo} remote 
-         */
-        let connMessage_announce = (message, remote) => {
-            if(message.length === 0)
-                return
-    
             let remoteAddress = `${remote.address}:${remote.port}`
-            
-            /** @type {Peer} */
-            let tracker = self.trackers[remoteAddress]
-        
-            if(typeof tracker === 'object'){ // outgoing connection
-                if(Try(() => message = json(tempTracker.key.decrypt(message))) === null){
-                    messageSendFailed = true
-                    messageSendFailedReason = `Decryption from tracker failed.` //LOCALE_NEEDED
-                    return
-                }
-        
-                if(message[0] === 'tooOld'){
-                    messageSendFailed = true
-                    messageSendFailedReason = `Peer is outdated.` //LOCALE_NEEDED
-                    return
-                }
-        
-                if(message[0] === 'unknown'){
-                    messageSendFailed = true
-                    messageSendFailedReason = `Tracker does not know specified peer` //LOCALE_NEEDED
-                    return
-                }
 
-                if(!IpRegex.test(message[0]) || typeof message[1] !== 'number'){
-                    messageSendFailed = true
-                    messageSendFailedReason = `Invalid target address from tracker` //LOCALE_NEEDED
-                    return
-                }
-
-                peer.ip = message[0]
-                peer.port = message[1]
+            switch(connState){
+                case 0:
+                    if(typeof self.trackers[remoteAddress] === 'undefined')
+                        return
                 
-                conn.send(peer.myPub, 0, peer.myPub.length, peer.port, peer.ip, showError)
-            }
-            else if(remoteAddress === `${peer.ip}:${peer.port}`){
-                peer.connected = true
-                self.send(peer,message)
+                    if(Try(() => message = json(tempTracker.key.decrypt(message))) === null)
+                        return
+        
+                    if(message[0] === 'welcome'){
+                        let announceMessage = tempTracker.key.encrypt(str( [`announce`, BaseN.encode(peer.pub)] ))
+                        conn.send(announceMessage, 0, announceMessage.length, tempTracker.port, tempTracker.ip, showError)
+                        connState = 1
+                    }
+                    else{
+                        messageSendFailed = true
+                        messageSendFailedReason = `Communication interrupted` //LOCALE_NEEDED
+                        return
+                    }
+
+                    return
+                case 1:
+                    /** @type {Peer} */
+                    let tracker = self.trackers[remoteAddress]
+                
+                    if(typeof tracker === 'object'){ // outgoing connection
+                        if(Try(() => message = json(tempTracker.key.decrypt(message))) === null){
+                            messageSendFailed = true
+                            messageSendFailedReason = `Decryption from tracker failed.` //LOCALE_NEEDED
+                            return
+                        }
+                
+                        if(message[0] === 'tooOld'){
+                            messageSendFailed = true
+                            messageSendFailedReason = `Peer is outdated.` //LOCALE_NEEDED
+                            return
+                        }
+                
+                        if(message[0] === 'unknown'){
+                            messageSendFailed = true
+                            messageSendFailedReason = `Tracker does not know specified peer` //LOCALE_NEEDED
+                            return
+                        }
+        
+                        if(!IpRegex.test(message[0]) || typeof message[1] !== 'number'){
+                            messageSendFailed = true
+                            messageSendFailedReason = `Invalid target address from tracker` //LOCALE_NEEDED
+                            return
+                        }
+        
+                        peer.ip = message[0]
+                        peer.port = message[1]
+                        
+                        conn.send(peer.myPub, 0, peer.myPub.length, peer.port, peer.ip, showError)
+                    }
+                    else if(remoteAddress === `${peer.ip}:${peer.port}`){
+                        peer.connected = true
+                        self.send(peer,message)
+                    }
+
+                    return
             }
         }
 
@@ -361,10 +359,11 @@ const Receiver = function(callback){
             reuseAddr: true
         })
         conn.on('error', showError)
+        conn.on('message', connMessage)
         peer.socket = conn
 
         if(!peer.nat){
-            conn.on('message', connMessage_announce)
+            connState = 1
             conn.send(
                 peer.myPub, 0, peer.myPub.length,
                 peer.port,
@@ -374,15 +373,13 @@ const Receiver = function(callback){
             return
         }
 
-        conn.on('message', (message, remote) => connMessage_tracker(message,remote))
+        //conn.on('message', (message, remote) => connMessage_tracker(message,remote))
         conn.send(
             tempTracker.myPub, 0, tempTracker.myPub.length,
             tempTracker.port,
             tempTracker.ip,
             showError
         )
-
-        console.log(`Announcing ${peer.ip}:${peer.port}`)
 
         setTimeout(() => {
             peer.quality--
