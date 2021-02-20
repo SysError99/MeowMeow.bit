@@ -338,8 +338,8 @@ const Receiver = function(callback){
                     messageSendFailedReason = `Tracker does not know specified peer` //LOCALE_NEEDED
                     return
                 }
-        
-                if(!IpRegex.test(message[0]) || typeof message[1] === 'number'){
+
+                if(!IpRegex.test(message[0]) || typeof message[1] !== 'number'){
                     messageSendFailed = true
                     messageSendFailedReason = `Invalid target address from tracker` //LOCALE_NEEDED
                     return
