@@ -246,9 +246,9 @@ const Receiver = function(callback){
     /**
      * Send message to target
      * @param {Peer} peer Peer to send data to
-     * @param {string|Array} message 
+     * @param {string|Array|Buffer} data Data to be sent
      */
-    this.send = (peer, message) => {
+    this.send = (peer, data) => {
         /** @type {Datagram.Socket} */
         let conn
         let connState = 0
@@ -265,16 +265,16 @@ const Receiver = function(callback){
         if(peer.connected){
             conn = peer.socket
     
-            if(Array.isArray(message))
-                if(Try(() => message = str(message)) === null)
+            if(Array.isArray(data))
+                if(Try(() => data = str(data)) === null)
                     return
             
-            if(typeof message !== 'string')
+            if(typeof data !== 'string')
                 return
                 
             Try(() => {
-                message = peer.key.encrypt(message)
-                conn.send(message, 0, message.length, peer.port, peer.ip, showError)
+                data = peer.key.encrypt(data)
+                conn.send(data, 0, data.length, peer.port, peer.ip, showError)
             })
             
             return
@@ -347,7 +347,7 @@ const Receiver = function(callback){
                     }
                     else if(remoteAddress === `${peer.ip}:${peer.port}`){
                         peer.connected = true
-                        self.send(peer,message)
+                        self.send(peer, data)
                     }
 
                     return
@@ -396,7 +396,7 @@ const Receiver = function(callback){
                     message: `Message to '${BaseN.encode(peer.pub)}' failed to send due to: ${messageSendFailedReason}` //LOCALE_NEEDED
                 }))
             else if(!peer.connected)
-                self.send(peer, message)
+                self.send(peer, data)
 
         }, 4000)
     }
