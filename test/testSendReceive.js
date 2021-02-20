@@ -4,6 +4,7 @@ const Receiver = require('../src/fn.receiver')
 
 const receiver = new Receiver((peer, data) => {
     console.log(data.data)
+    console.log(data.message)
 })
 
 let func = () => {
