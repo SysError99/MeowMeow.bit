@@ -22,7 +22,7 @@ const ECDHKey = function(d){
      * @returns {SymmetricKey} Symmetric key
      */
     this.computeSecret = pub => {
-        return Try(() => new SymmetricKey(Crypt.ecdh.computeSecret(ecdh, pub)), null)
+        return Try(() => new SymmetricKey(Crypt.ecdh.computeSecret(ecdh, Crypt.sect571k1.long(pub))), null)
     }
 
     this.get = {
@@ -38,7 +38,7 @@ const ECDHKey = function(d){
          * @returns {Buffer} Public key
          */
         pub: () => {
-            return Try(() => ecdh.getPublicKey(), Buffer.from([]))
+            return Try(() => Crypt.sect571k1.short(ecdh.getPublicKey()), Buffer.from([]))
         }
     }
 

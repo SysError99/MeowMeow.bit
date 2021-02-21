@@ -118,6 +118,20 @@ const ecdh = {
     }
 
 }
+const sect571k1 = {
+    
+    /**
+     * Restore 'sect571k1' ECDH public key
+     * @param {Buffer} buf 
+     */
+    long: buf => Buffer.concat([4,buf]),
+
+    /**
+     * Shorten 'sect571k1' ECDH public key
+     * @param {Buffer} buf 
+     */
+    short: buf => buf.slice(1, buf.length)
+}
 /** Key signing functions*/
 const sign = {
 
@@ -180,6 +194,7 @@ module.exports = {
 
     ecdh: ecdh,
     newKey: keyCreator,
+    sect571k1, sect571k1,
     sign: sign,
     symmetric: symmetric,
 
