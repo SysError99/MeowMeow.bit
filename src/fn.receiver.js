@@ -66,6 +66,27 @@ const Receiver = function(callback){
     })
 
     /**
+     * Handshake to a tracker
+     * @param {Peer} tracker Tracker to be initialized
+     */
+    let helloTracker = tracker => {
+        if(tracker.quality <= 0)
+            return false
+
+        let myPub = tracker.myPub
+
+        tracker.quality--
+        socket.send(
+            myPub, 0, myPub.length,
+            tracker.port,
+            tracker.ip,
+            showError
+        )
+
+        return true
+    }
+
+    /**
      * Handshake to trackers
      */
     let helloTrackers = () => {
@@ -104,21 +125,12 @@ const Receiver = function(callback){
         for(t in this.trackers){
             /** @type {Peer} */
             let tracker = this.trackers[t]
-            let myPub = tracker.myPub
-            socket.send(
-                myPub, 0, myPub.length,
-                tracker.port,
-                tracker.ip,
-                showError
-            )
+            helloTracker(tracker)
             this.peers[t] = tracker
         }
 
         console.log(`Receiver will be known as '${BaseN.encode(this.key.get.pub())}'.`)
     }
-
-    /** @type {number} Count how many times we had recall trackers */
-    let helloTrackersCount = 0
 
     /**
      * Handle socket incoming message
@@ -144,7 +156,6 @@ const Receiver = function(callback){
 
                 if(peer.key !== null){
                     peer.connected = true
-                    helloTrackersCount = 0
                     self.peers[remoteAddress] = peer
                     socket.send(Crypt.rand(16), 0, 16, remote.port, remote.address, showError)
                 }
@@ -169,20 +180,17 @@ const Receiver = function(callback){
         }
 
         if(Try(() => message = json(peer.key.decrypt(message))) === null){
-            if(isTracker && helloTrackersCount < 5){
-                helloTrackersCount++
-                helloTrackers()
+            if(isTracker){
+                if(!helloTracker(peer))
+                    callback(new Result({
+                        message: `Can't establish secure connection with trackers. `+
+                        `Key may be invalid or connection may be hijacked.` //LOCALE_NEEDED
+                    }))
                 return 
             }
-            else{
-                helloTrackersCount = 0
-                callback(new Result({
-                    message: `Can't establish secure connection with trackers. `+
-                    `Key may be invalid or connection may be hijacked.` //LOCALE_NEEDED
-                }))
-                return
-            }
         }
+        else
+            peer.quality = __.MAX_TRIAL
 
         if(isTracker){ // message from tracker
             switch(message[0]){
