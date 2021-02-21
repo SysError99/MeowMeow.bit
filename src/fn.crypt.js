@@ -124,7 +124,7 @@ const sect571k1 = {
      * Restore 'sect571k1' ECDH public key
      * @param {Buffer} buf 
      */
-    long: buf => Buffer.concat([4,buf]),
+    long: buf => Buffer.concat([Buffer.from([4]),buf]),
 
     /**
      * Shorten 'sect571k1' ECDH public key
