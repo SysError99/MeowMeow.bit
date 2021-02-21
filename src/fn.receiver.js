@@ -296,6 +296,11 @@ const Receiver = function(callback){
      * @param {string|Array|Buffer} data Data to be sent
      */
     this.send = (peer, data) => {
+        if(peer.quality < __.MAX_TRIAL)
+            return callback(peer, new Result({
+                message: `Peer ${BaseN.encode(peer.pub)} is still connecting...` //LOCALE_NEEDED
+            }))
+
         /** @type {Datagram.Socket} */
         let conn
         let connState = 0
@@ -399,6 +404,7 @@ const Receiver = function(callback){
                             return
                         }
 
+                        peer.quality = __.MAX_TRIAL
                         peer.connected = true
                         self.send(peer, data)
                     }
@@ -434,10 +440,10 @@ const Receiver = function(callback){
             showError
         )
 
+        peer.quality--
         setTimeout(() => {
-            peer.quality--
-
             if(peer.quality <= 0){
+                peer.quality = __.MAX_TRIAL
                 delete self.peers[`${peer.ip}:${peer.port}`]
                 callback(null, new Result({
                     message: `Connection to peer '${BaseN.encode(peer.pub)}' timed out.` //LOCALE_NEEDED
