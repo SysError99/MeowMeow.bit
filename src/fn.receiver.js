@@ -117,6 +117,9 @@ const Receiver = function(callback){
         console.log(`Receiver will be known as '${BaseN.encode(this.key.get.pub())}'.`)
     }
 
+    /** @type {number} Count how many times we had recall trackers */
+    let helloTrackersCount = 0
+
     /**
      * Handle socket incoming message
      * @param {Array|Buffer|string} message 
@@ -141,6 +144,7 @@ const Receiver = function(callback){
 
                 if(peer.key !== null){
                     peer.connected = true
+                    helloTrackersCount = 0
                     self.peers[remoteAddress] = peer
                     socket.send(Crypt.rand(16), 0, 16, remote.port, remote.address, showError)
                 }
@@ -156,7 +160,8 @@ const Receiver = function(callback){
                 else if(lastAccess >= __.LAST_ACCESS_LIMIT){
                     clearInterval(peer.keepAlive)
                     delete self.peers[remoteAddress]
-                    return handleSocketMessage(message, remote)
+                    handleSocketMessage(message, remote)
+                    return 
                 }
             }
     
@@ -164,8 +169,19 @@ const Receiver = function(callback){
         }
 
         if(Try(() => message = json(peer.key.decrypt(message))) === null){
-            if(isTracker)
-                return helloTrackers()
+            if(isTracker && helloTrackersCount < 5){
+                helloTrackersCount++
+                helloTrackers()
+                return 
+            }
+            else{
+                helloTrackersCount = 0
+                callback(new Result({
+                    message: `Can't establish secure connection with trackers. `+
+                    `Key may be invalid or connection may be hijacked.` //LOCALE_NEEDED
+                }))
+                return
+            }
         }
 
         if(isTracker){ // message from tracker
