@@ -258,49 +258,12 @@ const Receiver = function(callback){
 
     }
 
-    /** @type {RequestFunction} Callback function for this object */
-    this.callback = typeof callback === 'function' ? callback : () => false
-
-     /** @type {ECDHKey} Receiver generated key, always brand-new */
-    this.key
-
-    /** @type {Locale} Locale being used*/
-    this.locale = locale
-
-    /** @type {Peer[]} Connected peers */
-    this.peers = {}
-
-    /** @type {Peer} List of all trackers */
-    this.trackers = {}
-
-    /** @type {string[]} List of trackers, as array of string to be pointed at this.trackers */
-    this.trackerList = []
-
-    /**
-     * Do port forwarding and avoid NAT.
-     * @param {number} p Port to forward to
-     */
-    this.forwardPort = p => {
-        socket.bind(p)
-        for(t in self.trackers){
-            /** @type {Peer} */
-            let tracker = self.trackers[t]
-            let tellPortStr = tracker.key.encrypt(str( [`forwardPort`, p] ))
-            socket.send(tellPortStr, 0, tellPortStr.length, tracker.port, tracker.ip, showError)
-        }
-    }
-
     /**
      * Send message to target
      * @param {Peer} peer Peer to send data to
      * @param {string|Array|Buffer} data Data to be sent
      */
-    this.send = (peer, data) => {
-        if(peer.quality < __.MAX_TRIAL)
-            return callback(peer, new Result({
-                message: `Peer ${BaseN.encode(peer.pub)} is still connecting...` //LOCALE_NEEDED
-            }))
-
+    let sendMessage = (peer, data) => {
         /** @type {Datagram.Socket} */
         let conn
         let connState = 0
@@ -400,13 +363,13 @@ const Receiver = function(callback){
                     else if(remoteAddress === `${peer.ip}:${peer.port}`){
                         if(Try(() => message = json(peer.key.decrypt(message))) === null && peer.connected){
                             deletePeer(peer)
-                            self.send(peer, data)
+                            sendMessage(peer, data)
                             return
                         }
 
                         peer.quality = __.MAX_TRIAL
                         peer.connected = true
-                        self.send(peer, data)
+                        sendMessage(peer, data)
                     }
 
                     return
@@ -455,9 +418,54 @@ const Receiver = function(callback){
                     message: `Message to '${BaseN.encode(peer.pub)}' failed to send due to: ${messageSendFailedReason}` //LOCALE_NEEDED
                 }))
             else if(!peer.connected)
-                self.send(peer, data)
+                sendMessage(peer, data)
 
         }, 4000)
+    }
+
+    /** @type {RequestFunction} Callback function for this object */
+    this.callback = typeof callback === 'function' ? callback : () => false
+
+     /** @type {ECDHKey} Receiver generated key, always brand-new */
+    this.key
+
+    /** @type {Locale} Locale being used*/
+    this.locale = locale
+
+    /** @type {Peer[]} Connected peers */
+    this.peers = {}
+
+    /** @type {Peer} List of all trackers */
+    this.trackers = {}
+
+    /** @type {string[]} List of trackers, as array of string to be pointed at this.trackers */
+    this.trackerList = []
+
+    /**
+     * Do port forwarding and avoid NAT.
+     * @param {number} p Port to forward to
+     */
+    this.forwardPort = p => {
+        socket.bind(p)
+        for(t in self.trackers){
+            /** @type {Peer} */
+            let tracker = self.trackers[t]
+            let tellPortStr = tracker.key.encrypt(str( [`forwardPort`, p] ))
+            socket.send(tellPortStr, 0, tellPortStr.length, tracker.port, tracker.ip, showError)
+        }
+    }
+
+    /**
+     * Send message to target
+     * @param {Peer} peer Peer to send data to
+     * @param {string|Array|Buffer} data Data to be sent
+     */
+    this.send = (peer, data) => {
+        if(peer.quality < __.MAX_TRIAL)
+            return callback(peer, new Result({
+                message: `Peer ${BaseN.encode(peer.pub)} is still connecting...` //LOCALE_NEEDED
+            }))
+        sendMessage(peer, data)
     }
 
     /** Socket from receiver module */
