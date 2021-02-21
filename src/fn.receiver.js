@@ -66,6 +66,15 @@ const Receiver = function(callback){
     })
 
     /**
+     * Delete a peer from known list
+     * @param {Peer} peer Peer to delete
+     */
+    let deletePeer = peer => {
+        clearInterval(peer.keepAlive)
+        delete self.peers[``]
+    }
+
+    /**
      * Handshake to a tracker
      * @param {Peer} tracker Tracker to be initialized
      */
@@ -157,8 +166,11 @@ const Receiver = function(callback){
                 if(peer.key !== null){
                     peer.connected = true
                     self.peers[remoteAddress] = peer
-                    socket.send(Crypt.rand(16), 0, 16, remote.port, remote.address, showError)
+                    let helloMessage = peer.key.encrypt(str(`[""]`))
+                    socket.send(helloMessage, 0, helloMessage.length, remote.port, remote.address, showError)
                 }
+                else
+                    socket.send(Crypt.rand(22), 0, 22, remote.port, remote.address, showError)
             })
 
         if(!isTracker){ //check last access time from peer
@@ -169,8 +181,7 @@ const Receiver = function(callback){
                 if(lastAccess <= __.ACCESS_COOLDOWN)
                     return
                 else if(lastAccess >= __.LAST_ACCESS_LIMIT){
-                    clearInterval(peer.keepAlive)
-                    delete self.peers[remoteAddress]
+                    deletePeer(peer)
                     handleSocketMessage(message, remote)
                     return 
                 }
@@ -186,8 +197,12 @@ const Receiver = function(callback){
                         message: `Can't establish secure connection with trackers. `+
                         `Key may be invalid or connection may be hijacked.` //LOCALE_NEEDED
                     }))
-                return 
             }
+            else{
+                deletePeer(peer)
+                handleSocketMessage(message, remote)
+            }
+            return
         }
         else
             peer.quality = __.MAX_TRIAL
@@ -370,6 +385,12 @@ const Receiver = function(callback){
                         conn.send(peer.myPub, 0, peer.myPub.length, peer.port, peer.ip, showError)
                     }
                     else if(remoteAddress === `${peer.ip}:${peer.port}`){
+                        if(Try(() => message = json(peer.key.decrypt(message))) === null){
+                            messageSendFailed = true
+                            messageSendFailedReason = `Can't decrypt message from peer, key may be invalid or connection may be hijacked` //LOCALE_NEEDED
+                            return
+                        }
+
                         peer.connected = true
                         self.send(peer, data)
                     }
