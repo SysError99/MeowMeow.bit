@@ -2,6 +2,7 @@ const Datagram = require('dgram')
 
 const Try = require('../fn.try.catch')
 
+const __ = require('../const')
 const ECDHKey = require('./key.ecdh')
 const SymmetricKey = require('./key.symmetric')
 
@@ -40,7 +41,7 @@ const Peer = function(d){
     this.key = null
 
     /** @type {number} Peer quality indicator*/
-    this.quality = 30
+    this.quality = __.MAX_TRIAL
 
     /** @type {Datagram.Socket} Network socket*/
     this.socket = null
