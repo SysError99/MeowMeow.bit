@@ -385,7 +385,7 @@ const Receiver = function(callback){
                         conn.send(peer.myPub, 0, peer.myPub.length, peer.port, peer.ip, showError)
                     }
                     else if(remoteAddress === `${peer.ip}:${peer.port}`){
-                        if(Try(() => message = json(peer.key.decrypt(message))) === null){
+                        if(Try(() => message = json(peer.key.decrypt(message))) === null && peer.connected){
                             messageSendFailed = true
                             messageSendFailedReason = `Can't decrypt message from peer, key may be invalid or connection may be hijacked` //LOCALE_NEEDED
                             return
