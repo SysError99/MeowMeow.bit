@@ -70,8 +70,16 @@ const Receiver = function(callback){
      * @param {Peer} peer Peer to delete
      */
     let deletePeer = peer => {
-        clearInterval(peer.keepAlive)
-        delete self.peers[``]
+        let remoteAddress = `${peer.ip}:${peer.port}`
+        peer.connected = false
+
+        if(peer.keepAlive !== null){
+            clearInterval(peer.keepAlive)
+            peer.keepAlive = null
+        }
+
+        if(typeof self.peers[remoteAddress] === 'object')
+            delete self.peers[remoteAddress]
     }
 
     /**
@@ -386,6 +394,7 @@ const Receiver = function(callback){
                     }
                     else if(remoteAddress === `${peer.ip}:${peer.port}`){
                         if(Try(() => message = json(peer.key.decrypt(message))) === null && peer.connected){
+                            deletePeer(peer)
                             messageSendFailed = true
                             messageSendFailedReason = `Can't decrypt message from peer, key may be invalid or connection may be hijacked` //LOCALE_NEEDED
                             return
