@@ -12,7 +12,7 @@ const constants = {
     MAX_PAYLOAD: 1048576 * 32,
 
     /** @type {number} Max amount of trial times */
-    MAX_TRIAL = 10,
+    MAX_TRIAL: 10,
 
     /** @type {number} Last access time (in millisecods, default: 1 day) */
     LAST_ACCESS_LIMIT: 1000 * 60 * 60 * 24,
