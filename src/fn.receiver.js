@@ -479,10 +479,21 @@ const Receiver = function(callback){
 
     /**
      * Send message to target
-     * @param {Peer} peer Peer to send data to
+     * @param {Peer|string} peer Peer to send data to
      * @param {string|Array|Buffer} data Data to be sent
      */
     this.send = (peer, data) => {
+        if(typeof peer === 'string'){
+            peer = self.peers[peerStr]
+            if(typeof peer === 'undefined'){
+                peer = new Peer([
+                    '',
+                    0,
+                    peer
+                ])
+            }
+        }
+
         if(peer.quality < __.MAX_TRIAL)
             return callback(peer, new Result({
                 message: `Peer ${BaseN.encode(peer.pub)} is still connecting...` //LOCALE_NEEDED
