@@ -310,8 +310,6 @@ const Receiver = function(callback){
             return
         }
 
-        deletePeer(peer)
-
         /**
          * conn.on('message'): Tracker connection
          * @param {Buffer|string} message 
