@@ -482,6 +482,7 @@ const Receiver = function(callback){
      * Send message to target
      * @param {Peer|string} peer Peer to send data to
      * @param {string|Array|Buffer} data Data to be sent
+     * @returns {boolean} Is the connection established?
      */
     this.send = (peer, data) => {
         if(typeof peer === 'string'){
@@ -495,11 +496,15 @@ const Receiver = function(callback){
             }
         }
 
-        if(peer.quality < __.MAX_TRIAL)
-            return callback(peer, new Result({
+        if(peer.quality < __.MAX_TRIAL){
+            callback(peer, new Result({
                 message: `Peer ${BaseN.encode(peer.pub)} is still connecting...` //LOCALE_NEEDED
             }))
+            return false
+        }
+
         sendMessage(peer, data)
+        return true
     }
 
     /** Socket from receiver module */
