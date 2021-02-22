@@ -66,6 +66,20 @@ const Receiver = function(callback){
     })
 
     /**
+     * Add peer to peer list
+     * @param {Peer} peer Peer to be added
+     * @returns {boolean} Did peer been added?
+     */
+    let addPeer = peer => {
+        let remoteAddress = `${peer.ip}:${peer.port}`
+        if(typeof self.peers[remoteAddress] === 'undefined'){
+            self.peers[remoteAddress] = peer
+            return true
+        }
+        return false
+    }
+
+    /**
      * Delete a peer from known list
      * @param {Peer} peer Peer to delete
      */
@@ -172,8 +186,9 @@ const Receiver = function(callback){
                 peer.key = self.key.computeSecret(message)
 
                 if(peer.key !== null){
+                    addPeer(peer)
+                    peer.socket = socket
                     peer.connected = true
-                    self.peers[remoteAddress] = peer
                     let helloMessage = peer.key.encrypt(str(`[""]`))
                     socket.send(helloMessage, 0, helloMessage.length, remote.port, remote.address, showError)
                 }
@@ -270,6 +285,7 @@ const Receiver = function(callback){
         let messageSendFailed = false
         let messageSendFailedReason = ``
         let tracker = randTracker(self)
+        let remoteAddress = `${remote.address}:${remote.port}`
 
         let tempTracker = new Peer([
             tracker.ip,
@@ -295,16 +311,19 @@ const Receiver = function(callback){
             return
         }
 
+        deletePeer(peer)
+
         /**
          * conn.on('message'): Tracker connection
          * @param {Buffer|string} message 
          * @param {Datagram.RemoteInfo} remote 
          */
         let connMessage = (message, remote) => {
+            if(connState === 2)
+                handleSocketMessage(message, remote)
+
             if(message.length === 0)
                 return
-
-            let remoteAddress = `${remote.address}:${remote.port}`
 
             switch(connState){
                 case 0:
@@ -369,7 +388,11 @@ const Receiver = function(callback){
 
                         peer.quality = __.MAX_TRIAL
                         peer.connected = true
+
+                        addPeer(peer)
                         sendMessage(peer, data)
+
+                        connState = 2
                     }
 
                     return
@@ -407,7 +430,6 @@ const Receiver = function(callback){
         setTimeout(() => {
             if(peer.quality <= 0){
                 peer.quality = __.MAX_TRIAL
-                delete self.peers[`${peer.ip}:${peer.port}`]
                 callback(null, new Result({
                     message: `Connection to peer '${BaseN.encode(peer.pub)}' timed out.` //LOCALE_NEEDED
                 }))
