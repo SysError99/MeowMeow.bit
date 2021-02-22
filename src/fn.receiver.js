@@ -285,7 +285,6 @@ const Receiver = function(callback){
         let messageSendFailed = false
         let messageSendFailedReason = ``
         let tracker = randTracker(self)
-        let remoteAddress = `${remote.address}:${remote.port}`
 
         let tempTracker = new Peer([
             tracker.ip,
@@ -324,6 +323,8 @@ const Receiver = function(callback){
 
             if(message.length === 0)
                 return
+
+            let remoteAddress = `${remote.address}:${remote.port}`
 
             switch(connState){
                 case 0:
