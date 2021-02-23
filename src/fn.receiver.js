@@ -137,6 +137,7 @@ const Receiver = function(callback){
                     el.port,
                     el.pub
                 ])
+                newTracker.socket = socket
 
                 delete trackersLoaded [ind]
 
@@ -171,13 +172,9 @@ const Receiver = function(callback){
      * @returns {Promise<void>}
      */
     let handleSocketMessage = async (message, remote) => {
-        if(message.length === 0)
-            return socket.send('', 0, 0, remote.port, remote.address, showError)
-
         let remoteAddress = `${remote.address}:${remote.port}`
         /** @type {Peer} */
         let peer = self.peers[remoteAddress]
-        let isTracker = typeof self.trackers[remoteAddress] === 'object'
 
         if(typeof peer === 'undefined')
             return Try(() => {
@@ -192,11 +189,16 @@ const Receiver = function(callback){
                     peer.socket = socket
                     peer.connected = true
                     let helloMessage = peer.key.encrypt(str(`[""]`))
-                    socket.send(helloMessage, 0, helloMessage.length, remote.port, remote.address, showError)
+                    peer.socket.send(helloMessage, 0, helloMessage.length, remote.port, remote.address, showError)
                 }
                 else
-                    socket.send(Crypt.rand(22), 0, 22, remote.port, remote.address, showError)
+                    peer.socket.send(Crypt.rand(22), 0, 22, remote.port, remote.address, showError)
             })
+
+        if(message.length === 0)
+            return peer.socket.send('', 0, 0, remote.port, remote.address, showError)
+
+        let isTracker = typeof self.trackers[remoteAddress] === 'object'
 
         if(!isTracker){ //check last access time from peer
             if(peer.stream !== null){
@@ -265,7 +267,7 @@ const Receiver = function(callback){
                         return
 
                     let randomResponse = Crypt.rand(32)
-                    socket.send(randomResponse, 0, randomResponse.length, message[2], message[1], showError)
+                    peer.socket.send(randomResponse, 0, randomResponse.length, message[2], message[1], showError)
                     return
                 
                 //tracker
@@ -278,11 +280,11 @@ const Receiver = function(callback){
                     if(Try(() => helloMessage = peer.key.encrypt(str( [`hello`, BaseN.encode(self.key.get.pub())] ))) === null)
                         return
 
-                    socket.send(helloMessage, 0, helloMessage.length, remote.port, remote.address, showError)
+                    peer.socket.send(helloMessage, 0, helloMessage.length, remote.port, remote.address, showError)
                     return
 
                 case 'hello':
-                    peer.keepAlive = setInterval(() => socket.send('', 0, 0, remote.port, remote.address, showError), 10000)
+                    peer.keepAlive = setInterval(() => peer.socket.send('', 0, 0, remote.port, remote.address, showError), 10000)
                     return
             }
             return
