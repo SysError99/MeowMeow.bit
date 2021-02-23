@@ -40,17 +40,17 @@ const Peer = function(d){
     /** @type {SymmetricKey} Peer Symmetric key*/
     this.key = null
 
+    /** @type {boolean} Is the connection established?*/
+    this.connected = false
+
     /** @type {number} Peer quality indicator*/
     this.quality = __.MAX_TRIAL
 
     /** @type {Datagram.Socket} Network socket*/
     this.socket = null
 
-    /** @type {boolean} Is the connection established?*/
-    this.connected = false
-
-    /** @type {boolean} If this peer is currently sending large bytes*/
-    this.downloading = false
+    /** @type {boolean} If this peer is currently sending large bytes */
+    this.sendingLargeBytes = false
 
     /**
      * Import JSON
