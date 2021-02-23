@@ -3,35 +3,49 @@
  * 
  * Github: https://github.com/45678/Base58
  */
-let ALPHABET, ALPHABET_62, MAP_ALPHABET, MAP_ALPHABET_62, i;
-ALPHABET = "0123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz"; 
-ALPHABET_62 = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
-MAP_ALPHABET = {};
-MAP_ALPHABET_62 = {};
-i = 0;
-while(i < ALPHABET_62.length){
-    if(i < ALPHABET.length){
+/** @type {string} */
+const ALPHABET = "0123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz";
+const ALPHABET_LEN = ALPHABET.length;
+/** @type {string} */
+const ALPHABET_62 =" 0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+const ALPHABET_62_LEN = ALPHABET_62.length;
+/** @type {string} */
+const ALPHABET_92 = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz+/= !#$%&()*,-.:;<>?@[]^_`{|}~";
+const ALPHABET_92_LEN = ALPHABET_92.length;
+const MAP_ALPHABET = {};
+const MAP_ALPHABET_62 = {};
+const MAP_ALPHABET_92 = {};
+
+let i = 0;
+while(i < ALPHABET_92.length){
+    if(i < ALPHABET.length)
         MAP_ALPHABET[ALPHABET.charAt(i)] = i;
-    }
-    MAP_ALPHABET_62[ALPHABET_62.charAt(i)] = i;
+    
+    if(i < ALPHABET_62.length)
+        MAP_ALPHABET_62[ALPHABET_62.charAt(i)] = i;
+    
+    MAP_ALPHABET_92[ALPHABET_92.charAt(i)] = i;
     i++;
 }
 /**
- * Convert to text
+ * Convert to text, base on Base58
  * @param {number} digit 
  * @returns {string[]} Array of string
  */
-const convertToText = digit => {
-    return ALPHABET[digit];
-}
+const convertToText = digit => ALPHABET[digit];
 /**
  * Convert to text, based on Base62
  * @param {number} digit 
  * @returns {string[]} Array of string
  */
-const convertToText62 = digit => {
-    return ALPHABET_62[digit];
-}
+const convertToText62 = digit => ALPHABET_62[digit];
+/**
+ * Convert to text, base on Base92
+ * @param {number} digit 
+ * @returns {string[]} Array of string
+ */
+const convertToText92 = digit => ALPHABET_92[digit];
+
 /** BaseN module*/
 module.exports = {
     /**
@@ -42,7 +56,19 @@ module.exports = {
      */
     encode: (buffer, type) => {
         let carry, digits, j;
-        let d = type === "62" ? 62 : 58
+        /** @type {number} */
+        let d
+        switch(type){
+            case "62":
+                d = ALPHABET_62_LEN;
+                break;
+            case "92":
+                d = ALPHABET_92_LEN;
+                break;
+            default:
+                d = ALPHABET_LEN;
+                break;
+        }
         if(typeof buffer === "string"){
             buffer = Buffer.from(buffer);
         }
@@ -80,10 +106,17 @@ module.exports = {
             i++;
         }
         digits = digits.reverse()
-        if(type === "62")
-            digits = digits.map(convertToText62);
-        else
-            digits = digits.map(convertToText);
+        switch(type){
+            case "62":
+                digits = digits.map(convertToText62);
+                break;
+            case "92":
+                digits = digits.map(convertToText92);
+                break;
+            default:
+                digits = digits.map(convertToText);
+                break;
+        }
         return digits.join("");
     },
     /**
@@ -97,13 +130,19 @@ module.exports = {
         if(string.length === 0){
             return "";
         }
-        else if(type === "62"){
-            cc = MAP_ALPHABET_62;
-            d = 62;
-        }
-        else {
-            cc = MAP_ALPHABET;
-            d = 58;
+        switch(type){
+            case "62":
+                cc = MAP_ALPHABET_62;
+                d = ALPHABET_62_LEN;
+                break;
+            case "92":
+                cc = MAP_ALPHABET_92;
+                d = ALPHABET_92_LEN;
+                break;
+            default:
+                cc = MAP_ALPHABET;
+                d = ALPHABET_LEN;
+                break;
         }
         i = void 0;
         j = void 0;
