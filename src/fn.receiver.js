@@ -274,17 +274,16 @@ const Receiver = function(callback){
     }
 
     /**
-     * Send message to target
-     * @param {Peer} peer Peer to send data to
-     * @param {string|Array|Buffer} data Data to be sent
+     * Initialize connection for the target
+     * @param {Peer} peer Peer to initialize connection
+     * @returns {Promise<boolean>} Is connection successfully established?
      */
-    let sendMessage = (peer, data) => {
+    let initializeConnection = peer => new Promise(resolve => {
         /** @type {Datagram.Socket} */
         let conn
         let connState = 0
-        let messageSendFailed = false
-        let messageSendFailedReason = ``
         let tracker = randTracker(self)
+        let targetPub = BaseN.encode(peer.pub)
 
         let tempTracker = new Peer([
             tracker.ip,
@@ -292,23 +291,8 @@ const Receiver = function(callback){
             tracker.pub
         ])
 
-        if(peer.connected){
-            conn = peer.socket
-    
-            if(Array.isArray(data))
-                if(Try(() => data = str(data)) === null)
-                    return
-            
-            if(typeof data !== 'string')
-                return
-                
-            Try(() => {
-                data = peer.key.encrypt(data)
-                conn.send(data, 0, data.length, peer.port, peer.ip, showError)
-            })
-            
-            return
-        }
+        if(peer.connected)
+            return resolve(true)
 
         /**
          * conn.on('message'): Tracker connection
@@ -333,43 +317,53 @@ const Receiver = function(callback){
                         return
         
                     if(message[0] === 'welcome'){
-                        let announceMessage = tempTracker.key.encrypt(str( [`announce`, BaseN.encode(peer.pub)] ))
+                        let announceMessage = tempTracker.key.encrypt(str( [`announce`, targetPub] ))
                         conn.send(announceMessage, 0, announceMessage.length, tempTracker.port, tempTracker.ip, showError)
                         connState = 1
+                        return 1
                     }
                     else{
-                        messageSendFailed = true
-                        messageSendFailedReason = `Communication interrupted` //LOCALE_NEEDED
-                        return
+                        callback(new Result({
+                            message: `${targetPub} connection is interrupetd` //LOCALE_NEEDED
+                        }))
+                        peer.quality = 0
                     }
-
                     return
+
                 case 1:
                     /** @type {Peer} */
                     let tracker = self.trackers[remoteAddress]
                 
                     if(typeof tracker === 'object'){ // outgoing connection
                         if(Try(() => message = json(tempTracker.key.decrypt(message))) === null){
-                            messageSendFailed = true
-                            messageSendFailedReason = `Decryption from tracker failed.` //LOCALE_NEEDED
+                            peer.quality = 0
+                            callback(new Result({
+                                message:`${targetPub} decryption from tracker failed.` //LOCALE_NEEDED
+                            }))
                             return
                         }
                 
                         if(message[0] === 'tooOld'){
-                            messageSendFailed = true
-                            messageSendFailedReason = `Peer is outdated.` //LOCALE_NEEDED
+                            peer.quality = 0
+                            callback(new Result({
+                                message:`${targetPub} is outdated.` //LOCALE_NEEDED
+                            }))
                             return
                         }
                 
                         if(message[0] === 'unknown'){
-                            messageSendFailed = true
-                            messageSendFailedReason = `Tracker does not know specified peer` //LOCALE_NEEDED
+                            peer.quality = 0
+                            callback(new Result({
+                                message: `${targetPub} is unknown by a tracker.` //LOCALE_NEEDED
+                            }))
                             return
                         }
         
                         if(!IpRegex.test(message[0]) || typeof message[1] !== 'number'){
-                            messageSendFailed = true
-                            messageSendFailedReason = `Invalid target address from tracker` //LOCALE_NEEDED
+                            peer.quality = 0
+                            callback(new Result({
+                                message: `Tracker ${BaseN.encode(tempTracker.myPub)} had sent an invalid address.` //LOCALE_NEEDED
+                            }))
                             return
                         }
         
@@ -381,7 +375,7 @@ const Receiver = function(callback){
                     else if(remoteAddress === `${peer.ip}:${peer.port}`){
                         if(Try(() => message = json(peer.key.decrypt(message))) === null && peer.connected){
                             deletePeer(peer)
-                            sendMessage(peer, data)
+                            initializeConnection(peer)
                             return
                         }
 
@@ -389,11 +383,9 @@ const Receiver = function(callback){
                         peer.connected = true
 
                         addPeer(peer)
-                        sendMessage(peer, data)
-
+                        resolve(true)
                         connState = 2
                     }
-
                     return
             }
         }
@@ -417,7 +409,6 @@ const Receiver = function(callback){
             return
         }
 
-        //conn.on('message', (message, remote) => connMessage_tracker(message,remote))
         conn.send(
             tempTracker.myPub, 0, tempTracker.myPub.length,
             tempTracker.port,
@@ -425,24 +416,15 @@ const Receiver = function(callback){
             showError
         )
 
-        peer.quality--
         setTimeout(() => {
-            if(peer.quality <= 0){
-                peer.quality = __.MAX_TRIAL
-                callback(null, new Result({
-                    message: `Connection to peer '${BaseN.encode(peer.pub)}' timed out.` //LOCALE_NEEDED
-                }))
-                return
-            }
-            else if(messageSendFailed)
-                return callback(null, new Result({
-                    message: `Message to '${BaseN.encode(peer.pub)}' failed to send due to: ${messageSendFailedReason}` //LOCALE_NEEDED
-                }))
-            else if(!peer.connected)
-                sendMessage(peer, data)
+            if(peer.quality <= 0)
+                return resolve(false)
 
+            peer.quality--
+            initializeConnection(peer)
         }, 4000)
-    }
+    })
+
 
     /** @type {RequestFunction} Callback function for this object */
     this.callback = typeof callback === 'function' ? callback : () => false
@@ -480,28 +462,36 @@ const Receiver = function(callback){
      * Send message to target
      * @param {Peer|string} peer Peer to send data to
      * @param {string|Array|Buffer} data Data to be sent
-     * @returns {boolean} Is the connection established?
+     * @returns {Promise<boolean>} Is the connection successfully established?
      */
-    this.send = (peer, data) => {
-        if(typeof peer === 'string'){
-            peer = self.peers[peerStr]
-            if(typeof peer === 'undefined'){
-                peer = new Peer([
-                    '',
-                    0,
-                    peer
-                ])
-            }
-        }
-
-        if(peer.quality < __.MAX_TRIAL){
-            callback(peer, new Result({
-                message: `Peer ${BaseN.encode(peer.pub)} is still connecting...` //LOCALE_NEEDED
-            }))
+    this.send = async (peer, data) => {
+        if(Array.isArray(data))
+            if(Try(() => data = str(data)) === null)
+                return false
+        
+        if(typeof data !== 'string')
             return false
+
+        if(typeof peer === 'string'){
+            /** @type {string} */
+            let peerStr = peer
+            peer = self.peers[peerStr]
+
+            if(typeof peer === 'undefined')
+                peer = new Peer(['', 0, peerStr])
+        }
+        
+        if(!peer.connected){
+            if(!await initializeConnection(peer))
+                return false
         }
 
-        sendMessage(peer, data)
+        Try(() => {
+            let conn = peer.socket
+            data = peer.key.encrypt(data)
+            conn.send(data, 0, data.length, peer.port, peer.ip, showError)
+        })
+            
         return true
     }
 
