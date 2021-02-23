@@ -1,4 +1,5 @@
 const Datagram = require('dgram')
+const FileSystem = require('fs')
 
 const Try = require('../fn.try.catch')
 
@@ -49,8 +50,11 @@ const Peer = function(d){
     /** @type {Datagram.Socket} Network socket*/
     this.socket = null
 
-    /** @type {boolean} If this peer is currently sending large bytes */
-    this.sendingLargeBytes = false
+    /** @type {FileSystem.WriteStream} Currently writing stream*/
+    this.stream = null
+
+    /** @type {string} Amount of bytes received */
+    this.bytesReceived = 0
 
     /**
      * Import JSON

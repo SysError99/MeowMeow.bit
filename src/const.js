@@ -1,5 +1,7 @@
 /** List of constants */
 const constants = {
+    EOF: String.fromCharCode(5),
+
     /**  Constants about key*/
     KEY: {
         LOCATION: 'key.server'

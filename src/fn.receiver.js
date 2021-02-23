@@ -1,5 +1,6 @@
 // UNSTABLE, NOT TESTED
 const Datagram = require('dgram')
+const FileSystem = require('fs')
 
 const __ = require('./const')
 const BaseN = require('./fn.base.n')
@@ -198,6 +199,26 @@ const Receiver = function(callback){
             })
 
         if(!isTracker){ //check last access time from peer
+            if(peer.stream !== null){
+                message = peer.key.decrypt(message)
+
+                if(message[0] === __.EOF){
+                    peer.stream.close()
+                    peer.stream = null
+                    return
+                }
+ 
+                if(peer.bytesReceived > __.MAX_PAYLOAD){
+                    peer.stream.close()
+                    peer.stream = null
+                    return
+                }
+
+                peer.stream.write(message, showError)
+                peer.bytesReceived += message.length
+                return
+            }
+
             let currentTime = new Date()
             let lastAccess = currentTime - peer.lastAccess
     
@@ -210,8 +231,6 @@ const Receiver = function(callback){
                     return 
                 }
             }
-    
-            peer.lastAccess = currentTime
         }
 
         if(Try(() => message = json(peer.key.decrypt(message))) === null){
@@ -230,6 +249,9 @@ const Receiver = function(callback){
         }
         else
             peer.quality = __.MAX_TRIAL
+
+        if(!Array.isArray(message))
+            return
 
         if(isTracker){ // message from tracker
             switch(message[0]){
@@ -266,11 +288,24 @@ const Receiver = function(callback){
             return
         }
 
-        if(Array.isArray(message))
-            callback(peer, new Result({
-                success: true,
-                data: message
-            }))
+        switch(message[0]){
+            case `sendLargeBytes`:
+                if(peer.stream === null){
+                    peer.stream = FileSystem.createWriteStream(`./data/${BaseN.encode(peer.pub)}.bin`, {
+                        encoding: 'binary',
+                        flags: 'a' //append
+                    })
+
+                    peer.bytesReceived = 0
+                    peer.sendingLargeBytes = true
+                }
+                return
+        }
+
+        callback(peer, new Result({
+            success: true,
+            data: message
+        }))
 
     }
 
