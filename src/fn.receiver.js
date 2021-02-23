@@ -167,8 +167,9 @@ const Receiver = function(callback){
      * Handle socket incoming message
      * @param {Array|Buffer|string} message 
      * @param {Datagram.RemoteInfo} remote 
+     * @returns {Promise<void>}
      */
-    let handleSocketMessage = (message, remote) => {
+    let handleSocketMessage = async (message, remote) => {
         if(message.length === 0)
             return socket.send('', 0, 0, remote.port, remote.address, showError)
 
