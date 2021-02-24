@@ -100,9 +100,7 @@ const keyCreator = {
      * Generate a new symmetric key
      * @returns {Buffer} Key buffer
      */
-    symmetric: () => {
-        return Crypto.randomBytes(32)
-    }
+    symmetric: () => Crypto.randomBytes(32)
 
 }
 const ecdh = {
@@ -113,9 +111,7 @@ const ecdh = {
      * @param {Buffer} public Public key
      * @returns {Buffer} Secret key
      */
-    computeSecret: (ecdh, public) => {
-        return ecdh.computeSecret(public).slice(32,64)
-    }
+    computeSecret: (ecdh, public) => ecdh.computeSecret(public).slice(32,64)
 
 }
 const sect571k1 = {
@@ -142,9 +138,7 @@ const sign = {
      * @param {string} password Password (passphrase) to be used
      * @returns {string} Signature
      */
-    perform: (str,key,password) => {
-        return BaseN.encode(Crypto.sign(null, Buffer.from(str), {key: long(key, header.private), passphrase: typeof password === 'string' ? password : ''}), '62')
-    },
+    perform: (str,key,password) => BaseN.encode(Crypto.sign(null, Buffer.from(str), {key: long(key, header.private), passphrase: typeof password === 'string' ? password : ''}), '62'),
 
     /**
      * Perform key verification
@@ -153,9 +147,7 @@ const sign = {
      * @param {string} signature Signature to be verified
      * @returns {boolean} Is this legit?
      */
-    verify: (str,key,signature) => {
-        return Crypto.verify(null, Buffer.from(str), long(key, header.public), BaseN.decode(signature, '62'))
-    }
+    verify: (str,key,signature) => Crypto.verify(null, Buffer.from(str), long(key, header.public), BaseN.decode(signature, '62'))
 
 }
 /** Symmetric encryption functions*/
