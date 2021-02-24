@@ -12,6 +12,9 @@ const Post = function(d){
     /** @type {string[]} List of media hashes*/
     this.media = []
 
+    /** @type {string[]} Media type of each media */
+    this.mediaType = []
+
     /** @type {PostPointer[]} Post mention*/
     this.mention = null
 
