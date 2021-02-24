@@ -143,7 +143,7 @@ const sign = {
      * @returns {string} Signature
      */
     perform: (str,key,password) => {
-        return BaseN.encode(Crypto.sign(null, Buffer.from(str), {key: long(key, header.private), passphrase: password}), '62')
+        return BaseN.encode(Crypto.sign(null, Buffer.from(str), {key: long(key, header.private), passphrase: typeof password === 'string' ? password : ''}), '62')
     },
 
     /**
