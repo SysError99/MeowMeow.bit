@@ -294,7 +294,7 @@ const Receiver = function(callback){
             case `sendLargeBytes`:
                 if(peer.stream === null){
                     peer.stream = FileSystem.createWriteStream(`./data/${BaseN.encode(peer.pub)}.bin`, {
-                        encoding: 'binary',
+                        encoding: 'utf-8',
                         flags: 'a' //append
                     })
 
