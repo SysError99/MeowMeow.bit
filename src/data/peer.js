@@ -53,6 +53,9 @@ const Peer = function(d){
     /** @type {FileSystem.WriteStream} Currently writing stream*/
     this.stream = null
 
+    /** @type {string} */
+    this.streamLocation = ''
+
     /** @type {string} Amount of bytes received */
     this.bytesReceived = 0
 
