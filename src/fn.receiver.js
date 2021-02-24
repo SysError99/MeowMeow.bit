@@ -210,6 +210,10 @@ const Receiver = function(callback){
                 if(message[0] === __.EOF){
                     peer.mediaStream.close()
                     peer.mediaStream = null
+
+                    let mediaLocation = peer.mediaStreamLocation.split('.')
+                    // [ <owner>, <post-number>, 'media', <media-number> ]
+                    // TODO: continue verifying file
                     return
                 }
  
@@ -525,6 +529,51 @@ const Receiver = function(callback){
         })
 
         return true
+    }
+
+    /**
+     * Send data and wait for ready response
+     * @param {Peer} peer 
+     * @param {string|Buffer} data Data to be sent
+     * @returns {Promise<boolean>} is target now ready to receive next data
+     */
+    this.sendAndWait = (peer,data) => {
+        if(typeof data !== 'string')
+            return false
+
+        if(typeof peer === 'string'){
+            /** @type {string} */
+            let peerStr = peer
+            peer = self.peers[peerStr]
+
+            if(typeof peer === 'undefined')
+                peer = new Peer(['', 0, peerStr])
+        }
+
+        if(!peer.connected){
+            if(!await initializeConnection(peer))
+                return false
+        }
+
+        Try(() => {
+            let conn = peer.socket
+            data = peer.key.encrypt(data)
+            conn.send(data, 0, data.length, peer.port, peer.ip, showError)
+        })
+
+        return await (() =>
+            new Promise(resolve => {
+                let intervalCount = 0
+                setInterval(() =>{
+                    if(peer.mediaStreamReady)
+                        resolve(true)
+                    else if(intervalCount < 1000)
+                        intervalCount++
+                    else
+                        reslove(false)
+                },1)
+            })
+        )()
     }
 
     /** Socket from receiver module */

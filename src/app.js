@@ -33,9 +33,9 @@ app.get('/find/:id', (req,res) => {
 const receiver = new Receiver((peer, data) => {
     console.log(`${data.data}`)
     /**
-     * [0]:string Requester (poster) public key
+     * [0]:string Post owner (public key)
      * [1]:number Post position
-     * [2]:string Social Command
+     * [2]:string Social Command (such as post, like, comment, share, mention)
      * :
      * [.]:any
      * [n]:string Signature (optional)
@@ -53,7 +53,7 @@ const receiver = new Receiver((peer, data) => {
 
         case 'media':
             /**
-             * UNSTABLE, NOT TESTED
+             * !! UNSTABLE, NOT TESTED !!
              * 
              * [3]:number media number
              */
