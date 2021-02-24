@@ -53,6 +53,12 @@ const promise = {
 }
 
 /**
+ * Check if the file exists.
+ * @param {string} location Location to be check for existing files
+ */
+const access = location => FileSystem.accessSync(P.a + location + P.b)
+
+/**
  * Retrieve a file from storage
  * @param {string} location File location
  * @returns {Result} Result of a read JSON
@@ -86,13 +92,22 @@ const write = (location, data) => {
     }))
 }
 
+/**
+ * Create a write stream to the location
+ * @param {string} location File location to be written to
+ * @returns {FileSystem.WriteStream} Created write stream
+ */
+const writeStream = location => FileSystem.createWriteStream(P.a + location + P.b, {encoding: 'utf-8', flags: 'a'})
+
 /** Shared storage module*/
 const storage = {
     /** @type {Locale} Locale object, will be retreived from server*/
     locale: null,
     promise: promise,
+    access: access,
     read: read,
-    write: write
+    write: write,
+    writeStream, writeStream
 }
 
 /**
