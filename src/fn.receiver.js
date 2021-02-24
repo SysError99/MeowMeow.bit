@@ -66,6 +66,8 @@ const Receiver = function(callback){
         reuseAddr: true
     })
 
+    let storage = require('./fn.storage')(locale)
+
     /**
      * Add peer to peer list
      * @param {Peer} peer Peer to be added
@@ -127,7 +129,7 @@ const Receiver = function(callback){
         self.trackerList = []
         self.trackers = Try(() => {
             /** @type {Array} */
-            let trackersLoaded = require('./fn.storage')().read('trackers').data
+            let trackersLoaded = storage.read('trackers').data
             /** @type {Peer[]} */
             let trackersImported = {}
         
@@ -213,6 +215,7 @@ const Receiver = function(callback){
                 if(peer.bytesReceived > __.MAX_PAYLOAD){
                     peer.stream.close()
                     peer.stream = null
+                    storage.remove(peer.streamLocation)
                     return
                 }
 
@@ -288,20 +291,6 @@ const Receiver = function(callback){
                     return
             }
             return
-        }
-
-        switch(message[0]){
-            case `sendLargeBytes`:
-                if(peer.stream === null){
-                    peer.stream = FileSystem.createWriteStream(`./data/${BaseN.encode(peer.pub)}.bin`, {
-                        encoding: 'utf-8',
-                        flags: 'a' //append
-                    })
-
-                    peer.bytesReceived = 0
-                    peer.sendingLargeBytes = true
-                }
-                return
         }
 
         callback(peer, new Result({
@@ -475,6 +464,9 @@ const Receiver = function(callback){
 
     /** @type {Peer[]} Connected peers */
     this.peers = {}
+
+    /** Storage being used */
+    this.storage = storage
 
     /** @type {Peer} List of all trackers */
     this.trackers = {}
