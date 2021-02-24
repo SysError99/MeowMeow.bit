@@ -37,7 +37,7 @@ const Peer = function(d){
 
     /** @type {boolean} Is this running behind NAT?*/
     this.nat = true
-    
+
     /** @type {SymmetricKey} Peer Symmetric key*/
     this.key = null
 
@@ -51,13 +51,16 @@ const Peer = function(d){
     this.socket = null
 
     /** @type {FileSystem.WriteStream} Currently writing stream*/
-    this.stream = null
+    this.mediaStream = null
 
-    /** @type {string} */
-    this.streamLocation = ''
+    /** @type {boolean} If peer is now ready to receive next bytes */
+    this.mediaStreamReady = false
+
+    /** @type {string} Location of media stream*/
+    this.mediaStreamLocation = ''
 
     /** @type {string} Amount of bytes received */
-    this.bytesReceived = 0
+    this.mediaStreamBytesReceived = 0
 
     /**
      * Import JSON

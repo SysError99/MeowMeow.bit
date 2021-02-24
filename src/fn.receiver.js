@@ -204,24 +204,25 @@ const Receiver = function(callback){
         let isTracker = typeof self.trackers[remoteAddress] === 'object'
 
         if(!isTracker){ //check last access time from peer
-            if(peer.stream !== null){
+            if(peer.mediaStream !== null){
                 message = peer.key.decrypt(message)
 
                 if(message[0] === __.EOF){
-                    peer.stream.close()
-                    peer.stream = null
+                    peer.mediaStream.close()
+                    peer.mediaStream = null
                     return
                 }
  
-                if(peer.bytesReceived > __.MAX_PAYLOAD){
-                    peer.stream.close()
-                    peer.stream = null
-                    storage.remove(peer.streamLocation)
+                if(peer.mediaStreamBytesReceived > __.MAX_PAYLOAD){
+                    peer.mediaStream.close()
+                    peer.mediaStream = null
+                    storage.remove(peer.mediaStreamLocation)
                     return
                 }
 
-                peer.stream.write(message, showError)
-                peer.bytesReceived += message.length
+                peer.mediaStream.write(message, showError)
+                peer.mediaStreamBytesReceived += message.length
+                peer.socket.send('', 0, 0, remote.port, remote.address, showError)
                 return
             }
 
