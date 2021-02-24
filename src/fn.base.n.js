@@ -7,7 +7,7 @@
 const ALPHABET = "0123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz";
 const ALPHABET_LEN = ALPHABET.length;
 /** @type {string} */
-const ALPHABET_62 =" 0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+const ALPHABET_62 = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 const ALPHABET_62_LEN = ALPHABET_62.length;
 /** @type {string} */
 const ALPHABET_92 = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz+/= !#$%&()*,-.:;<>?@[]^_`{|}~";
