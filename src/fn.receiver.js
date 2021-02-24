@@ -171,12 +171,13 @@ const Receiver = function(callback){
      * Handle socket incoming message
      * @param {Array|Buffer|string} message 
      * @param {Datagram.RemoteInfo} remote 
+     * @param {Peer} _peer (optional)
      * @returns {Promise<void>}
      */
-    let handleSocketMessage = async (message, remote) => {
+    let handleSocketMessage = async (message, remote, peer) => {
         let remoteAddress = `${remote.address}:${remote.port}`
         /** @type {Peer} */
-        let peer = self.peers[remoteAddress]
+        let peer = typeof _peer === 'object' ? _peer : self.peers[remoteAddress]
 
         if(typeof peer === 'undefined')
             return Try(() => {
@@ -328,7 +329,7 @@ const Receiver = function(callback){
          */
         let connMessage = (message, remote) => {
             if(connState === 2)
-                handleSocketMessage(message, remote)
+                handleSocketMessage(message, remote, peer)
 
             if(message.length === 0)
                 return
