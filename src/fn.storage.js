@@ -59,6 +59,12 @@ const promise = {
 const access = location => FileSystem.accessSync(P.a + location + P.b)
 
 /**
+ * Remove file from storage
+ * @param {string} location 
+ */
+const remove = location => Try(() => FileSystem.rmSync(P.a + location + P.b))
+
+/**
  * Retrieve a file from storage
  * @param {string} location File location
  * @returns {Result} Result of a read JSON
@@ -106,6 +112,7 @@ const storage = {
     promise: promise,
     access: access,
     read: read,
+    remove: remove,
     write: write,
     writeStream, writeStream
 }
