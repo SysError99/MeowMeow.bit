@@ -174,7 +174,7 @@ const Receiver = function(callback){
      * @param {Peer} _peer (optional)
      * @returns {Promise<void>}
      */
-    let handleSocketMessage = async (message, remote, peer) => {
+    let handleSocketMessage = async (message, remote, _peer) => {
         let remoteAddress = `${remote.address}:${remote.port}`
         /** @type {Peer} */
         let peer = typeof _peer === 'object' ? _peer : self.peers[remoteAddress]
@@ -198,8 +198,11 @@ const Receiver = function(callback){
                     peer.socket.send(Crypt.rand(22), 0, 22, remote.port, remote.address, showError)
             })
 
-        if(message.length === 0)
-            return peer.socket.send('', 0, 0, remote.port, remote.address, showError)
+        if(message.length === 0){
+            peer.socket.send('', 0, 0, remote.port, remote.address, showError)
+            peer.mediaStreamReady = true
+            return
+        }
 
         let isTracker = typeof self.trackers[remoteAddress] === 'object'
 
@@ -523,7 +526,7 @@ const Receiver = function(callback){
             data = peer.key.encrypt(data)
             conn.send(data, 0, data.length, peer.port, peer.ip, showError)
         })
-            
+
         return true
     }
 

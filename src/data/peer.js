@@ -54,7 +54,7 @@ const Peer = function(d){
     this.mediaStream = null
 
     /** @type {boolean} If peer is now ready to receive next bytes */
-    this.mediaStreamReady = false
+    this.mediaStreamReady = true
 
     /** @type {string} Location of media stream*/
     this.mediaStreamLocation = ''
