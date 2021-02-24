@@ -197,7 +197,6 @@ const Receiver = function(callback){
             })
 
         if(message.length === 0){
-            peer.socket.send('', 0, 0, remote.port, remote.address, showError)
             peer.mediaStreamReady = true
             return
         }
