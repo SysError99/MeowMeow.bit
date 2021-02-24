@@ -1,6 +1,4 @@
-// UNSTABLE, NOT TESTED
 const Datagram = require('dgram')
-const FileSystem = require('fs')
 
 const __ = require('./const')
 const BaseN = require('./fn.base.n')

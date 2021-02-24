@@ -1,4 +1,3 @@
-// UNSTABLE, NOT TESTED
 /*!
  * Tracker Server
  */
