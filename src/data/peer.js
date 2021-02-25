@@ -53,8 +53,8 @@ const Peer = function(d){
     /** @type {FileSystem.WriteStream} Currently writing stream*/
     this.mediaStream = null
 
-    /** @type {boolean} If peer is now ready to receive next bytes */
-    this.mediaStreamReady = true
+    /** @type {function} Call this if peer is now ready to receive next bytes */
+    this.mediaStreamReady = null
 
     /** @type {string} Location of media stream*/
     this.mediaStreamLocation = ''

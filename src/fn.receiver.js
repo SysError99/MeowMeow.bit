@@ -197,7 +197,10 @@ const Receiver = function(callback){
             })
 
         if(message.length === 0){
-            peer.mediaStreamReady = true
+            if(typeof peer.mediaStreamReady === 'function'){
+                peer.mediaStreamReady()
+                peer.mediaStreamReady = null
+            }
             return
         }
 
@@ -532,15 +535,15 @@ const Receiver = function(callback){
         if(wait)
             return await (() =>
                 new Promise(resolve => {
-                    let intervalCount = 0
-                    setInterval(() =>{
-                        if(peer.mediaStreamReady)
-                            resolve(true)
-                        else if(intervalCount < 1000)
-                            intervalCount++
-                        else
-                            reslove(false)
-                    },1)
+                    let waitTimeout = setTimeout(() => {
+                        peer.mediaStreamReady = null
+                        resolve(false)
+                    })
+
+                    peer.mediaStreamReady = () =>{
+                        clearTimeout(waitTimeout)
+                        resolve(true)
+                    }
                 })
             )()
 
