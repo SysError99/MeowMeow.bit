@@ -498,9 +498,10 @@ const Receiver = function(callback){
      * Send message to target
      * @param {Peer|string} peer Peer to send data to
      * @param {string|Array|Buffer} data Data to be sent
+     * @param {boolean} wait If sending this need to wait peer to response back
      * @returns {Promise<boolean>} Is the connection successfully established?
      */
-    this.send = async (peer, data) => {
+    this.send = async (peer, data, wait) => {
         if(Array.isArray(data))
             if(Try(() => data = str(data)) === null)
                 return false
@@ -528,52 +529,22 @@ const Receiver = function(callback){
             conn.send(data, 0, data.length, peer.port, peer.ip, showError)
         })
 
+        if(wait)
+            return await (() =>
+                new Promise(resolve => {
+                    let intervalCount = 0
+                    setInterval(() =>{
+                        if(peer.mediaStreamReady)
+                            resolve(true)
+                        else if(intervalCount < 1000)
+                            intervalCount++
+                        else
+                            reslove(false)
+                    },1)
+                })
+            )()
+
         return true
-    }
-
-    /**
-     * Send data and wait for ready response
-     * @param {Peer} peer 
-     * @param {string|Buffer} data Data to be sent
-     * @returns {Promise<boolean>} is target now ready to receive next data
-     */
-    this.sendAndWait = (peer,data) => {
-        if(typeof data !== 'string')
-            return false
-
-        if(typeof peer === 'string'){
-            /** @type {string} */
-            let peerStr = peer
-            peer = self.peers[peerStr]
-
-            if(typeof peer === 'undefined')
-                peer = new Peer(['', 0, peerStr])
-        }
-
-        if(!peer.connected){
-            if(!await initializeConnection(peer))
-                return false
-        }
-
-        Try(() => {
-            let conn = peer.socket
-            data = peer.key.encrypt(data)
-            conn.send(data, 0, data.length, peer.port, peer.ip, showError)
-        })
-
-        return await (() =>
-            new Promise(resolve => {
-                let intervalCount = 0
-                setInterval(() =>{
-                    if(peer.mediaStreamReady)
-                        resolve(true)
-                    else if(intervalCount < 1000)
-                        intervalCount++
-                    else
-                        reslove(false)
-                },1)
-            })
-        )()
     }
 
     /** Socket from receiver module */
