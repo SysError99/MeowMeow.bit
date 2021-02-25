@@ -44,6 +44,7 @@ const Post = function(d){
      * ./<owner>.<post-number>.comment.<n>.json
      * ./<owner>.<post-number>.share.<n>.json
      * 
+     * Comments, shares will use PostPointer() for linking to real post.
      * Media hashes will be included and signed, others are not.
      */
 

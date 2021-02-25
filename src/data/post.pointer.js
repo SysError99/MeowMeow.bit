@@ -1,5 +1,5 @@
 /**
- * Post Pointer object
+ * Post Pointer object, to be used for posts, comments, and shares
  * @param {[string, string]} d JSON
  */
 const PostPointer = function(d){
