@@ -220,7 +220,7 @@ const Receiver = function(callback){
                     return
                 }
  
-                if(peer.mediaStreamBytesReceived > __.MAX_PAYLOAD){
+                if(peer.mediaStreamPacketsReceived > __.MAX_PAYLOAD){
                     peer.mediaStream.close()
                     peer.mediaStream = null
                     storage.remove(peer.mediaStreamLocation)
@@ -228,7 +228,7 @@ const Receiver = function(callback){
                 }
 
                 peer.mediaStream.write(message, showError)
-                peer.mediaStreamBytesReceived += message.length
+                peer.mediaStreamPacketsReceived += message.length
                 peer.socket.send('', 0, 0, remote.port, remote.address, showError)
                 return
             }
@@ -538,7 +538,7 @@ const Receiver = function(callback){
                     let waitTimeout = setTimeout(() => {
                         peer.mediaStreamReady = null
                         resolve(false)
-                    })
+                    }, 1000)
 
                     peer.mediaStreamReady = () =>{
                         clearTimeout(waitTimeout)

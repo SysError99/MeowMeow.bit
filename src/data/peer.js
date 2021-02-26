@@ -60,7 +60,7 @@ const Peer = function(d){
     this.mediaStreamLocation = ''
 
     /** @type {string} Amount of bytes received */
-    this.mediaStreamBytesReceived = 0
+    this.mediaStreamPacketsReceived = 0
 
     /**
      * Import JSON
