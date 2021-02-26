@@ -138,7 +138,7 @@ const sign = {
      * @param {string} password Password (passphrase) to be used
      * @returns {string} Signature
      */
-    perform: (str,key,password) => BaseN.encode(Crypto.sign(null, Buffer.from(str), {key: long(key, header.private), passphrase: typeof password === 'string' ? password : ''}), '62'),
+    perform: (str,key,password) => BaseN.encode(Crypto.sign(null, Buffer.from(str), {key: long(key, header.private), passphrase: typeof password === 'string' ? password : ''}), '92'),
 
     /**
      * Perform key verification
@@ -147,7 +147,7 @@ const sign = {
      * @param {string} signature Signature to be verified
      * @returns {boolean} Is this legit?
      */
-    verify: (str,key,signature) => Crypto.verify(null, Buffer.from(str), long(key, header.public), BaseN.decode(signature, '62'))
+    verify: (str,key,signature) => Crypto.verify(null, Buffer.from(str), long(key, header.public), BaseN.decode(signature, '92'))
 
 }
 /** Symmetric encryption functions*/
