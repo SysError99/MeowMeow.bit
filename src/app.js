@@ -6,6 +6,8 @@
 const Receiver = require('./fn.receiver')
 const Web = require('./fn.web')
 
+const Post = require('./data/post')
+
 /**
  * Stringify JSON object or array
  * @param {Object} o JSON or array object to be stringified
@@ -60,16 +62,22 @@ const receiver = new Receiver((peer, data) => {
             if(typeof data[3] !== 'number')
                 return
             
-            let location = `${data[0]}.${data[1]}.media.${data[3]}`
+            let postLocation = `${data[0]}.${data[1]}`
+            let mediaLocation = `${postLocation}.media.${data[3]}`
 
-            if(receiver.storage.access(location))
+            let post = new Post(receiver.storage.read(postLocation))
+
+            if(typeof post.media[data[3]] === `undefined`)
+                return
+
+            if(receiver.storage.access(mediaLocation))
                 return
             
             if(peer.mediaStream !== null)
                 return
 
-            peer.mediaStreamLocation = location
-            peer.mediaStream = receiver.storage.writeStream(location)
+            peer.mediaStreamLocation = mediaLocation
+            peer.mediaStream = receiver.storage.writeStream(mediaLocation)
             return
 
     }
