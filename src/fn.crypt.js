@@ -26,6 +26,7 @@ const len = 64
  * @returns {string} Restored string
  */
 const long = (str,prefix) => {
+    str = BaseN.decode(str, '62').toString('base64')
     let s
     let strRows = Math.ceil(str.length / len)
     let strArr = Array(strRows + 2)
@@ -50,7 +51,7 @@ const short = str => {
         return str.join('\n')
     str.splice(str.length - 2, 2)
     str.splice(0,1)
-    return str.join('')
+    return BaseN.encode(Buffer.from(str.join(''), 'base64'), '62')
 }
 
 /** Key creator*/
