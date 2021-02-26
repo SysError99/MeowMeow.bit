@@ -15,7 +15,7 @@ const Post = function(d){
     /** @type {string[]} Media type of each media */
     this.mediaType = []
 
-    /** @type {PostPointer[]} Post mention*/
+    /** @type {PostPointer} Post mention*/
     this.mention = null
 
     /** @type {string} Post owner name*/
