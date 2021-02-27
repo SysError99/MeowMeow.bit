@@ -42,7 +42,7 @@ const promise = {
             resolve(Try(async () => 
                 new Result({
                     success: true, 
-                    data: await FileSystem.promises.writeFile(P.a + location + P.b, JSON.stringify(data), {encoding:'utf-8'})
+                    data: await FileSystem.promises.writeFile(P.a + location + P.b, typeof data === 'object' ? JSON.stringify(data) : data, {encoding:'utf-8'})
                 }),
                 new Result({
                     message: storage.locale.str.file.writeErr
@@ -88,7 +88,7 @@ const read = location => {
  */
 const write = (location, data) => {
     return Try(() => {
-        FileSystem.writeFileSync(P.a + location + P.b, JSON.stringify(data), {encoding:'utf-8'})
+        FileSystem.writeFileSync(P.a + location + P.b, typeof data === 'object' ? JSON.stringify(data) : data, {encoding:'utf-8'})
         return new Result({
             success: true
         })
