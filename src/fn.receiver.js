@@ -292,7 +292,6 @@ const Receiver = function(callback){
                     peer.keepAlive = setInterval(() => peer.socket.send('', 0, 0, remote.port, remote.address, showError), 10000)
                     return
             }
-            return
         }
 
         callback(peer, new Result({
