@@ -17,6 +17,9 @@ const Peer = function(d){
     /** @type {boolean} This is 'Peer' object*/
     this.isPeer = true
 
+    /** @type {boolean} If this peer is a tracker*/
+    this.isTracker = false
+
     /** @type {string} Peer IP address*/
     this.ip = ''
 

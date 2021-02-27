@@ -137,6 +137,7 @@ const Receiver = function(callback){
                     el.port,
                     el.pub
                 ])
+                newTracker.isTracker = true
                 newTracker.socket = socket
 
                 delete trackersLoaded [ind]
