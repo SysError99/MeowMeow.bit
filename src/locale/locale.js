@@ -3,8 +3,6 @@
  * @param {function} f Function of locale changer.
  */
 const Locale = function(f){
-    /** This object */
-    let self = this
     /** @type {boolean} This is a 'Locale' object*/
     this.isLocale = true
     
@@ -15,7 +13,7 @@ const Locale = function(f){
      * Change locale with the function.
      * @param {function} fn 
      */
-    this.change = fn => fn(self)
+    this.change = fn => fn(this)
 
     /** List of locale */
     this.str = {

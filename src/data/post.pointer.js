@@ -3,8 +3,6 @@
  * @param {[string, string]} d JSON
  */
 const PostPointer = function(d){
-    /** This Object*/
-    let self = this
     /** This is a 'PostPointer' Object*/
     this.isPostPointer = true
 
@@ -19,10 +17,10 @@ const PostPointer = function(d){
      */
     let _import = () => {
         if(typeof d[0] === 'number')
-            self.pos = d[0]
+            this.pos = d[0]
 
         if(typeof d[1] === 'string')
-            self.owner = d[1]
+            this.owner = d[1]
     }
     /**
      * Export to array
@@ -30,8 +28,8 @@ const PostPointer = function(d){
      */
     this.export = () => {
         return [
-            self.pos,
-            self.owner
+            this.pos,
+            this.owner
         ]
     }
 

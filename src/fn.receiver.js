@@ -50,8 +50,6 @@ const randTracker = receiver => receiver.peers[receiver.trackerList[Math.floor(M
  * @param {RequestFunction} callback Callback to handle server
  */
 const Receiver = function(callback){
-    /** This object*/
-    let self = this
     /** @type {string} This is 'Receiver' object*/
     this.isReceiver = true
 
@@ -73,8 +71,8 @@ const Receiver = function(callback){
      */
     let addPeer = peer => {
         let remoteAddress = `${peer.ip}:${peer.port}`
-        if(typeof self.peers[remoteAddress] === 'undefined'){
-            self.peers[remoteAddress] = peer
+        if(typeof this.peers[remoteAddress] === 'undefined'){
+            this.peers[remoteAddress] = peer
             return true
         }
         return false
@@ -93,8 +91,8 @@ const Receiver = function(callback){
             peer.keepAlive = null
         }
 
-        if(typeof self.peers[remoteAddress] === 'object')
-            delete self.peers[remoteAddress]
+        if(typeof this.peers[remoteAddress] === 'object')
+            delete this.peers[remoteAddress]
     }
 
     /**
@@ -122,9 +120,9 @@ const Receiver = function(callback){
      * Handshake to trackers
      */
     let helloTrackers = () => {
-        self.key = new ECDHKey()
-        self.peers = {}
-        self.trackerList = []
+        this.key = new ECDHKey()
+        this.peers = {}
+        this.trackerList = []
         if(Try(() => {
             /** @type {Array} */
             let trackersLoaded = storage.read('trackers').data
@@ -144,18 +142,18 @@ const Receiver = function(callback){
                     return
 
                 let trackerAddress = `${el.ip}:${el.port}`
-                self.peers[trackerAddress] = newTracker
-                self.trackerList.push(trackerAddress)
+                this.peers[trackerAddress] = newTracker
+                this.trackerList.push(trackerAddress)
             })
         }))
             return
         
-        if(self.trackerList.length === 0)
+        if(this.trackerList.length === 0)
             throw Error('No trackers has been set')
 
-        for(let t in self.trackerList){
+        for(let t in this.trackerList){
             /** @type {Peer} */
-            let tracker = this.peers[self.trackerList[t]]
+            let tracker = this.peers[this.trackerList[t]]
             helloTracker(tracker)
         }
 
@@ -172,7 +170,7 @@ const Receiver = function(callback){
     let handleSocketMessage = async (message, remote, _peer) => {
         let remoteAddress = `${remote.address}:${remote.port}`
         /** @type {Peer} */
-        let peer = typeof _peer === 'object' ? _peer : self.peers[remoteAddress]
+        let peer = typeof _peer === 'object' ? _peer : this.peers[remoteAddress]
 
         if(typeof peer === 'undefined')
             return Try(() => {
@@ -180,7 +178,7 @@ const Receiver = function(callback){
                     remote.address,
                     remote.port
                 ])
-                peer.key = self.key.computeSecret(message)
+                peer.key = this.key.computeSecret(message)
 
                 if(peer.key !== null){
                     addPeer(peer)
@@ -279,12 +277,12 @@ const Receiver = function(callback){
                 
                 //tracker
                 case 'keyExists':
-                    self.key = new ECDHKey()
+                    this.key = new ECDHKey()
 
                 case 'welcome':
                     /** @type {Buffer} */
                     let helloMessage
-                    if(Try(() => helloMessage = peer.key.encrypt(str( [`hello`, BaseN.encode(self.key.get.pub())] ))) === null)
+                    if(Try(() => helloMessage = peer.key.encrypt(str( [`hello`, BaseN.encode(this.key.get.pub())] ))) === null)
                         return
 
                     peer.socket.send(helloMessage, 0, helloMessage.length, remote.port, remote.address, showError)
@@ -313,7 +311,7 @@ const Receiver = function(callback){
         /** @type {Datagram.Socket} */
         let conn
         let connState = 0
-        let tracker = randTracker(self)
+        let tracker = randTracker(this)
         let targetPub = BaseN.encode(peer.pub)
 
         let tempTracker = new Peer([
@@ -356,7 +354,7 @@ const Receiver = function(callback){
             }
 
             // find peer from tracker
-            if(self.peers[remoteAddress] !== tracker)
+            if(this.peers[remoteAddress] !== tracker)
                 return
 
             if(Try(() => message = json(tempTracker.key.decrypt(message))) === null){
@@ -476,9 +474,9 @@ const Receiver = function(callback){
      */
     this.forwardPort = p => {
         socket.bind(p)
-        for(let t in self.trackerList){
+        for(let t in this.trackerList){
             /** @type {Peer} */
-            let tracker = self.peers[self.trackerList[t]]
+            let tracker = this.peers[this.trackerList[t]]
             let tellPortStr = tracker.key.encrypt(str( [`forwardPort`, p] ))
             socket.send(tellPortStr, 0, tellPortStr.length, tracker.port, tracker.ip, showError)
         }
@@ -502,7 +500,7 @@ const Receiver = function(callback){
         if(typeof peer === 'string'){
             /** @type {string} */
             let peerStr = peer
-            peer = self.peers[peerStr]
+            peer = this.peers[peerStr]
 
             if(typeof peer === 'undefined')
                 peer = new Peer(['', 0, peerStr])

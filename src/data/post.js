@@ -4,8 +4,6 @@ const PostPointer = require('./post.pointer')
  * @param {Array} d Array object
  */
 const Post = function(d){
-    /** This object*/
-    let self = this
     /** @type {boolean} This is 'Post' object*/
     this.isPost = true
 
@@ -53,22 +51,22 @@ const Post = function(d){
      */
     let _import = () => {
         if(Array.isArray(d[0]))
-            self.media = d[0]
+            this.media = d[0]
 
         if(Array.isArray(d[1]))
-            self.mention = d[1]
+            this.mention = d[1]
 
         if(typeof d[2] === 'string')
-            self.owner = d[2]
+            this.owner = d[2]
 
         if(typeof d[3] === 'string')
-            self.signature = d[3]
+            this.signature = d[3]
 
         if(Array.isArray(d[4]))
-            self.tag = d[4]
+            this.tag = d[4]
 
         if(typeof d[5] === 'string')
-            self.text = d[5]
+            this.text = d[5]
     }
     /**
      * Export to array
@@ -76,12 +74,12 @@ const Post = function(d){
      */
     this.export = () => {
         return [
-            self.media,
-            self.mention,
-            self.owner,
-            self.signature,
-            self.tag,
-            self.text
+            this.media,
+            this.mention,
+            this.owner,
+            this.signature,
+            this.tag,
+            this.text
         ]
     }
 

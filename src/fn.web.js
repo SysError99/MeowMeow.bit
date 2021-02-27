@@ -22,8 +22,6 @@ const Try = require('./fn.try.catch')
  * }} d Data container for this object
  */
 const WebRequest = function(req,d){
-    /** This object*/
-    let self = this
     /** @type {boolean} This is 'WebRequest' object*/
     this.isWebRequest = true
     /** @type {HTTP.IncomingMessage} Unimplemented features live here*/
@@ -41,9 +39,9 @@ const WebRequest = function(req,d){
      */
     let _import = () => {
         if(isAny(d.params))
-            self.params = d.params
+            this.params = d.params
         if(isAny(d.query)) 
-            self.query = d.query
+            this.query = d.query
     }
     if(isAny(d))
         _import()
@@ -54,8 +52,6 @@ const WebRequest = function(req,d){
  * @param {HTTP.ServerResponse} res Outgoing response
  */
 const WebResponse = function(res){
-    /** This object*/
-    let self = this
     /** This is 'WebResponse' object*/
     this.isWebResponse = true
     /** @type {HTTP.ServerResponse} Unimplemented features live here*/
@@ -67,7 +63,7 @@ const WebResponse = function(res){
      */
     this.contentType = contentType => {
         res.setHeader('content-type', contentType)
-        return self
+        return this
     }
     /**
      * Send data back to client
@@ -84,7 +80,7 @@ const WebResponse = function(res){
                 break
         }
         res.end(data)
-        return self
+        return this
     }
     /**
      * Set HTTP status
@@ -93,7 +89,7 @@ const WebResponse = function(res){
      */
     this.status = () => {
         res.writeHead(status)
-        return self
+        return this
     }
 }
 
@@ -102,8 +98,6 @@ const WebResponse = function(res){
  * @param {{method:string,params:string,callback,function}} d Array
  */
 const WebEvent = function(d){
-    /** This object*/
-    let self = this
     /** @type {boolean} This is 'WebEvent' object*/
     this.isWebEvent = true
     /** @type {RequestCallback} Callback function*/
@@ -118,11 +112,11 @@ const WebEvent = function(d){
      */
     let _import = () => {
         if(typeof d.callback === 'function')
-            self.callback = d.callback
+            this.callback = d.callback
         if(typeof d.method === 'string')
-            self.method = d.method.toLowerCase()
+            this.method = d.method.toLowerCase()
         if(typeof d.params === 'string')
-            self.params = d.params.split('/')
+            this.params = d.params.split('/')
     }
     if(isAny(d))
         _import()
@@ -150,8 +144,6 @@ let webEventAdd = (event, callback, method, params) => {
  * }} d JSON properties
  */
 const Web = function(d){
-    /** This object*/
-    let self = this
     /** @type {boolean} This is 'Web' object*/
     this.isWeb = true
 
@@ -288,7 +280,7 @@ const Web = function(d){
             req.on('error', err => {
                 console.error('E -> http.on(\'error\'): ' + err.message)
             })
-        }).listen(self.port)
+        }).listen(this.port)
     }
     
     /**
@@ -296,7 +288,7 @@ const Web = function(d){
      */
     let _import = () => {
         if(typeof d.port === 'number')
-            self.port = d.port
+            this.port = d.port
         _server()
     }
     if(isAny(d))
