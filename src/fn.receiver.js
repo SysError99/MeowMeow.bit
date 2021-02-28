@@ -535,6 +535,7 @@ const Receiver = class {
         if(typeof callback !== 'function')
             throw Error(`Callback for receiver must be a function!`)
 
+        this.callback = callback
         this.socket.on('error', showError)
         this.socket.on('message', (msg, remote) => this.handleSocketMessage(msg, remote))    
     
