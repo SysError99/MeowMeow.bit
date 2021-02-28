@@ -1,26 +1,38 @@
 const isAny = require('../fn.is.any')
 
-/** 
- * Result object.
- * @param {{success: boolean, message: string, data:any}} d JSON
- */
-const Result = function(d){
+/** Result object */
+const Result = class {
     /** @type {boolean} This is 'Result' object*/
-    this.isResult = true
+    isResult = true
 
     /** @type {Array} Data received*/
-    this.data = null
+    data = null
 
     /** @type {string} Result message*/
-    this.message = ''
+    message = ''
 
     /** @type {boolean} Is this result success?*/
-    this.success = false
+    success = false
 
     /**
-     * Import JSON
+     * Export data to JSON object
      */
-    let _import = () => {
+    export () {
+        return {
+            data: this.data,
+            message: this.message,
+            success: this.success
+        }
+    }
+
+    /**
+     * Create result
+     * @param {{success: boolean, message: string, data:any}} d Data to be set
+     */
+    constructor (d) {
+        if(typeof d !== 'object')
+            return
+
         if(typeof d.data !== 'undefined') 
             this.data = d.data
 
@@ -30,22 +42,6 @@ const Result = function(d){
         if(typeof d.success === 'boolean')
             this.success = d.success
     }
-
-    /**
-     * Export to JSON
-     * @returns {Object} JSON
-     */
-    this.export = () => {
-        return {
-            data: this.data,
-            message: this.message,
-            success: this.success
-        }
-    }
-
-    if(isAny(d))
-        _import()
-    
 }
 
 module.exports = Result

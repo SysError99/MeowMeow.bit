@@ -1,81 +1,53 @@
-const Try = require('../try.catch')
+const Try = require('../fn.try.catch')
 
 const Crypt = require('../fn.crypt')
 
-/**
- * Sign key object.
- * @param {Array|string} d Array object or string for new key (passphrase)
- */
-const SignKey = function(d){
+/** Signing Key, used for signing strings */
+const SignKey = class {
     /** @type {boolean} This is 'SignKey' object*/
-    this.isSignKey = true
+    isSignKey = true
 
-    /** @type {string} Saved password*/
-    let password = ''
+    /** @type {string} Key password */
+    password = ''
 
-    /** @type {string} Private key*/
-    let private = ''
+    /** @type {string} Privatte key */
+    private = ''
 
     /** @type {string} Public key*/
-    let public = ''
+    public = ''
 
     /**
-     * Sign a key using private key
+     * Sign a string
      * @param {string} str String to be signed
      * @returns {string} Base64-based signature
      */
-    this.sign = str => {
-        if(private.length === 0 || str.length === 0)
+    sign (str) {
+        if(this.private.length === 0 || str.length === 0)
             return ''
-        return Try(() => Crypt.sign.perform(str, private, password), '')
+        return Try(() => Crypt.sign.perform(str, this.private, this.password), '')
     }
 
     /**
-     * Verify signature using public key
+     * Verify signature
      * @param {string} str String to be verified
      * @param {string} signature Signature to be verified
      * @returns {boolean} Is this legit?
      */
-    this.verify = (str, signature) => {
-        if(public.length === 0 || str.length === 0)
+    verify (str, signature) {
+        if(this.public.length === 0 || str.length === 0)
             return false
-        return Try(() => Crypt.sign.verify(str, public, signature), '')
-    }
-    
-    /**
-     * Generate a new key
-     * @param {string} password Passphrase for this key
-     */
-    let _newKey = password => {
-        let newKey = Crypt.newKey.sign(password)
-        password = password
-        private = newKey.privateKey
-        public = newKey.publicKey
-    }
-
-    /**
-     * Import array object
-     */
-    let _import = () => {
-        if(typeof d[0] === 'string')
-            password = d[0]
-
-        if(typeof d[1] === 'string')
-            private = d[1]
-
-        if(typeof d[2] === 'string')
-            public = d[2]
+        return Try(() => Crypt.sign.verify(str, this.public, signature), '')
     }
 
     /**
      * Export to array
      * @returns {Array} Array object
      */
-    this.export = () => {
+    export () {
         return [
-            password,
-            private,
-            public
+            this.password,
+            this.private,
+            this.public
         ]
     }
 
@@ -83,17 +55,34 @@ const SignKey = function(d){
      * Export only public key
      * @returns {string} A public key
      */
-    this.exportPub = () => {
-        return public
+    exportPub () {
+        return this.public
     }
 
-    if(Array.isArray(d))
-        _import()
-    else if(typeof d === 'string')
-        _newKey(d)
-    else
-        _newKey('')
+    /**
+     * Create sign key
+     * @param {Array|string} d Use string to create a new key with password, use array to load saved key
+     */
+    constructor (d) {
+        if(Array.isArray(d)){
+            if(typeof d[0] === 'string')
+                password = d[0]
 
+            if(typeof d[1] === 'string')
+                private = d[1]
+
+            if(typeof d[2] === 'string')
+                public = d[2]
+        }
+        else{
+            let password = typeof d === 'string' ? d : ''
+            let newKey = Crypt.newKey.sign(password)
+            this.password = password
+            this.private = newKey.privateKey
+            this.public = newKey.publicKey
+            return
+        }
+    }
 }
 
 module.exports = SignKey

@@ -5,51 +5,54 @@ const Crypt = require('../fn.crypt')
 
 const SymmetricKey = require('./key.symmetric')
 
-/**
- * ECDH key object
- * @param {Buffer|string} d String to be used as private key
- */
-const ECDHKey = function(d){
+/** ECDH key object, used for exchanging secret key */
+const ECDHKey = class {
     /** @type {boolean} This is 'ECDH Key'*/
-    this.isECDHKey = true
+    isECDHKey = true
 
     /** @type {Crypto.ECDH} ECDH key object*/
-    let ecdh = Try(() => Crypt.newKey.ecdh(d), null)
+    ecdh = null
 
     /**
      * Compute a secret key
      * @param {Buffer} pub Public key
      * @returns {SymmetricKey} Symmetric key
      */
-    this.computeSecret = pub => {
-        return Try(() => new SymmetricKey(Crypt.ecdh.computeSecret(ecdh, Crypt.sect571k1.long(pub))), null)
+    computeSecret (pub) {
+        return Try(() => new SymmetricKey(Crypt.ecdh.computeSecret(this.ecdh, Crypt.sect571k1.long(pub))), null)
     }
 
-    this.get = {
-        /**
-         * Get private key
-         * @returns {Buffer} Public key
-         */
-        prv: () => {
-            return Try(() => ecdh.getPrivateKey(), Buffer.from([]))
-        },
-        /**
-         * Get public key
-         * @returns {Buffer} Public key
-         */
-        pub: () => {
-            return Try(() => Crypt.sect571k1.short(ecdh.getPublicKey()), Buffer.from([]))
-        }
+    /**
+     * Get private key
+     * @returns {Buffer} Public key
+     */
+    getPrv () {
+        return Try(() => this.ecdh.getPrivateKey(), Buffer.from([]))
+    }
+
+     /**
+     * Get public key
+     * @returns {Buffer} Public key
+     */
+    getPub () {
+        return Try(() => Crypt.sect571k1.short(this.ecdh.getPublicKey()), Buffer.from([]))
     }
 
     /**
      * Export key
      * @returns {string} Private key
      */
-    this.export = () => {
-        return Try(() => ecdh.getPrivateKey().toString('base64'), Buffer.from([]))
+    export () {
+        return Try(() => this.ecdh.getPrivateKey().toString('base64'), Buffer.from([]))
     }
 
+    /**
+     * Generate ECDH key object
+     * @param {Array} d 
+     */
+    constructor (d) {
+        this.ecdh = Try(() => Crypt.newKey.ecdh(d), null)
+    }
 }
 
 module.exports = ECDHKey

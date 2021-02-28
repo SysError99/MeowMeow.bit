@@ -179,4 +179,4 @@ udp.on('message', (msg, remote) => {
     }
 })
 
-console.log(`Tracker is now on! \n\nPublic key: <${myKey.get.pub().toString('base64')}>`)
+console.log(`Tracker is now on! \n\nPublic key: <${myKey.getPub().toString('base64')}>`)

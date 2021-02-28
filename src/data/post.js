@@ -1,32 +1,30 @@
 const PostPointer = require('./post.pointer')
-/**
- * Post object
- * @param {Array} d Array object
- */
-const Post = function(d){
+
+/** Post object, contains post elements */
+const Post = class {
     /** @type {boolean} This is 'Post' object*/
-    this.isPost = true
+    isPost = true
 
     /** @type {string[]} List of media hashes*/
-    this.media = []
+    media = []
 
     /** @type {string[]} Media type of each media */
-    this.mediaType = []
+    mediaType = []
 
     /** @type {PostPointer} Post mention*/
-    this.mention = null
+    mention = null
 
     /** @type {string} Post owner name*/
-    this.owner = ''
+    owner = ''
 
     /** @type {string} Post signature from owner*/
-    this.signature = Buffer.from([])
+    signature = Buffer.from([])
 
     /** @type {string[]} Account Tags*/
-    this.tag = []
+    tag = []
 
     /** @type {string} Text inside post*/
-    this.text = ''
+    text = ''
 
     /**
      * Other elements including:
@@ -47,9 +45,28 @@ const Post = function(d){
      */
 
     /**
-     * Import d to object
+     * Export to array
+     * @returns {Array}
      */
-    let _import = () => {
+    export () {
+        return [
+            this.media,
+            this.mention,
+            this.owner,
+            this.signature,
+            this.tag,
+            this.text
+        ]
+    }
+
+    /**
+     * Create Post object
+     * @param {Array} d Array to be imported
+     */
+    constructor (d) {
+        if(!Array.isArray(d))
+            return
+
         if(Array.isArray(d[0]))
             this.media = d[0]
 
@@ -68,23 +85,6 @@ const Post = function(d){
         if(typeof d[5] === 'string')
             this.text = d[5]
     }
-    /**
-     * Export to array
-     * @returns {Array} Array object
-     */
-    this.export = () => {
-        return [
-            this.media,
-            this.mention,
-            this.owner,
-            this.signature,
-            this.tag,
-            this.text
-        ]
-    }
-
-    if(Array.isArray(d))
-        _import()
 }
 
 module.exports = Post

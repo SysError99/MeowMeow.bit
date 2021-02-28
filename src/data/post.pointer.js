@@ -1,39 +1,39 @@
-/**
- * Post Pointer object, to be used for posts, comments, and shares
- * @param {[string, string]} d JSON
- */
-const PostPointer = function(d){
+/** Post pointer, used for referencing post position */
+const PostPointer = class {
     /** This is a 'PostPointer' Object*/
-    this.isPostPointer = true
+    isPostPointer = true
 
     /** @type {number} Position of a post*/
-    this.pos = -1
+    pos = -1
 
     /** @type {string} Account owner*/
-    this.owner = ''
+    owner = ''
 
-    /**
-     * Import from array
-     */
-    let _import = () => {
-        if(typeof d[0] === 'number')
-            this.pos = d[0]
-
-        if(typeof d[1] === 'string')
-            this.owner = d[1]
-    }
     /**
      * Export to array
-     * @returns {Array} Array object
+     * @returns {Array}
      */
-    this.export = () => {
+    export () {
         return [
             this.pos,
             this.owner
         ]
     }
 
-    if(Array.isArray(d))
-        _import()
+    /**
+     * Create Post Pointer
+     * @param {Array} d Data to be imported
+     */
+    constructor (d) {
+        if(!Array.isArray(d))
+            return
+
+        if(typeof d[0] === 'number')
+            this.pos = d[0]
+
+        if(typeof d[1] === 'string')
+            this.owner = d[1]
+    }
 }
+
 module.exports = PostPointer

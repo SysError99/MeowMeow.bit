@@ -1,55 +1,94 @@
 const SignKey = require('./key.sign')
-/**
- * Account object
- * @param {Array[]} d Array object
- */
-const Acc = function(d){
-    /** @type {boolean} This is 'Account' object*/
-    this.isAcc = true
+
+/** Account object, used for storing account data */
+const Acc = class {
+    /** @type {boolean} This is account object*/
+    isAcc = true
 
     /** @type {string} Account description*/
-    this.description = ''
+    description = ''
 
-    /** @type {string[]} List of followers (identified with a public key)*/
-    this.follower = []
+    /** @type {string[]} List of followers (account public key)*/
+    follower = []
 
-    /** @type {string[]} List of following (identified by a public key)*/
-    this.following = []
-
-    /** @type {SignKey} Asymmetric key to be used*/
-    this.key = null
-
-    /** @type {string} Name to be called*/
-    this.name = ''
-
-    /** Picture for this account*/
-    this.pic = {
-        /** @type {string} Base64-based cover picture file*/
+    /** Account images */
+    img = {
+        /** @type {string} Cover image */
         cover: '',
-        /** @type {string} Base64-based profile picture file*/
+        /** @type {string} Profile image */
         profile: ''
     }
 
-    /** @type {number} Number of posts*/
-    this.posts = 0
-    
-    /** @type {boolean} Is this a public account? (Anyone can write to this account)*/
-    this.public = false
+    /** @type {SignKey} Signing key*/
+    key = null
 
-    /** @type {string[]} List of tag for searching*/
-    this.tag = []
+    /** @type {string} Account name*/
+    name = ''
+
+    /** @type {string} Number of posted posts*/
+    posts = 0
+
+    /** @type {boolean} If this is a public account, other users can post to this account*/
+    public = false
+
+    /** @type {string[]} Account tags (for searching)*/
+    tag = []
 
     /**
-     * Create a new account
+     * Export account base
+     * @returns {Array}
      */
-    let _new = () => {
+    exportBase () {
+        return [
+            this.description,
+            this.follower,
+            null,
+            this.name,
+            [
+                this.pic.cover,
+                this.pic.profile
+            ],
+            this.posts,
+            this.public,
+            this.tag
+        ]
+    }
+
+    /**
+     * Export to array, for sharing with others
+     * @returns {Array}
+     */
+    exportPub () {
+        let e = this.exportBase()
+        e[2] = this.key.exportPub()
+        return e
+    }
+
+    /**
+     * Export whole account to array
+     * @returns {Array}
+     */
+    export () {
+        let e = this.exportBase()
+        e[2] = this.key.export()
+        return e
+    }
+
+    /**
+     * Generate basic information on this account
+     */
+    new () {
         this.key = new SignKey()
     }
 
     /**
-     * Import array
+     * Create account object
+     * @param {Array} d Array to be imported
      */
-    let _import = () => {
+    constructor (d) {
+        if(!Array.isArray(d))
+            return this.new()
+
         if(typeof d[0] === 'string')
             this.description = d[0]
 
@@ -81,47 +120,6 @@ const Acc = function(d){
         if(Array.isArray(d[7]))
             this.tag = d[7]
     }
-    /**
-     * Export to array
-     * @returns {Array} Array object
-     */
-    let exportBase = () => {
-        return [
-            this.description,
-            this.follower,
-            null,
-            this.name,
-            [
-                this.pic.cover,
-                this.pic.profile
-            ],
-            this.posts,
-            this.public,
-            this.tag
-        ]
-    }
-    /**
-     * Export to array
-     * @returns {Array} Array object
-     */
-    this.export = () => {
-        let e = exportBase()
-        e[2] = this.key.export()
-        return e
-    }
-    /**
-     * Export to array
-     * @returns {Array} Array object
-     */
-    this.exportPub = () => {
-        let e = exportBase()
-        e[2] = this.key.exportPub()
-        return e
-    }
-    if(Array.isArray(d))
-        _import()
-    else
-        _new()
 }
 
 module.exports = Acc

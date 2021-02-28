@@ -1,22 +1,13 @@
-/**
- * Locale object
- * @param {function} f Function of locale changer.
- */
-const Locale = function(f){
+/** Locale object */
+const Locale = class {
     /** @type {boolean} This is a 'Locale' object*/
-    this.isLocale = true
+    isLocale = true
     
     /** @type {string} Currently used locale*/
-    this.current = ''
-
-    /**
-     * Change locale with the function.
-     * @param {function} fn 
-     */
-    this.change = fn => fn(this)
+    current = ''
 
     /** List of locale */
-    this.str = {
+    str = {
         file: {
             readErr: '',
             writeErr: ''
@@ -40,12 +31,24 @@ const Locale = function(f){
         }
     }
 
-    if(typeof f === 'function')
-        this.change(f)
+    /**
+     * Change locale with the function.
+     * @param {function} fn Function to be executed
+     */
+    change (fn) {
+        fn(this)
+    }
 
-    else
-        this.change(require('./en'))
-    
+    /**
+     * Create Locale object
+     * @param {function} f Function of locale changer.
+     */
+    constructor (f) {
+        if(typeof f === 'function')
+            this.change(f)
+        else
+            this.change(require('./en'))
+    }
 }
 
 module.exports = Locale

@@ -7,66 +7,81 @@ const __ = require('../const')
 const ECDHKey = require('./key.ecdh')
 const SymmetricKey = require('./key.symmetric')
 
-/** 
- * Peer object
- * @param {Array} d Array object
- */
-const Peer = function(d){
-    /** @type {boolean} This is 'Peer' object*/
-    this.isPeer = true
+/** Peer Object, used for referencing peer */
+const Peer = class {
+    /** @type {boolean} This is 'Peer' object */
+    isPeer = true
 
-    /** @type {boolean} If this peer is a tracker*/
-    this.isTracker = false
+    /** @type {boolean} This is tracker*/
+    isTracker = false
 
-    /** @type {string} Peer IP address*/
-    this.ip = ''
+    /** @type {string} IP Address*/
+    ip = ''
 
     /** @type {Date} Last accessed time*/
-    this.lastAccess = new Date(0)
+    lastAccess = new Date(0)
 
     /** @type {number} Peer connected port*/
-    this.port = 8080
+    port = 8080
 
     /** @type {Buffer} Peer public key.*/
-    this.pub = Buffer.from([])
+    pub = Buffer.from([])
 
     /** @type {NodeJS.Timeout} */
-    this.keepAlive = null
+    keepAlive = null
 
     /** @type {Buffer} Randomly generated public key to be shared with another peer*/
-    this.myPub = Buffer.from([])
+    myPub = Buffer.from([])
 
     /** @type {boolean} Is this running behind NAT?*/
-    this.nat = true
+    nat = true
 
     /** @type {SymmetricKey} Peer Symmetric key*/
-    this.key = null
+    key = null
 
     /** @type {boolean} Is the connection established?*/
-    this.connected = false
+    connected = false
 
     /** @type {number} Peer quality indicator*/
-    this.quality = __.MAX_TRIAL
+    quality = __.MAX_TRIAL
 
     /** @type {Datagram.Socket} Network socket*/
-    this.socket = null
+    socket = null
 
     /** @type {FileSystem.WriteStream} Currently writing stream*/
-    this.mediaStream = null
+    mediaStream = null
 
     /** @type {function} Call this if peer is now ready to receive next bytes */
-    this.mediaStreamReady = null
+    mediaStreamReady = null
 
     /** @type {string} Location of media stream*/
-    this.mediaStreamLocation = ''
+    mediaStreamLocation = ''
 
     /** @type {string} Amount of bytes received */
-    this.mediaStreamPacketsReceived = 0
+    mediaStreamPacketsReceived = 0
 
     /**
-     * Import JSON
+     * Export to array
+     * @returns {Array}
      */
-    let _import = () => {
+    export () {
+        return [
+            this.ip,
+            this.port,
+            this.pub.toString('base64'),
+            this.nat,
+            this.lastAccess.toUTCString(),
+        ]
+    }
+
+    /**
+     * Create Peer
+     * @param {Array} d Array to be imported
+     */
+    constructor (d) {
+        if(!Array.isArray(d))
+            return
+
         if(typeof d[0] === 'string')
             this.ip = d[0]
 
@@ -88,28 +103,10 @@ const Peer = function(d){
 
             let newECDH = new ECDHKey()
             this.key = newECDH.computeSecret(d[2])
-            this.myPub = newECDH.get.pub()
+            this.myPub = newECDH.getPub()
             this.pub = d[2]
         })
     }
-
-    /**
-     * Export to JSON
-     * @returns {Object} JSON
-     */
-    this.export = () => {
-        return [
-            this.ip,
-            this.port,
-            this.pub.toString('base64'),
-            this.nat,
-            this.lastAccess.toUTCString(),
-        ]
-    }
-
-    if(Array.isArray(d))
-        _import()
-
 }
 
 module.exports = Peer

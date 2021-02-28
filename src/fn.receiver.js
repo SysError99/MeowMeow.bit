@@ -45,31 +45,41 @@ const str = obj => JSON.stringify(obj)
  */
 const randTracker = receiver => receiver.peers[receiver.trackerList[Math.floor(Math.random() * receiver.trackerList.length)]]
 
-/**
- * Peer receiver.
- * @param {RequestFunction} callback Callback to handle server
- */
-const Receiver = function(callback){
+/** Peer receiver */
+const Receiver = class {
     /** @type {string} This is 'Receiver' object*/
-    this.isReceiver = true
+    isReceiver = true
+
+    /** @type {RequestFunction} Callback function for this object */
+    callback = () => false
+
+    /** @type {ECDHKey} Receiver generated key, always brand-new */
+    key = new ECDHKey()
 
     /** Locale being used in this object */
-    let locale = new Locale()
+    locale = new Locale()
+
+    /** @type {Peer[]} Connected peers */
+    peers = {}
 
     /** Receiver socket module*/
-    let socket = Datagram.createSocket({
+    socket = Datagram.createSocket({
         type: 'udp4',
         reuseAddr: true
     })
 
-    let storage = require('./fn.storage')(locale)
+    /** Storage module */
+    storage = require('./fn.storage')(this.locale)
+
+    /** @type {string[]} List of trackers as "ip:port" */
+    trackerList = []
 
     /**
-     * Add peer to peer list
+     * Add peer to known list
      * @param {Peer} peer Peer to be added
      * @returns {boolean} Did peer been added?
      */
-    let addPeer = peer => {
+    addPeer (peer) {
         let remoteAddress = `${peer.ip}:${peer.port}`
         if(typeof this.peers[remoteAddress] === 'undefined'){
             this.peers[remoteAddress] = peer
@@ -82,7 +92,7 @@ const Receiver = function(callback){
      * Delete a peer from known list
      * @param {Peer} peer Peer to delete
      */
-    let deletePeer = peer => {
+    deletePeer (peer) {
         let remoteAddress = `${peer.ip}:${peer.port}`
         peer.connected = false
 
@@ -96,17 +106,31 @@ const Receiver = function(callback){
     }
 
     /**
+     * Do port forwarding and avoid NAT.
+     * @param {number} p Port to forward to
+     */
+    forwardPort (p) {
+        this.socket.bind(p)
+        for(let t in this.trackerList){
+            /** @type {Peer} */
+            let tracker = this.peers[this.trackerList[t]]
+            let tellPortStr = tracker.key.encrypt(str( [`forwardPort`, p] ))
+            this.socket.send(tellPortStr, 0, tellPortStr.length, tracker.port, tracker.ip, showError)
+        }
+    }
+
+    /**
      * Handshake to a tracker
      * @param {Peer} tracker Tracker to be initialized
      */
-    let helloTracker = tracker => {
+    helloTracker (tracker) {
         if(tracker.quality <= 0)
             return false
 
         let myPub = tracker.myPub
 
         tracker.quality--
-        socket.send(
+        this.socket.send(
             myPub, 0, myPub.length,
             tracker.port,
             tracker.ip,
@@ -119,13 +143,12 @@ const Receiver = function(callback){
     /**
      * Handshake to trackers
      */
-    let helloTrackers = () => {
-        this.key = new ECDHKey()
+    helloTrackers () {
         this.peers = {}
         this.trackerList = []
         if(Try(() => {
             /** @type {Array} */
-            let trackersLoaded = storage.read('trackers').data
+            let trackersLoaded = this.storage.read('trackers').data
 
             trackersLoaded.forEach((el, ind) => {
                 let newTracker = new Peer([
@@ -134,7 +157,7 @@ const Receiver = function(callback){
                     el.pub
                 ])
                 newTracker.isTracker = true
-                newTracker.socket = socket
+                newTracker.socket = this.socket
 
                 delete trackersLoaded [ind]
 
@@ -154,10 +177,10 @@ const Receiver = function(callback){
         for(let t in this.trackerList){
             /** @type {Peer} */
             let tracker = this.peers[this.trackerList[t]]
-            helloTracker(tracker)
+            this.helloTracker(tracker)
         }
 
-        console.log(`Receiver will be known as '${BaseN.encode(this.key.get.pub())}'.`)
+        console.log(`Receiver will be known as '${BaseN.encode(this.key.getPub())}'.`)
     }
 
     /**
@@ -167,7 +190,7 @@ const Receiver = function(callback){
      * @param {Peer} _peer (optional)
      * @returns {Promise<void>}
      */
-    let handleSocketMessage = async (message, remote, _peer) => {
+    async handleSocketMessage (message, remote, _peer) {
         let remoteAddress = `${remote.address}:${remote.port}`
         /** @type {Peer} */
         let peer = typeof _peer === 'object' ? _peer : this.peers[remoteAddress]
@@ -181,10 +204,10 @@ const Receiver = function(callback){
                 peer.key = this.key.computeSecret(message)
 
                 if(peer.key !== null){
-                    addPeer(peer)
-                    peer.socket = socket
-                    peer.connected = true
                     let helloMessage = peer.key.encrypt(str(`[""]`))
+                    this.addPeer(peer)
+                    peer.connected = true
+                    peer.socket = this.socket
                     peer.socket.send(helloMessage, 0, helloMessage.length, remote.port, remote.address, showError)
                 }
                 else
@@ -216,7 +239,7 @@ const Receiver = function(callback){
                 if(peer.mediaStreamPacketsReceived > __.MAX_PAYLOAD){
                     peer.mediaStream.close()
                     peer.mediaStream = null
-                    storage.remove(peer.mediaStreamLocation)
+                    this.storage.remove(peer.mediaStreamLocation)
                     return
                 }
 
@@ -233,8 +256,8 @@ const Receiver = function(callback){
                 if(lastAccess <= __.ACCESS_COOLDOWN)
                     return
                 else if(lastAccess >= __.LAST_ACCESS_LIMIT){
-                    deletePeer(peer)
-                    handleSocketMessage(message, remote)
+                    this.deletePeer(peer)
+                    this.handleSocketMessage(message, remote)
                     return 
                 }
             }
@@ -243,14 +266,14 @@ const Receiver = function(callback){
         if(Try(() => message = json(peer.key.decrypt(message))) === null){
             if(peer.isTracker){
                 if(!helloTracker(peer))
-                    callback(new Result({
+                    this.callback(new Result({
                         message: `Can't establish secure connection with trackers. `+
                         `Key may be invalid or connection may be hijacked.` //LOCALE_NEEDED
                     }))
             }
             else{
-                deletePeer(peer)
-                handleSocketMessage(message, remote)
+                this.deletePeer(peer)
+                this.handleSocketMessage(message, remote)
             }
             return
         }
@@ -282,7 +305,7 @@ const Receiver = function(callback){
                 case 'welcome':
                     /** @type {Buffer} */
                     let helloMessage
-                    if(Try(() => helloMessage = peer.key.encrypt(str( [`hello`, BaseN.encode(this.key.get.pub())] ))) === null)
+                    if(Try(() => helloMessage = peer.key.encrypt(str( [`hello`, BaseN.encode(this.key.getPub())] ))) === null)
                         return
 
                     peer.socket.send(helloMessage, 0, helloMessage.length, remote.port, remote.address, showError)
@@ -294,7 +317,7 @@ const Receiver = function(callback){
             }
         }
 
-        callback(peer, new Result({
+        this.callback(peer, new Result({
             success: true,
             data: message
         }))
@@ -306,189 +329,158 @@ const Receiver = function(callback){
      * @param {Peer} peer Peer to initialize connection
      * @returns {Promise<boolean>} Is connection successfully established?
      */
-    let initializeConnection = peer => new Promise(resolve => {
-        /** @type {Datagram.Socket} */
-        let conn
-        let connState = 0
-        let tracker = randTracker(this)
-        let targetPub = BaseN.encode(peer.pub)
+    initializeConnection (peer) {
+        return new Promise(resolve => {
+            /** @type {Datagram.Socket} */
+            let conn
+            let connState = 0
+            let tracker = randTracker(this)
+            let targetPub = BaseN.encode(peer.pub)
 
-        let tempTracker = new Peer([
-            tracker.ip,
-            tracker.port,
-            tracker.pub
-        ])
+            let tempTracker = new Peer([
+                tracker.ip,
+                tracker.port,
+                tracker.pub
+            ])
 
-        if(peer.connected)
-            return resolve(true)
+            if(peer.connected)
+                return resolve(true)
 
-        /**
-         * conn.on('message'): Tracker connection
-         * @param {Buffer|string} message 
-         * @param {Datagram.RemoteInfo} remote 
-         */
-        let connMessage = (message, remote) => {
-            if(connState === 2)
-                handleSocketMessage(message, remote, peer)
+            /**
+             * conn.on('message'): Tracker connection
+             * @param {Buffer|string} message 
+             * @param {Datagram.RemoteInfo} remote 
+             */
+            let connMessage = (message, remote) => {
+                if(connState === 2)
+                    this.handleSocketMessage(message, remote, peer)
 
-            if(message.length === 0)
-                return
+                if(message.length === 0)
+                    return
 
-            let remoteAddress = `${remote.address}:${remote.port}`
+                let remoteAddress = `${remote.address}:${remote.port}`
 
-            // establish connection with peer
-            if(`${peer.ip}:${peer.port}` === remoteAddress){
-                if(Try(() => message = json(peer.key.decrypt(message))) === null && peer.connected){
-                    deletePeer(peer)
-                    initializeConnection(peer)
+                // establish connection with peer
+                if(`${peer.ip}:${peer.port}` === remoteAddress){
+                    if(Try(() => message = json(peer.key.decrypt(message))) === null && peer.connected){
+                        this.deletePeer(peer)
+                        this.initializeConnection(peer)
+                        return
+                    }
+
+                    peer.quality = __.MAX_TRIAL
+                    peer.connected = true
+
+                    connState = 2
+                    resolve(true)
+                    this.addPeer(peer)
+                }
+
+                // find peer from tracker
+                if(this.peers[remoteAddress] !== tracker)
+                    return
+
+                if(Try(() => message = json(tempTracker.key.decrypt(message))) === null){
+                    peer.quality = 0
+                    this.callback(new Result({
+                        message:`${targetPub} decryption from tracker failed.` //LOCALE_NEEDED
+                    }))
                     return
                 }
 
-                peer.quality = __.MAX_TRIAL
-                peer.connected = true
+                switch(connState){
+                    case 0: // connect to tracker
+                        if(message[0] === 'welcome'){
+                            let announceMessage = tempTracker.key.encrypt(str( [`announce`, targetPub] ))
+                            conn.send(announceMessage, 0, announceMessage.length, tempTracker.port, tempTracker.ip, showError)
+                            connState = 1
+                            return 1
+                        }
+                        else{
+                            this.callback(new Result({
+                                message: `${targetPub} connection is interrupetd` //LOCALE_NEEDED
+                            }))
+                            peer.quality = 0
+                        }
+                        return
 
-                addPeer(peer)
-                resolve(true)
-                connState = 2
+                    case 1:
+                        if(message[0] === 'tooOld'){
+                            peer.quality = 0
+                            this.callback(new Result({
+                                message:`${targetPub} is outdated.` //LOCALE_NEEDED
+                            }))
+                            return
+                        }
+                
+                        if(message[0] === 'unknown'){
+                            peer.quality = 0
+                            this.callback(new Result({
+                                message: `${targetPub} is unknown by a tracker.` //LOCALE_NEEDED
+                            }))
+                            return
+                        }
+        
+                        if(!IpRegex.test(message[0]) || typeof message[1] !== 'number'){
+                            peer.quality = 0
+                            this.callback(new Result({
+                                message: `Tracker ${BaseN.encode(tempTracker.myPub)} had sent an invalid address.` //LOCALE_NEEDED
+                            }))
+                            return
+                        }
+        
+                        peer.ip = message[0]
+                        peer.port = message[1]
+                        
+                        conn.send(peer.myPub, 0, peer.myPub.length, peer.port, peer.ip, showError)
+                        return
+                }
             }
 
-            // find peer from tracker
-            if(this.peers[remoteAddress] !== tracker)
+            conn = Datagram.createSocket({
+                type: 'udp4',
+                reuseAddr: true
+            })
+            conn.on('error', showError)
+            conn.on('message', connMessage)
+            peer.socket = conn
+
+            if(!peer.nat){
+                connState = 1
+                conn.send(
+                    peer.myPub, 0, peer.myPub.length,
+                    peer.port,
+                    peer.ip,
+                    showError
+                )
                 return
-
-            if(Try(() => message = json(tempTracker.key.decrypt(message))) === null){
-                peer.quality = 0
-                callback(new Result({
-                    message:`${targetPub} decryption from tracker failed.` //LOCALE_NEEDED
-                }))
-                return
             }
 
-            switch(connState){
-                case 0: // connect to tracker
-                    if(message[0] === 'welcome'){
-                        let announceMessage = tempTracker.key.encrypt(str( [`announce`, targetPub] ))
-                        conn.send(announceMessage, 0, announceMessage.length, tempTracker.port, tempTracker.ip, showError)
-                        connState = 1
-                        return 1
-                    }
-                    else{
-                        callback(new Result({
-                            message: `${targetPub} connection is interrupetd` //LOCALE_NEEDED
-                        }))
-                        peer.quality = 0
-                    }
-                    return
-
-                case 1:
-                    if(message[0] === 'tooOld'){
-                        peer.quality = 0
-                        callback(new Result({
-                            message:`${targetPub} is outdated.` //LOCALE_NEEDED
-                        }))
-                        return
-                    }
-            
-                    if(message[0] === 'unknown'){
-                        peer.quality = 0
-                        callback(new Result({
-                            message: `${targetPub} is unknown by a tracker.` //LOCALE_NEEDED
-                        }))
-                        return
-                    }
-    
-                    if(!IpRegex.test(message[0]) || typeof message[1] !== 'number'){
-                        peer.quality = 0
-                        callback(new Result({
-                            message: `Tracker ${BaseN.encode(tempTracker.myPub)} had sent an invalid address.` //LOCALE_NEEDED
-                        }))
-                        return
-                    }
-    
-                    peer.ip = message[0]
-                    peer.port = message[1]
-                    
-                    conn.send(peer.myPub, 0, peer.myPub.length, peer.port, peer.ip, showError)
-                    return
-            }
-        }
-
-        conn = Datagram.createSocket({
-            type: 'udp4',
-            reuseAddr: true
-        })
-        conn.on('error', showError)
-        conn.on('message', connMessage)
-        peer.socket = conn
-
-        if(!peer.nat){
-            connState = 1
             conn.send(
-                peer.myPub, 0, peer.myPub.length,
-                peer.port,
-                peer.ip,
+                tempTracker.myPub, 0, tempTracker.myPub.length,
+                tempTracker.port,
+                tempTracker.ip,
                 showError
             )
-            return
-        }
 
-        conn.send(
-            tempTracker.myPub, 0, tempTracker.myPub.length,
-            tempTracker.port,
-            tempTracker.ip,
-            showError
-        )
+            setTimeout(() => {
+                if(peer.quality <= 0)
+                    return resolve(false)
 
-        setTimeout(() => {
-            if(peer.quality <= 0)
-                return resolve(false)
-
-            peer.quality--
-            initializeConnection(peer)
-        }, 4000)
-    })
-
-
-    /** @type {RequestFunction} Callback function for this object */
-    this.callback = typeof callback === 'function' ? callback : () => false
-
-     /** @type {ECDHKey} Receiver generated key, always brand-new */
-    this.key
-
-    /** @type {Locale} Locale being used*/
-    this.locale = locale
-
-    /** @type {Peer[]} Connected peers */
-    this.peers = {}
-
-    /** Storage being used */
-    this.storage = storage
-
-    /** @type {string[]} List of trackers as "ip:port" */
-    this.trackerList = []
-
-    /**
-     * Do port forwarding and avoid NAT.
-     * @param {number} p Port to forward to
-     */
-    this.forwardPort = p => {
-        socket.bind(p)
-        for(let t in this.trackerList){
-            /** @type {Peer} */
-            let tracker = this.peers[this.trackerList[t]]
-            let tellPortStr = tracker.key.encrypt(str( [`forwardPort`, p] ))
-            socket.send(tellPortStr, 0, tellPortStr.length, tracker.port, tracker.ip, showError)
-        }
+                peer.quality--
+                this.initializeConnection(peer)
+            }, 4000)
+        })
     }
 
     /**
-     * Send message to target
-     * @param {Peer|string} peer Peer to send data to
+     * Send message to specific peer
+     * @param {Peer} peer Peer to send data to
      * @param {string|Array|Buffer} data Data to be sent
      * @param {boolean} wait If sending this need to wait peer to response back
      * @returns {Promise<boolean>} Is the connection successfully established?
      */
-    this.send = async (peer, data, wait) => {
+    async send (peer, data, wait) {
         if(Array.isArray(data))
             if(Try(() => data = str(data)) === null)
                 return false
@@ -507,7 +499,7 @@ const Receiver = function(callback){
         
         if(!peer.connected){
             peer.quality = __.MAX_TRIAL
-            if(!await initializeConnection(peer))
+            if(!await this.initializeConnection(peer))
                 return false
         }
 
@@ -535,13 +527,19 @@ const Receiver = function(callback){
         return true
     }
 
-    /** Socket from receiver module */
-    this.socket = socket
+    /**
+     * Create a new receiver
+     * @param {RequestFunction} callback Callback to be used
+     */
+    constructor (callback) {
+        if(typeof callback !== 'function')
+            throw Error(`Callback for receiver must be a function!`)
 
-    socket.on('error', showError)
-    socket.on('message', handleSocketMessage)    
-
-    helloTrackers()
+        this.socket.on('error', showError)
+        this.socket.on('message', (msg, remote) => this.handleSocketMessage(msg, remote))    
+    
+        this.helloTrackers()
+    }
 }
 
 module.exports = Receiver
