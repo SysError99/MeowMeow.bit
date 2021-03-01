@@ -1,3 +1,5 @@
+const Crypt = require('../fn.crypt')
+
 const PostPointer = require('./post.pointer')
 
 /** Post object, contains post elements */
@@ -14,7 +16,7 @@ const Post = class {
     /** @type {PostPointer} Post mention*/
     mention = null
 
-    /** @type {string} Post owner name*/
+    /** @type {string} Post owner public key*/
     owner = ''
 
     /** @type {string} Post signature from owner*/
@@ -25,6 +27,12 @@ const Post = class {
 
     /** @type {string} Text inside post*/
     text = ''
+
+    /** @type {Date} Post date*/
+    time = new Date()
+
+    /** @type {boolean} If this post has a valid signature*/
+    valid = false
 
     /**
      * Other elements including:
@@ -56,7 +64,8 @@ const Post = class {
             this.owner,
             this.signature,
             this.tag,
-            this.text
+            this.text,
+            this.time
         ]
     }
 
@@ -88,6 +97,20 @@ const Post = class {
 
         if(typeof d[6] === 'string')
             this.text = d[6]
+
+        if(typeof d[7] === 'number')
+            this.time = d[7]
+
+        if(this.signature.length  > 0)
+            this.valid = Try(() => Crypt.sign.verify(JSON.stringify([
+                this.media,
+                this.mediaType,
+                this.mention,
+                this.owner,
+                this.tag,
+                this.text,
+                this.time
+            ]), this.owner, this.signature))
     }
 }
 
