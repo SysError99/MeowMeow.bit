@@ -39,7 +39,7 @@ const PostLike = class {
         if(typeof d[3] === 'number') this.pos = d[3]
         if(typeof d[4] === 'string') this.signature = d[4]
 
-        this.valid = Try(() => Crypt.sign.verify(Buffer.from(JSON.stringify( [d[1], d[2], d[3]] ), 'base64'), BaseN.decode(this.owner), Buffer.from(this.signature, 'base64')), false)
+        this.valid = Try(() => Crypt.sign.verify(JSON.stringify( [d[0], d[1], d[2], d[3]] ), d[0], d[4]), false)
     }
 }
 
