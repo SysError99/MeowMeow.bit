@@ -183,6 +183,32 @@ const Receiver = class {
         console.log(`Receiver will be known as '${BaseN.encode(this.key.getPub())}'.`)
     }
 
+
+    /**
+     * Handle Bad Peer from socket
+     * @param {Peer} peer 
+     * @param {Buffer|string} message 
+     * @param {Datagram.RemoteInfo} remote 
+     */
+    handleBadPeer (peer, message, remote) {
+        if(peer.isTracker){
+            if(!helloTracker(peer))
+                this.callback(new Result({
+                    message: `Can't establish secure connection with trackers. `+
+                    `Key may be invalid or connection may be hijacked.` //LOCALE_NEEDED
+                }))
+        }
+        else{
+            let conn = peer.socket
+            if(conn === this.socket){
+                this.deletePeer(peer)
+                return this.handleSocketMessage(message, remote)
+            }
+            else
+                conn.send(peer.myPub, 0, peer.myPub.length, peer.port, peer.ip, showError)
+        }
+    }
+
     /**
      * Handle socket incoming message
      * @param {Array|Buffer|string} message 
@@ -222,70 +248,41 @@ const Receiver = class {
             return
         }
 
-        if(!peer.isTracker){ //check last access time from peer
-            if(peer.mediaStream !== null){
-                message = peer.key.decrypt(message)
+        if(Try(() => message = peer.key.decrypt(message)) === null)
+            return this.handleBadPeer(peer, message, remote)
 
-                if(message[0] === __.EOF){
-                    peer.mediaStream.close()
-                    peer.mediaStream = null
+        if(peer.mediaStream !== null){
+            if(message[0] === __.EOF){
+                peer.mediaStream.close()
+                peer.mediaStream = null
 
-                    let mediaLocation = peer.mediaStreamLocation.split('.')
-                    // [ <owner>, <post-number>, 'media', <media-number> ]
-                    // TODO: continue verifying file
-                    return
-                }
- 
-                if(peer.mediaStreamPacketsReceived > __.MAX_PAYLOAD){
-                    peer.mediaStream.close()
-                    peer.mediaStream = null
-                    this.storage.remove(peer.mediaStreamLocation)
-                    return
-                }
-
-                peer.mediaStream.write(message, showError)
-                peer.mediaStreamPacketsReceived += message.length
-                peer.socket.send('', 0, 0, remote.port, remote.address, showError)
+                let mediaLocation = peer.mediaStreamLocation.split('.')
+                // [ <owner>, <post-number>, 'media', <media-number> ]
+                // TODO: continue verifying file
                 return
             }
 
-            let currentTime = new Date()
-            let lastAccess = currentTime - peer.lastAccess
+            if(peer.mediaStreamPacketsReceived > __.MAX_PAYLOAD){
+                peer.mediaStream.close()
+                peer.mediaStream = null
+                this.storage.remove(peer.mediaStreamLocation)
+                return this.handleBadPeer(peer, message, remote)
+            }
+
+            peer.mediaStream.write(message, showError)
+            peer.mediaStreamPacketsReceived += message.length
+            peer.socket.send('', 0, 0, remote.port, remote.address, showError)
+            return
+        }
+
+        if(Try(() => message = json(message)) === null)
+            return this.handleBadPeer(peer, message, remote)
     
-            if(peer.lastAccess.getTime() !== 0){
-                if(lastAccess <= __.ACCESS_COOLDOWN)
-                    return
-                else if(lastAccess >= __.LAST_ACCESS_LIMIT){
-                    this.deletePeer(peer)
-                    this.handleSocketMessage(message, remote)
-                    return 
-                }
-            }
-        }
-
-        if(Try(() => message = json(peer.key.decrypt(message))) === null){
-            if(peer.isTracker){
-                if(!helloTracker(peer))
-                    this.callback(new Result({
-                        message: `Can't establish secure connection with trackers. `+
-                        `Key may be invalid or connection may be hijacked.` //LOCALE_NEEDED
-                    }))
-            }
-            else{
-                this.deletePeer(peer)
-                this.handleSocketMessage(message, remote)
-            }
-            return
-        }
-        else
-            peer.quality = __.MAX_TRIAL
-
         if(!Array.isArray(message))
-            return
+            return this.handleBadPeer(peer, message, remote)
 
         if(peer.isTracker){ // message from tracker
             switch(message[0]){
-
                 //announcer
                 case 'announce': // peer response back
                     if(typeof message[1] !== 'string' || typeof message[2] !== 'number')
@@ -315,6 +312,20 @@ const Receiver = class {
                     peer.keepAlive = setInterval(() => peer.socket.send('', 0, 0, remote.port, remote.address, showError), 10000)
                     return
             }
+        }
+        else{ //check last access time from peer
+            let currentTime = new Date()
+
+            if(peer.lastAccess.getTime() === 0){
+                peer.lastAccess = currentTime
+                return
+            }
+
+            let lastAccess = currentTime - peer.lastAccess
+            if(lastAccess <= __.ACCESS_COOLDOWN)
+                return
+            else if(lastAccess >= __.LAST_ACCESS_LIMIT)
+                return this.handleBadPeer(peer, message, remote)
         }
 
         this.callback(peer, new Result({
