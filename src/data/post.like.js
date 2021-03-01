@@ -1,4 +1,3 @@
-const BaseN = require('../fn.base.n')
 const Crypt = require('../fn.crypt')
 const Try = require('../fn.try.catch')
 
@@ -26,14 +25,31 @@ const PostLike = class {
     valid = false
 
     /**
-     * Export to array
+     * Export without signature
+     */
+    exportPostLike () {
+        return [
+            this.owner,
+            this.time,
+            this.acc,
+            this.pos
+        ]
+    }
+
+    /**
+     * Export to array, with signature
      */
     export () {
-        this.owner,
-        this.time,
-        this.acc,
-        this.pos,
-        this.signature
+        let postLike = this.exportPostLike()
+        postLike.push(this.signature)
+        return postLike
+    }
+
+    /**
+     * Sign this using private key
+     */
+    sign (privateKey, password) {
+        this.signature = Crypt.sign.perform(JSON.stringify(this.exportPostLike()), privateKey, typeof password === 'string' ? password : '')
     }
 
     /**
@@ -50,7 +66,7 @@ const PostLike = class {
         if(typeof d[3] === 'number') this.pos = d[3]
         if(typeof d[4] === 'string') this.signature = d[4]
 
-        this.valid = Try(() => Crypt.sign.verify(JSON.stringify( [d[0], d[1], d[2], d[3]] ), d[0], d[4]), false)
+        this.valid = Try(() => Crypt.sign.verify(JSON.stringify(this.exportPostLike()), this.owner, this.signature), false)
     }
 }
 
