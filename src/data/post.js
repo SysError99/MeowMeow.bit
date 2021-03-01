@@ -58,14 +58,14 @@ const Post = class {
      */
     export () {
         return [
+            this.owner,
             this.media,
             this.mediaType,
             this.mention,
-            this.owner,
-            this.signature,
             this.tag,
             this.text,
-            this.time
+            this.time,
+            this.signature,
         ]
     }
 
@@ -77,29 +77,29 @@ const Post = class {
         if(!Array.isArray(d))
             return
 
-        if(Array.isArray(d[0]))
-            this.media = d[0]
+        if(typeof d[0] === 'string')
+            this.owner = d[0]
 
         if(Array.isArray(d[1]))
-            this.mediaType = d[1]
+            this.media = d[1]
 
         if(Array.isArray(d[2]))
-            this.mention = new PostPointer([2])
+            this.mediaType = d[2]
 
-        if(typeof d[3] === 'string')
-            this.owner = d[3]
+        if(Array.isArray(d[3]))
+            this.mention = new PostPointer(d[3])
 
-        if(typeof d[4] === 'string')
-            this.signature = d[4]
+        if(Array.isArray(d[4]))
+            this.tag = d[4]
 
-        if(Array.isArray(d[5]))
-            this.tag = d[5]
+        if(typeof d[5] === 'string')
+            this.text = d[5]
 
-        if(typeof d[6] === 'string')
-            this.text = d[6]
+        if(typeof d[6] === 'number')
+            this.time = d[6]
 
-        if(typeof d[7] === 'number')
-            this.time = d[7]
+        if(typeof d[7] === 'string')
+            this.signature = d[7]
 
         if(this.signature.length  > 0)
             this.valid = Try(() => Crypt.sign.verify(JSON.stringify([
