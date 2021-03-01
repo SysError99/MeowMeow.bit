@@ -51,6 +51,7 @@ const Post = class {
     export () {
         return [
             this.media,
+            this.mediaType,
             this.mention,
             this.owner,
             this.signature,
@@ -71,19 +72,22 @@ const Post = class {
             this.media = d[0]
 
         if(Array.isArray(d[1]))
-            this.mention = new PostPointer([1])
+            this.mediaType = d[1]
 
-        if(typeof d[2] === 'string')
-            this.owner = d[2]
+        if(Array.isArray(d[2]))
+            this.mention = new PostPointer([2])
 
         if(typeof d[3] === 'string')
-            this.signature = d[3]
+            this.owner = d[3]
 
-        if(Array.isArray(d[4]))
-            this.tag = d[4]
+        if(typeof d[4] === 'string')
+            this.signature = d[4]
 
-        if(typeof d[5] === 'string')
-            this.text = d[5]
+        if(Array.isArray(d[5]))
+            this.tag = d[5]
+
+        if(typeof d[6] === 'string')
+            this.text = d[6]
     }
 }
 
