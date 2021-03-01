@@ -71,7 +71,7 @@ const Post = class {
             this.media = d[0]
 
         if(Array.isArray(d[1]))
-            this.mention = d[1]
+            this.mention = new PostPointer([1])
 
         if(typeof d[2] === 'string')
             this.owner = d[2]
