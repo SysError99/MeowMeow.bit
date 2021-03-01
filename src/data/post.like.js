@@ -26,6 +26,17 @@ const PostLike = class {
     valid = false
 
     /**
+     * Export to array
+     */
+    export () {
+        this.owner,
+        this.time,
+        this.acc,
+        this.pos,
+        this.signature
+    }
+
+    /**
      * Create Post Like object and verify
      * @param {Array} d Array to be verified
      */
