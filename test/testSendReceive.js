@@ -28,7 +28,6 @@ let funcResearch = async () => {
         }))
 
         receiver.deletePeer(peer)
-        peer.connected = false
         i++
     }
 }
