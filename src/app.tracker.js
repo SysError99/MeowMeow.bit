@@ -80,7 +80,7 @@ udp.on('message', (msg, remote) => {
     let identifyPeer = reset => {
         if(reset){
             delete knownPeers[remoteAddress]
-            delete knownPeersByPub[BaseN.encode(peer.pub)]
+            delete knownPeersByPub[BaseN.encode(peer.pub, '62')]
         }
 
         let currentTime = new Date()
@@ -167,7 +167,7 @@ udp.on('message', (msg, remote) => {
                 return
             }
 
-            delete knownPeersByPub[BaseN.encode(peer.pub)]
+            delete knownPeersByPub[BaseN.encode(peer.pub, '62')]
             knownPeersByPub[message[1]] = peer
             peer.pub = BaseN.decode(message[1])
             

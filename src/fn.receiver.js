@@ -59,6 +59,9 @@ const Receiver = class {
     /** Locale being used in this object */
     locale = new Locale()
 
+    /** @type {} */
+    myPub = BaseN.encode(this.key.getPub(), '62')
+
     /** @type {Peer[]} Connected peers */
     peers = {}
 
@@ -180,7 +183,7 @@ const Receiver = class {
             this.helloTracker(tracker)
         }
 
-        console.log(`Receiver will be known as '${BaseN.encode(this.key.getPub())}'.`)
+        console.log(`Receiver will be known as '${this.myPub}'.`)
     }
 
 
@@ -298,11 +301,12 @@ const Receiver = class {
                 //tracker
                 case 'keyExists':
                     this.key = new ECDHKey()
+                    this.myPub = BaseN.encode(this.key.getPub(), '62')
 
                 case 'welcome':
                     /** @type {Buffer} */
                     let helloMessage
-                    if(Try(() => helloMessage = peer.key.encrypt(str( [`hello`, BaseN.encode(this.key.getPub())] ))) === null)
+                    if(Try(() => helloMessage = peer.key.encrypt(str( [`hello`, this.myPub] ))) === null)
                         return
 
                     peer.socket.send(helloMessage, 0, helloMessage.length, remote.port, remote.address, showError)
@@ -346,7 +350,7 @@ const Receiver = class {
             let conn
             let connState = 0
             let tracker = randTracker(this)
-            let targetPub = BaseN.encode(peer.pub)
+            let targetPub = BaseN.encode(peer.pub, '62')
 
             let tempTracker = new Peer([
                 tracker.ip,
@@ -435,7 +439,7 @@ const Receiver = class {
                         if(!IpRegex.test(message[0]) || typeof message[1] !== 'number'){
                             peer.quality = 0
                             this.callback(new Result({
-                                message: `Tracker ${BaseN.encode(tempTracker.myPub)} had sent an invalid address.` //LOCALE_NEEDED
+                                message: `Tracker ${BaseN.encode(tempTracker.myPub, '62')} had sent an invalid address.` //LOCALE_NEEDED
                             }))
                             return
                         }
