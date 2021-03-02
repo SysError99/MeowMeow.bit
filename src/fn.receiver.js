@@ -357,13 +357,8 @@ const Receiver = class {
                     peer.socket.send(Crypt.rand(22), 0, 22, remote.port, remote.address, showError)
             })
 
-        if(message.length === 0){
-            if(typeof peer.mediaStreamReady === 'function'){
-                peer.mediaStreamReady()
-                peer.mediaStreamReady = null
-            }
+        if(message.length === 0)
             return
-        }
 
         if(Try(() => message = peer.key.decrypt(message)) === null)
             return this.handleBadPeer(peer, message, remote)
@@ -386,9 +381,10 @@ const Receiver = class {
                 return this.handleBadPeer(peer, message, remote)
             }
 
+            let okMessage = peer.key.encrypt(`["ok"]`)
             peer.mediaStream.write(message, showError)
             peer.mediaStreamPacketsReceived += message.length
-            peer.socket.send('', 0, 0, remote.port, remote.address, showError)
+            peer.socket.send(okMessage, 0, okMessage.length, remote.port, remote.address, showError)
             return
         }
 
@@ -496,6 +492,14 @@ const Receiver = class {
                     return
                 else if(lastAccess >= __.LAST_ACCESS_LIMIT)
                     return this.handleBadPeer(peer, message, remote)
+
+                if(message[0] === 'ok'){
+                    if(typeof peer.mediaStreamReady === 'function'){
+                        peer.mediaStreamReady()
+                        peer.mediaStreamReady = null
+                    }
+                    return
+                }
             }
         }
 
