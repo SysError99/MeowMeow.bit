@@ -308,8 +308,10 @@ const Receiver = class {
                 this.deletePeer(peer)
                 return this.handleSocketMessage(message, remote)
             }
-            else
+            else{
+                peer.connected = false
                 conn.send(peer.myPub, 0, peer.myPub.length, peer.port, peer.ip, showError)
+            }
         }
     }
 
@@ -381,7 +383,7 @@ const Receiver = class {
 
         if(Try(() => message = json(message)) === null)
             return this.handleBadPeer(peer, message, remote)
-    
+
         if(!Array.isArray(message))
             return this.handleBadPeer(peer, message, remote)
 
@@ -521,7 +523,7 @@ const Receiver = class {
              * @param {Datagram.RemoteInfo} remote 
              */
             let connMessage = (message, remote) => {
-                if(connState === 2)
+                if(peer.connected)
                     this.handleSocketMessage(message, remote, peer)
 
                 if(message.length === 0)
@@ -531,11 +533,8 @@ const Receiver = class {
 
                 // establish connection with peer
                 if(`${peer.ip}:${peer.port}` === remoteAddress){
-                    if(Try(() => message = json(peer.key.decrypt(message))) === null && peer.connected){
-                        this.deletePeer(peer)
-                        this.initializeConnection(peer)
+                    if(Try(() => message = json(peer.key.decrypt(message))) === null)
                         return
-                    }
 
                     peer.quality = __.MAX_TRIAL
                     peer.connected = true
