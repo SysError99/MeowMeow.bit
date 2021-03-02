@@ -347,7 +347,6 @@ const Receiver = class {
                 peer.socket = this.socket
 
                 if(peer.key !== null){
-                    console.log(`Welcome ${remote.address}:${remote.port}!`)
                     let helloMessage = peer.key.encrypt(`[""]`)
                     this.addPeer(peer)
                     peer.connected = true
@@ -487,16 +486,16 @@ const Receiver = class {
         else{ //check last access time from peer
             let currentTime = new Date()
 
-            if(peer.lastAccess.getTime() === 0){
+            if(peer.lastAccess.getTime() === 0)
                 peer.lastAccess = currentTime
-                return
-            }
+            else{
+                let lastAccess = currentTime - peer.lastAccess
 
-            let lastAccess = currentTime - peer.lastAccess
-            if(lastAccess <= __.ACCESS_COOLDOWN)
-                return
-            else if(lastAccess >= __.LAST_ACCESS_LIMIT)
-                return this.handleBadPeer(peer, message, remote)
+                if(lastAccess <= __.ACCESS_COOLDOWN)
+                    return
+                else if(lastAccess >= __.LAST_ACCESS_LIMIT)
+                    return this.handleBadPeer(peer, message, remote)
+            }
         }
 
         this.callback(peer, new Result({
