@@ -348,7 +348,7 @@ const Receiver = class {
 
                 if(peer.key !== null){
                     console.log(`Welcome ${remote.address}:${remote.port}!`)
-                    let helloMessage = peer.key.encrypt(str(`[""]`))
+                    let helloMessage = peer.key.encrypt(`[""]`)
                     this.addPeer(peer)
                     peer.connected = true
                     peer.socket.send(helloMessage, 0, helloMessage.length, remote.port, remote.address, showError)
