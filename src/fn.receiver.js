@@ -308,7 +308,7 @@ const Receiver = class {
     handleBadPeer (peer, message, remote) {
         if(peer.isTracker){
             if(!helloTracker(peer))
-                this.callback(new Result({
+                this.callback(null, new Result({
                     message: `Can't establish secure connection with trackers. `+
                     `Key may be invalid or connection may be hijacked.` //LOCALE_NEEDED
                 }))
@@ -565,7 +565,7 @@ const Receiver = class {
 
                 if(Try(() => message = json(tempTracker.key.decrypt(message))) === null){
                     peer.quality = 0
-                    this.callback(new Result({
+                    this.callback(null, new Result({
                         message:`${targetPub} decryption from tracker failed.` //LOCALE_NEEDED
                     }))
                     return
@@ -580,7 +580,7 @@ const Receiver = class {
                             return 1
                         }
                         else{
-                            this.callback(new Result({
+                            this.callback(null, new Result({
                                 message: `${targetPub} connection is interrupetd` //LOCALE_NEEDED
                             }))
                             peer.quality = 0
@@ -590,7 +590,7 @@ const Receiver = class {
                     case 1:
                         if(message[0] === 'tooOld'){
                             peer.quality = 0
-                            this.callback(new Result({
+                            this.callback(null, new Result({
                                 message:`${targetPub} is outdated.` //LOCALE_NEEDED
                             }))
                             return
@@ -598,7 +598,7 @@ const Receiver = class {
 
                         if(message[0] === 'unknown'){
                             peer.quality = 0
-                            this.callback(new Result({
+                            this.callback(null, new Result({
                                 message: `${targetPub} is unknown by a tracker.` //LOCALE_NEEDED
                             }))
                             return
@@ -606,7 +606,7 @@ const Receiver = class {
 
                         if(!IpRegex.test(message[0]) || typeof message[1] !== 'number'){
                             peer.quality = 0
-                            this.callback(new Result({
+                            this.callback(null, new Result({
                                 message: `Tracker ${BaseN.encode(tempTracker.myPub, '62')} had sent an invalid address.` //LOCALE_NEEDED
                             }))
                             return
