@@ -93,8 +93,14 @@ const Receiver = class {
      */
     addPeer (peer) {
         let remoteAddress = `${peer.ip}:${peer.port}`
+        let remotePub = BaseN.encode(peer.pub, '62')
+
         if(typeof this.peers[remoteAddress] === 'undefined'){
             this.peers[remoteAddress] = peer
+
+            if(typeof this.peers[remotePub] === 'undefined')
+                this.peers[remotePub] = peer
+
             return true
         }
         return false
@@ -198,6 +204,7 @@ const Receiver = class {
      */
     deletePeer (peer) {
         let remoteAddress = `${peer.ip}:${peer.port}`
+        let remotePub = BaseN.encode(peer.pub, '62')
         peer.connected = false
 
         if(peer.keepAlive !== null){
@@ -207,6 +214,9 @@ const Receiver = class {
 
         if(typeof this.peers[remoteAddress] === 'object')
             delete this.peers[remoteAddress]
+
+        if(typeof this.peers[remotePub] === 'object')
+            delete this.peers[remotePub]
     }
 
     /**
@@ -334,12 +344,13 @@ const Receiver = class {
                     remote.port
                 ])
                 peer.key = this.key.computeSecret(message)
+                peer.socket = this.socket
 
                 if(peer.key !== null){
+                    console.log(`Welcome ${remote.address}:${remote.port}!`)
                     let helloMessage = peer.key.encrypt(str(`[""]`))
                     this.addPeer(peer)
                     peer.connected = true
-                    peer.socket = this.socket
                     peer.socket.send(helloMessage, 0, helloMessage.length, remote.port, remote.address, showError)
                 }
                 else
