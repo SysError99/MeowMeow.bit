@@ -66,17 +66,18 @@ const SignKey = class {
     constructor (d) {
         if(Array.isArray(d)){
             if(typeof d[0] === 'string')
-                password = d[0]
+                this.password = d[0]
 
             if(typeof d[1] === 'string')
-                private = d[1]
+                this.exportprivate = d[1]
 
             if(typeof d[2] === 'string')
-                public = d[2]
+                this.public = d[2]
         }
         else{
             let password = typeof d === 'string' ? d : ''
             let newKey = Crypt.newKey.sign(password)
+
             this.password = password
             this.private = newKey.privateKey
             this.public = newKey.publicKey
