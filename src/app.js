@@ -13,6 +13,11 @@ const Acc = require('./data/acc')
 const Post = require('./data/post')
 const PostLike = require('./data/post.like')
 
+/** Debugging parameters */
+const debug = {
+    packetCount: 0
+}
+
 /**
  * Stringify JSON object or array
  * @param {Object} o JSON or array object to be stringified
@@ -38,7 +43,7 @@ app.get('/find/:id', (req,res) => {
 
 /** Receiver Object*/
 const receiver = new Receiver((peer, data) => {
-    console.log(`${data.data}`)
+    console.log(`Packet ${debug.packetCount++}:${data.data}`) //debug
 
     /**
      * [0]:string   post owner (public key)
