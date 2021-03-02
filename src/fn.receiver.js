@@ -642,6 +642,9 @@ const Receiver = class {
             )
 
             setTimeout(() => {
+                if(peer.connected)
+                    return resolve(true)
+
                 if(peer.quality <= 0)
                     return resolve(false)
 
