@@ -674,6 +674,8 @@ const Receiver = class {
             if(typeof peer === 'undefined')
                 peer = new Peer(['', 0, BaseN.decode(peerStr, '62')])
         }
+        else if(typeof peer !== 'object')
+            return false
 
         if(!peer.connected){
             peer.quality = __.MAX_TRIAL
