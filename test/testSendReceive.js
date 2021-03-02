@@ -21,10 +21,10 @@ let funcAsync = async () => {
 let funcResearch = async () => {
     let i = 0
     while(i < 1024){
-        await receiver.send(peer, [BaseN.encode(Crypt.rand(128), '92')])
+        await receiver.send(peer, [BaseN.encode(Crypt.rand(128), '62')])
 
         await (() => new Promise(resolve => {
-            setTimeout(() => resolve(), 2000)
+            setTimeout(() => resolve(), 4000)
         }))
 
         receiver.deletePeer(peer)
