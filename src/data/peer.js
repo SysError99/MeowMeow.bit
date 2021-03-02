@@ -70,7 +70,7 @@ const Peer = class {
             this.port,
             this.pub.toString('base64'),
             this.nat,
-            this.lastAccess.toUTCString(),
+            this.lastAccess.getTime(),
         ]
     }
 
@@ -95,8 +95,8 @@ const Peer = class {
             if(typeof d[3] === 'boolean')
                 this.nat = d[3]
 
-            if(typeof d[4] === 'string')
-                this.lastAccess = Date.parse(d[4])
+            if(typeof d[4] === 'number')
+                this.lastAccess = new Date(d[4])
 
             if(!Buffer.isBuffer(d[2]))
                 return
