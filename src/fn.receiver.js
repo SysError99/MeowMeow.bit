@@ -101,6 +101,7 @@ const Receiver = class {
             if(typeof this.peers[remotePub] === 'undefined')
                 this.peers[remotePub] = peer
 
+            peer.keepAlive = setInterval(() => peer.socket.send('', 0, 0, peer.port, peer.ip, showError), 10000)
             return true
         }
         return false
