@@ -13,6 +13,15 @@ const Result = require('./data/result')
 /** @type {RegExp} IP address regular expression*/
 const IpRegex = require('./data/ip.regex')
 
+/** Account seeders, contains string[] of seeder peers (shares across all receivers)*/
+const seeders = {}
+
+/** Position of this peer, on peer seeders (shares across all receivers)*/
+const seedersMyPos = {}
+
+/** For storing seeder update status, to check if it needs to be sorted again (shares across all receivers)*/
+const seedersSorted = {}
+
 /**
  * Convert JSON string to object or array
  * @param {string} str String to be converted
@@ -89,6 +98,98 @@ const Receiver = class {
             return true
         }
         return false
+    }
+
+    /**
+     * Broadcast data to certain amount of peers
+     * @param {string} account Account
+     * @param {number} n Amount of peers to broadcast
+     * @param {Array|string} data Data to be sent
+     */
+    broadcast (account, n, data) {
+        if(n <= 0)
+            return false
+
+        /** @type {string[]} */
+        let peers = seeders[account]
+
+        if(!Array.isArray(peers))
+            return false
+
+        if(Array.isArray(data))
+            data = str(data)
+        else if(typeof data !== 'string')
+            return false
+
+        if(data.length > __.MTU)
+            return false
+
+        if(!seedersSorted[account]){
+            let x = 0
+            let y = 0
+
+            peers.sort()
+
+            //find self position
+            while(y < peers.length){
+                let arr = peers[y]
+
+                if(arr[0] === account[0])
+                    break
+
+                y++
+            }
+
+            x = 1
+
+            while(y < peers.length){
+                let arr = peers[y]
+
+                if(arr[x] === account[x]){
+                    if(x < account.length)
+                        x++
+                    else
+                        break
+                }
+                else
+                    y++
+            }
+
+            if(y < peers.length)
+                seedersMyPos[account] = y
+            else{
+                peers.push(this.myPub)
+                return this.broadcast(account, n, data)
+            }
+
+            seedersSorted[account] = true
+        }
+
+        /** @type {string[]} */
+        let peersSelected = []
+        let peerToAdd = ''
+        let pos = 0
+
+        while(n > 0){
+            if(p > 0)
+                pos = - Math.abs(pos)
+            else
+                pos =  Math.abs(pos) + 1
+
+            peerToAdd = array[y + pos]
+
+            if(typeof str === 'string')
+                peersSelected.push(peerToAdd)
+
+            n--
+        }
+
+        while(peersSelected.length > 0){
+            this.send(peersSelected[0], data)
+            peersSelected.splice(0,1)
+        }
+
+        return true
     }
 
     /**
@@ -173,7 +274,7 @@ const Receiver = class {
             })
         }))
             return
-        
+
         if(this.trackerList.length === 0)
             throw Error('No trackers has been set')
 
@@ -284,10 +385,22 @@ const Receiver = class {
         if(!Array.isArray(message))
             return this.handleBadPeer(peer, message, remote)
 
-        if(peer.isTracker){ // message from tracker
+        if(peer.isTracker){
+            /**
+             * Tracker section
+             * 
+             * [0]:string tracker command
+             */
             switch(message[0]){
+
                 //announcer
-                case 'announce': // peer response back
+                case 'announce':
+                    /**
+                     * Announce to peer
+                     * 
+                     * [1]:string       peer IP
+                     * [2]:number       peer port
+                     */
                     if(typeof message[1] !== 'string' || typeof message[2] !== 'number')
                         return
 
@@ -297,13 +410,48 @@ const Receiver = class {
                     let randomResponse = Crypt.rand(32)
                     peer.socket.send(randomResponse, 0, randomResponse.length, message[2], message[1], showError)
                     return
-                
+
                 //tracker
+                case 'follower':
+                    /**
+                     * Set list of followers
+                     * 
+                     * [1]:string       account public key
+                     * [2]:string[]     list of following peers
+                     */
+                    if( typeof message[1] !== 'string' ||
+                        !Array.isArray(message[2]) )
+                        return
+
+                    /** @type {string[]} */
+                    let peers = message[2]
+                    /** @type {string[]} */
+
+                    if(typeof seeders[message[1]] === 'undefined'){
+                        seeders[message[1]] = peers
+                        seedersMyPos [message[1]] = 0
+                        seedersSorted[message[1]] = false
+                    }
+                    else{
+                        /** @type {string[]} */
+                        let oldSeeders = seeders[message[1]]
+
+                        oldSeeders.concat(peers)
+                        seedersSorted[message[1]] = false
+                    }
+                    return
+
                 case 'keyExists':
+                    /**
+                     * Tracker told that this key exists
+                     */
                     this.key = new ECDHKey()
                     this.myPub = BaseN.encode(this.key.getPub(), '62')
 
                 case 'welcome':
+                    /**
+                     * Tracker says welcome, say hello with your pub key!
+                     */
                     /** @type {Buffer} */
                     let helloMessage
                     if(Try(() => helloMessage = peer.key.encrypt(str( [`hello`, this.myPub] ))) === null)
@@ -313,7 +461,13 @@ const Receiver = class {
                     return
 
                 case 'hello':
+                    /**
+                     * Tracker accepted your pub key!
+                     */
                     peer.keepAlive = setInterval(() => peer.socket.send('', 0, 0, remote.port, remote.address, showError), 10000)
+                    return
+
+                default:
                     return
             }
         }
@@ -427,7 +581,7 @@ const Receiver = class {
                             }))
                             return
                         }
-                
+
                         if(message[0] === 'unknown'){
                             peer.quality = 0
                             this.callback(new Result({
@@ -435,7 +589,7 @@ const Receiver = class {
                             }))
                             return
                         }
-        
+
                         if(!IpRegex.test(message[0]) || typeof message[1] !== 'number'){
                             peer.quality = 0
                             this.callback(new Result({
@@ -443,7 +597,7 @@ const Receiver = class {
                             }))
                             return
                         }
-        
+
                         peer.ip = message[0]
                         peer.port = message[1]
                         
@@ -511,7 +665,7 @@ const Receiver = class {
             if(typeof peer === 'undefined')
                 peer = new Peer(['', 0, peerStr])
         }
-        
+
         if(!peer.connected){
             peer.quality = __.MAX_TRIAL
             if(!await this.initializeConnection(peer))
@@ -553,7 +707,7 @@ const Receiver = class {
         this.callback = callback
         this.socket.on('error', showError)
         this.socket.on('message', (msg, remote) => this.handleSocketMessage(msg, remote))    
-    
+
         this.helloTrackers()
     }
 }
