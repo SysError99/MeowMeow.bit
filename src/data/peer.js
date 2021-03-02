@@ -1,4 +1,3 @@
-const Datagram = require('dgram')
 const FileSystem = require('fs')
 
 const Try = require('../fn.try.catch')
@@ -12,9 +11,6 @@ const Peer = class {
     /** @type {boolean} This is 'Peer' object */
     isPeer = true
 
-    /** @type {boolean} This is tracker*/
-    isTracker = false
-
     /** @type {string} IP Address*/
     ip = ''
 
@@ -27,7 +23,10 @@ const Peer = class {
     /** @type {Buffer} Peer public key.*/
     pub = Buffer.from([])
 
-    /** @type {NodeJS.Timeout} */
+    /** @type {boolean} Is this peer connected to this receiver */
+    isSender = false
+
+    /** @type {NodeJS.Timeout} Keep alive client polling timer */
     keepAlive = null
 
     /** @type {Buffer} Randomly generated public key to be shared with another peer*/
@@ -42,11 +41,14 @@ const Peer = class {
     /** @type {boolean} Is the connection established?*/
     connected = false
 
+    /** @type {function} Some of function to be put for special purposes */
+    callback = null
+
     /** @type {number} Peer quality indicator*/
     quality = __.MAX_TRIAL
 
-    /** @type {Datagram.Socket} Network socket*/
-    socket = null
+    /** @type {number} Socket number currently using*/
+    socket = 0
 
     /** @type {FileSystem.WriteStream} Currently writing stream*/
     mediaStream = null
