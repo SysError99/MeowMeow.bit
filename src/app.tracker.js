@@ -169,7 +169,7 @@ udp.on('message', (msg, remote) => {
 
             delete knownPeersByPub[BaseN.encode(peer.pub, '62')]
             knownPeersByPub[message[1]] = peer
-            peer.pub = BaseN.decode(message[1])
+            peer.pub = Try(() => BaseN.decode(message[1], '62'), Buffer.from([]))
             
             console.log(`${remoteAddress}: Hello, my pub is ${message[1]}`)
             let helloMessage = peer.key.encrypt(str( [`hello`] ))

@@ -663,7 +663,7 @@ const Receiver = class {
             peer = this.peers[peerStr]
 
             if(typeof peer === 'undefined')
-                peer = new Peer(['', 0, peerStr])
+                peer = new Peer(['', 0, BaseN.decode(peerStr, '62')])
         }
 
         if(!peer.connected){
