@@ -593,7 +593,7 @@ const Receiver = class {
                     return resolve(false)
 
                 peer.quality--
-                this.initializeConnection(peer, sock > __.MAX_TRIAL ? 0 : sock + 1)
+                this.initializeConnection(peer, sock + 1 > __.MAX_TRIAL ? 0 : sock + 1)
             }, 4000)
         })
     }
