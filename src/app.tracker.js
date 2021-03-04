@@ -14,7 +14,6 @@ const ECDHKey = require('./data/key.ecdh')
 const Peer = require('./data/peer')
 
 const knownPeers = {}
-const knownPeersByPub = {}
 /** @type {ECDHKey} ECDH key being used on the tracker */
 const myKey = (() => {
     /** @type {ECDHKey} */
@@ -78,10 +77,8 @@ udp.on('message', (msg, remote) => {
      * @param {boolean} reset Delete this peer? 
      */
     let identifyPeer = reset => {
-        if(reset){
+        if(reset)
             delete knownPeers[remoteAddress]
-            delete knownPeersByPub[BaseN.encode(peer.pub, '62')]
-        }
 
         let currentTime = new Date()
 
@@ -127,13 +124,13 @@ udp.on('message', (msg, remote) => {
         //announcer
         case 'announce':
             /** @type {Peer} */
-            let peerToAnnounce = knownPeersByPub[message[1]]
+            let peerToAnnounce = knownPeers[message[1]]
 
             if(typeof peerToAnnounce === 'object'){
                 if(new Date() - peerToAnnounce.lastAccess > __.LAST_ACCESS_LIMIT){ //peer is too old to connect
-                    let msgTooOldPeerError = peer.key.encrypt(str( [`tooOld`] ))
+                    let msgTooOldPeerError = peer.key.encrypt(str( [`unknown`] ))
                     udp.send(msgTooOldPeerError, 0, msgTooOldPeerError.length, remote.port, remote.address, showError)
-                    delete knownPeersByPub[message[1]]
+                    delete knownPeers[message[1]]
                     return
                 }
 
@@ -157,25 +154,8 @@ udp.on('message', (msg, remote) => {
                 return
 
             peer.port = message[1]
-            peer.nat = false
+            peer.public = true
             return
-
-        case 'hello': //Peer add pub
-            if(typeof knownPeersByPub[message[1]] !== 'undefined'){
-                let keyExistsMessage = peer.key.encrypt(str( [`keyExists`] ))
-                udp.send(keyExistsMessage, 0, keyExistsMessage.length, remote.port, remote.address, showError)
-                return
-            }
-
-            delete knownPeersByPub[BaseN.encode(peer.pub, '62')]
-            knownPeersByPub[message[1]] = peer
-            peer.pub = Try(() => BaseN.decode(message[1], '62'), Buffer.from([]))
-            
-            console.log(`${remoteAddress}: Hello, my pub is ${message[1]}`)
-            let helloMessage = peer.key.encrypt(str( [`nice2meetu`] ))
-            udp.send(helloMessage, 0, helloMessage.length, remote.port, remote.address, showError)
-            return
-
     }
 })
 

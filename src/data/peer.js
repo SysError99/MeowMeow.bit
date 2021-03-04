@@ -32,8 +32,8 @@ const Peer = class {
     /** @type {Buffer} Randomly generated public key to be shared with another peer*/
     myPub = Buffer.from([])
 
-    /** @type {boolean} Is this running behind NAT?*/
-    nat = true
+    /** @type {boolean} Is this a public peer? (directly accessible)*/
+    public = false
 
     /** @type {SymmetricKey} Peer Symmetric key*/
     key = null
@@ -71,7 +71,7 @@ const Peer = class {
             this.ip,
             this.port,
             this.pub.toString('base64'),
-            this.nat,
+            this.public,
             this.lastAccess.getTime(),
         ]
     }
@@ -95,7 +95,7 @@ const Peer = class {
                 d[2] = Buffer.from(d[2], 'base64')
 
             if(typeof d[3] === 'boolean')
-                this.nat = d[3]
+                this.public = d[3]
 
             if(typeof d[4] === 'number')
                 this.lastAccess = new Date(d[4])

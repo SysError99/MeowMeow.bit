@@ -218,6 +218,11 @@ const Receiver = class {
             peer.keepAlive = null
         }
 
+        if(peer.mediaStream !== null){
+            peer.mediaStream.close()
+            this.storage.remove(peer.mediaStreamLocation)
+        }
+
         if(typeof this.peers[remoteAddress] === 'object')
             delete this.peers[remoteAddress]
 
@@ -429,16 +434,17 @@ const Receiver = class {
                  * [1]: peer ip
                  * [2]: peer port
                  */
-                if(!IpRegex.test(message[1]) || typeof message[2] !== 'number')
+                /** @type {Peer} Requested peer */
+                let peerPort = typeof message[2] === 'number' ? message[2] : 0
+                let peer = this.peers[`${message[1]}:${peerPort}`]
+
+                if(typeof peer === 'undefined' || !IpRegex.test(message[1]) || peerPort <= 1024 || peerPort > 65535)
                     return this.callback(null, new Result({
                         message: `Tracker ${BaseN.encode(tracker.pub, '62')} had sent an invalid address.` //LOCALE_NEEDED
                     }))
 
-                if(message[2] <= 0 || message[2] >= 65536)
-                    return
-
                 peer.ip = message[1]
-                peer.port = message[2]
+                peer.port = peerPort
                 this.addPeer(peer, sock)
                 this.sockets[sock].send(peer.myPub, 0, peer.myPub.length, peer.port, peer.ip, showError)
                 return
@@ -462,32 +468,9 @@ const Receiver = class {
                 return
 
             //tracker
-            case 'keyExists':
-                /**
-                 * Tracker told that currenty used public key is already exists
-                 */
-                this.key = new ECDHKey()
-                this.myPub = BaseN.encode(this.key.getPub(), '62')
-
             case 'welcome':
                 /**
-                 * Tracker says welcome, say hello with your pub key!
-                 */
-                if(sock > 0)
-                    return
-                
-                /** @type {Buffer} */
-                let helloMessage
-
-                if(Try(() => helloMessage = tracker.keys[sock].encrypt(str( [`hello`, this.myPub] ))) === null)
-                    return
-
-                this.sockets[sock].send(helloMessage, 0, helloMessage.length, remote.port, remote.address, showError)
-                return
-
-            case 'nice2meetu':
-                /**
-                 * Tracker accepted your pub key!
+                 * Tracker says welcome!
                  */
                 tracker.keepAlive[sock] = setInterval(() => this.sockets[sock].send('', 0, 0, remote.port, remote.address, showError), 10000)
                 return
@@ -504,11 +487,17 @@ const Receiver = class {
                     return
 
                 /** @type {string[]} */
-                let peers = message[2]
-                /** @type {string[]} */
+                let followerPeers = message[2]
+
+                for(let p = 0; p < followerPeers.length; p++){
+                    let followerPeer = new Peer(followerPeers[p])
+
+                    this.addPeer(followerPeer)
+                    followerPeers[p] = BaseN.encode(peer.public, '62')
+                }
 
                 if(typeof seeders[message[1]] === 'undefined'){
-                    seeders[message[1]] = peers
+                    seeders[message[1]] = followerPeers
                     seedersMyPos [message[1]] = 0
                     seedersSorted[message[1]] = false
                 }
@@ -516,7 +505,7 @@ const Receiver = class {
                     /** @type {string[]} */
                     let oldSeeders = seeders[message[1]]
 
-                    oldSeeders.concat(peers)
+                    oldSeeders.concat(followerPeers)
                     seedersSorted[message[1]] = false
                 }
                 return
@@ -554,7 +543,7 @@ const Receiver = class {
 
             sock = typeof sock === 'number' ? sock : 0
 
-            if(!peer.nat){
+            if(peer.public){
                 this.addPeer(peer, sock)
                 this.sockets[sock].send(
                     peer.myPub, 0, peer.myPub.length,
@@ -566,8 +555,7 @@ const Receiver = class {
             }
 
             let tracker = randTracker(this)
-            let targetPub = BaseN.encode(peer.pub, '62')
-            let announceMessage = tracker.key.encrypt(str( [`announce`, targetPub] ))
+            let announceMessage = tracker.key.encrypt(str( [`announce`, `${peer.ip}:${peer.port}`] ))
 
             if(typeof this.sockets[sock] === 'undefined'){
                 let newSocket = Datagram.createSocket({

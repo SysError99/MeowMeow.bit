@@ -3,7 +3,7 @@ const BaseN = require('../src/fn.base.n')
 const Peer = require('../src/data/peer')
 const Receiver = require('../src/fn.receiver')
 
-const peer = new Peer(['', 0, BaseN.decode(process.argv[2], '62')])
+const peer = new Peer([process.argv[2], parseInt(process.argv[3]), BaseN.decode(process.argv[4], '62')])
 
 const receiver = new Receiver((peer, data) => {
     console.log(data.data)
@@ -18,23 +18,6 @@ let funcAsync = async () => {
     }
 }
 
-let funcResearch = async () => {
-    let i = 0
-    while(i < 1024){
-        let alwaysNewPeer = new Peer(['', 0, BaseN.decode(process.argv[2], '62')])
-        if(!await receiver.send(alwaysNewPeer, [BaseN.encode(Crypt.rand(32), '62')]))
-            return console.log('bad')
+let func = () => receiver.send(peer, ['hello'])
 
-        await (() => new Promise(resolve => {
-            setTimeout(() => resolve(), 4000)
-        }))()
-
-        i++
-    }
-}
-
-let func = () => {
-    receiver.send(peer, ['hello'])
-}
-
-funcResearch()
+func()
