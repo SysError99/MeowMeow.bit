@@ -93,9 +93,10 @@ const Receiver = class {
     /**
      * Add peer to known list
      * @param {Peer} peer Peer to be added
+     * @param {number} sock Socket number to use
      * @returns {boolean} Did peer been added?
      */
-    addPeer (peer) {
+    addPeer (peer, sock) {
         let remoteAddress = `${peer.ip}:${peer.port}`
         let remotePub = BaseN.encode(peer.pub, '62')
 
@@ -105,7 +106,7 @@ const Receiver = class {
             if(typeof this.peers[remotePub] === 'undefined')
                 this.peers[remotePub] = peer
 
-            peer.keepAlive = setInterval(() => this.sockets[peer.socket].send('', 0, 0, peer.port, peer.ip, showError), 10000)
+            peer.keepAlive = setInterval(() => this.sockets[sock].send('', 0, 0, peer.port, peer.ip, showError), 10000)
             return true
         }
         return false
@@ -269,26 +270,29 @@ const Receiver = class {
         /** @type {Peer|Tracker} */
         let peer = this.peers[`${remote.address}:${remote.port}`]
 
-        if(typeof peer === 'undefined')
-            return Try(() => {
-                peer = new Peer([
-                    remote.address,
-                    remote.port
-                ])
-                peer.isSender = true
-                peer.key = this.key.computeSecret(message)
-
-                if(peer.key !== null){
-                    let helloMessage = peer.key.encrypt(str( ['nice2meetu'] ))
-
+        if(typeof peer === 'undefined'){
+            let computeKey = this.key.computeSecret(message)
+            
+            Try(() => {
+                if(computeKey !== null){
+                    let helloMessage = computeKey.encrypt(str( ['nice2meetu'] ))
+    
+                    peer = new Peer([
+                        remote.address,
+                        remote.port
+                    ])
+                    peer.isSender = true
+                    peer.key = computeKey
                     peer.connected = true
-                    this.addPeer(peer)
+                    this.addPeer(peer, sock)
                     this.sockets[sock].send(helloMessage, 0, helloMessage.length, remote.port, remote.address, showError)
                 }
                 else
                     this.sockets[sock].send(Crypt.rand(22), 0, 22, remote.port, remote.address, showError)
             })
-        else if(!peer.connected){
+            return 
+        }
+        else if(!peer.connected && !peer.isSender){
             if(Try(() => json(peer.key.decrypt(message))) === null)
                 return
 
@@ -303,11 +307,83 @@ const Receiver = class {
             return
         }
 
-        if(peer.isTracker)
-            return this.handleTrackerMessage(message, remote, sock, peer)
-
         if(peer.isPeer)
             return this.handlePeerMessage(peer, message, sock, peer)
+
+        if(peer.isTracker)
+            return this.handleTrackerMessage(message, remote, sock, peer)
+    }
+
+    /**
+     * Handle Message have sent from peers
+     * @param {string} message Encrypted message received
+     * @param {Datagram.RemoteInfo} remote Remote info
+     * @param {number} sock Socket number
+     * @param {Peer} peer Peer sent this
+     */
+    handlePeerMessage (message, remote, sock, peer) {
+        if(peer.mediaStream !== null){
+            if(Try(() => message = peer.key.decrypt(message)) === null)
+                return this.handleBadPeer(message, remote, sock, peer)
+
+            if(message[0] === __.EOF){
+                peer.mediaStream.close()
+                peer.mediaStream = null
+
+                let mediaLocation = peer.mediaStreamLocation.split('.')
+                // [ <owner>, <post-number>, 'media', <media-number> ]
+                // TODO: continue verifying file
+                return
+            }
+
+            if(peer.mediaStreamPacketsReceived > __.MAX_PAYLOAD){
+                peer.mediaStream.close()
+                peer.mediaStream = null
+                this.storage.remove(peer.mediaStreamLocation)
+                return this.handleBadPeer(message, remote, sock, peer)
+            }
+
+            let okMessage = peer.key.encrypt(str( [``] ))
+            peer.mediaStream.write(message, showError)
+            peer.mediaStreamPacketsReceived += message.length
+            this.sockets[sock].send(okMessage, 0, okMessage.length, remote.port, remote.address, showError)
+            return
+        }
+
+        if(peer.mediaStreamReady === null){
+            //check last access time from peer
+            let currentTime = new Date()
+
+            if(peer.lastAccess.getTime() === 0)
+                peer.lastAccess = currentTime
+            else{
+                let lastAccess = currentTime - peer.lastAccess
+
+                if(lastAccess <= __.ACCESS_COOLDOWN)
+                    return
+                else if(lastAccess >= __.LAST_ACCESS_LIMIT)
+                    return this.handleBadPeer(message, remote, sock, peer)
+            }
+        }
+
+        if(Try(() => message = json(peer.key.decrypt(message))) === null)
+            return this.handleBadPeer(message, remote, sock, peer)
+
+        if(!Array.isArray(message))
+            return this.handleBadPeer(message, remote, sock, peer)
+
+        if(message[0] === ''){
+            if(typeof peer.mediaStreamReady === 'function'){
+                peer.mediaStreamReady()
+                peer.mediaStreamReady = null
+            }
+            return
+        }
+
+        this.callback(peer, new Result({
+            success: true,
+            data: message
+        }))
     }
 
     /**
@@ -363,8 +439,8 @@ const Receiver = class {
 
                 peer.ip = message[1]
                 peer.port = message[2]
+                this.addPeer(peer, sock)
                 this.sockets[sock].send(peer.myPub, 0, peer.myPub.length, peer.port, peer.ip, showError)
-                this.addPeer(peer)
                 return
 
             case 'sendrand':
@@ -448,82 +524,6 @@ const Receiver = class {
     }
 
     /**
-     * Handle Message have sent from peers
-     * @param {string} message Encrypted message received
-     * @param {Datagram.RemoteInfo} remote Remote info
-     * @param {number} sock Socket number
-     * @param {Peer} peer Peer sent this
-     */
-    handlePeerMessage (message, remote, sock, peer) {
-        //check last access time from peer
-        let currentTime = new Date()
-
-        if(peer.lastAccess.getTime() === 0)
-            peer.lastAccess = currentTime
-        else{
-            let lastAccess = currentTime - peer.lastAccess
-
-            if(lastAccess <= __.ACCESS_COOLDOWN)
-                return
-            else if(lastAccess >= __.LAST_ACCESS_LIMIT)
-                return this.handleBadPeer(message, remote, sock, peer)
-
-            switch(message[0]){
-                case 'ok':
-                    /**
-                     * Peer told that it's ready te receive next stream
-                     */
-                    if(typeof peer.mediaStreamReady === 'function'){
-                        peer.mediaStreamReady()
-                        peer.mediaStreamReady = null
-                    }
-                    return
-
-            }
-        }
-
-        if(Try(() => message = peer.key.decrypt(message)) === null)
-            return this.handleBadPeer(message, remote, sock, peer)
-
-        if(peer.mediaStream !== null){
-            if(message[0] === __.EOF){
-                peer.mediaStream.close()
-                peer.mediaStream = null
-
-                let mediaLocation = peer.mediaStreamLocation.split('.')
-                // [ <owner>, <post-number>, 'media', <media-number> ]
-                // TODO: continue verifying file
-                return
-            }
-
-            if(peer.mediaStreamPacketsReceived > __.MAX_PAYLOAD){
-                peer.mediaStream.close()
-                peer.mediaStream = null
-                this.storage.remove(peer.mediaStreamLocation)
-                return this.handleBadPeer(message, remote, sock, peer)
-            }
-
-            let okMessage = peer.key.encrypt(str( [`ok`] ))
-            peer.mediaStream.write(message, showError)
-            peer.mediaStreamPacketsReceived += message.length
-            this.sockets[sock].send(okMessage, 0, okMessage.length, remote.port, remote.address, showError)
-            return
-        }
-
-        if(Try(() => message = json(message)) === null)
-            return this.handleBadPeer(message, remote, sock, peer)
-
-        if(!Array.isArray(message))
-            return this.handleBadPeer(message, remote, sock, peer)
-
-        this.callback(peer, new Result({
-            success: true,
-            data: message
-        }))
-    }
-
-
-    /**
      * Handle Bad Peer from socket
      * @param {Buffer|string} message 
      * @param {Datagram.RemoteInfo} remote 
@@ -555,7 +555,7 @@ const Receiver = class {
             sock = typeof sock === 'number' ? sock : 0
 
             if(!peer.nat){
-                this.addPeer(peer)
+                this.addPeer(peer, sock)
                 this.sockets[sock].send(
                     peer.myPub, 0, peer.myPub.length,
                     peer.port,
