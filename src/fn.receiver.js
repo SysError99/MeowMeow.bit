@@ -346,9 +346,9 @@ const Receiver = class {
 
         if(peer.mediaStreamReady === null){
             //check last access time from peer
-            let currentTime = new Date()
+            let currentTime = new Date().getTime()
 
-            if(peer.lastAccess.getTime() !== 0){
+            if(peer.lastAccess !== 0){
                 let lastAccess = currentTime - peer.lastAccess
 
                 if(lastAccess <= __.ACCESS_COOLDOWN)

@@ -66,6 +66,7 @@ udp.on('message', (msg, remote) => {
     if(msg.length === 0)
         return udp.send('', 0, 0, remote.port, remote.address, showError)
 
+    let currentTime = new Date().getTime()
     let remoteAddress = `${remote.address}:${remote.port}`
     /** @type {Buffer|message} */
     let message
@@ -79,8 +80,6 @@ udp.on('message', (msg, remote) => {
     let identifyPeer = reset => {
         if(reset)
             delete knownPeers[remoteAddress]
-
-        let currentTime = new Date()
 
         if(typeof knownPeers[remoteAddress] === 'undefined'){
             peer = new Peer([
@@ -104,7 +103,7 @@ udp.on('message', (msg, remote) => {
 
         peer = knownPeers[remoteAddress]
 
-        if(peer.lastAccess.getTime() > 0){
+        if(peer.lastAccess > 0){
             if(currentTime - peer.lastAccess > __.ACCESS_COOLDOWN)
                 return identifyPeer(true)
         }
@@ -127,7 +126,7 @@ udp.on('message', (msg, remote) => {
             let peerToAnnounce = knownPeers[message[1]]
 
             if(typeof peerToAnnounce === 'object'){
-                if(new Date() - peerToAnnounce.lastAccess > __.LAST_ACCESS_LIMIT){ //peer is too old to connect
+                if(currentTime - peerToAnnounce.lastAccess > __.LAST_ACCESS_LIMIT){ //peer is too old to connect
                     let msgTooOldPeerError = peer.key.encrypt(str( [`unknown`] ))
                     udp.send(msgTooOldPeerError, 0, msgTooOldPeerError.length, remote.port, remote.address, showError)
                     delete knownPeers[message[1]]

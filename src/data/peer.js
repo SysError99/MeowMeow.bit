@@ -14,8 +14,8 @@ const Peer = class {
     /** @type {string} IP Address*/
     ip = ''
 
-    /** @type {Date} Last accessed time*/
-    lastAccess = new Date(0)
+    /** @type {number} Last accessed time*/
+    lastAccess = 0
 
     /** @type {number} Peer connected port*/
     port = 8080
@@ -76,7 +76,7 @@ const Peer = class {
             this.port,
             this.pub.toString('base64'),
             this.public,
-            this.lastAccess.getTime(),
+            this.lastAccess,
         ]
     }
 
@@ -102,7 +102,7 @@ const Peer = class {
                 this.public = d[3]
 
             if(typeof d[4] === 'number')
-                this.lastAccess = new Date(d[4])
+                this.lastAccess = d[4]
 
             if(!Buffer.isBuffer(d[2]))
                 return

@@ -28,8 +28,8 @@ const Post = class {
     /** @type {string} Text inside post*/
     text = ''
 
-    /** @type {Date} Post date*/
-    time = new Date()
+    /** @type {number} Post time*/
+    time = new Date().getTime()
 
     /** @type {boolean} If this post has a valid signature*/
     valid = false
@@ -63,7 +63,7 @@ const Post = class {
             this.mention,
             this.tag,
             this.text,
-            this.time.getTime()
+            this.time
         ]
     }
 
@@ -112,7 +112,7 @@ const Post = class {
             this.text = d[5]
 
         if(typeof d[6] === 'number')
-            this.time = new Date(d[6])
+            this.time = d[6]
 
         if(typeof d[7] === 'string')
             this.signature = d[7]
