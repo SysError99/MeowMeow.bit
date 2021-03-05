@@ -55,7 +55,7 @@ const Tracker = class {
         else if(Buffer.isBuffer(d[2]))
             this.pub = d[2]
 
-        for(let i = __.MAX_TRIAL; i >= 0; i--){
+        for(let i = __.MAX_TRIAL - 1; i >= 0; i--){
             let ecdh = new ECDHKey()
 
             this.keys[i] = ecdh.computeSecret(this.pub)

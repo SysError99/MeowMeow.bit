@@ -551,18 +551,6 @@ const Receiver = class {
             let tracker = randTracker(this)
             let announceMessage = tracker.keys[sock].encrypt(str( [`announce`, `${peer.ip}:${peer.port}`] ))
 
-            if(typeof this.sockets[sock] === 'undefined'){
-                let newSocket = Datagram.createSocket({
-                    type: 'udp4',
-                    reuseAddr: true
-                })
-
-                newSocket.on('error', showError)
-                newSocket.on('message', (msg, remote) => this.handleSocketMessage(msg, remote, sock))
-                this.sockets[sock] = newSocket
-                this.helloTracker(tracker, sock)
-            }
-
             peer.socket = sock
             peer.callback = () => resolve(true)
             this.sockets[sock].send(announceMessage, 0, announceMessage.length, tracker.port, tracker.ip, showError)
@@ -575,7 +563,7 @@ const Receiver = class {
                     return resolve(false)
 
                 peer.quality--
-                this.initializeConnection(peer, sock + 1 > __.MAX_TRIAL ? 0 : sock + 1)
+                this.initializeConnection(peer, sock + 1 < __.MAX_TRIAL - 1 ? sock + 1 : 0)
             }, 4000)
         })
     }
@@ -706,10 +694,23 @@ const Receiver = class {
         if(this.trackerList.length === 0)
             throw Error('No trackers has been set')
 
+        
+
         for(let t in this.trackerList){
             /** @type {Tracker} */
             let tracker = this.peers[this.trackerList[t]]
-            this.helloTracker(tracker, 0)
+
+            for(let i = __.MAX_TRIAL - 1; i >= 0; i--){
+                let newSocket = Datagram.createSocket({
+                    type: 'udp4',
+                    reuseAddr: true
+                })
+
+                newSocket.on('error', showError)
+                newSocket.on('message', (msg, remote) => this.handleSocketMessage(msg, remote, i))
+                this.sockets[i] = newSocket
+                this.helloTracker(tracker, i)
+            }
         }
 
         console.log(`Receiver will be known as '${this.myPub}'.`)
