@@ -62,7 +62,7 @@ const Peer = class {
     /**
      * Check if this peer has a connection
      */
-    isConnected () {
+    connected () {
         return this.keepAlive !== null
     }
 
