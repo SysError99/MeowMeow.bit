@@ -535,8 +535,6 @@ const Receiver = class {
             if(peer.connected())
                 return resolve(true)
 
-            sock = typeof sock === 'number' ? sock : 0
-
             if(peer.public){
                 this.sockets[sock].send(
                     peer.myPub, 0, peer.myPub.length,
@@ -544,11 +542,14 @@ const Receiver = class {
                     peer.ip,
                     showError
                 )
+                resolve(true)
                 return
             }
 
+            sock = typeof sock === 'number' ? sock : 0
+
             let tracker = randTracker(this)
-            let announceMessage = tracker.key.encrypt(str( [`announce`, `${peer.ip}:${peer.port}`] ))
+            let announceMessage = tracker.keys[sock].encrypt(str( [`announce`, `${peer.ip}:${peer.port}`] ))
 
             if(typeof this.sockets[sock] === 'undefined'){
                 let newSocket = Datagram.createSocket({
