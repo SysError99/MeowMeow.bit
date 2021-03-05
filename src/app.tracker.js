@@ -141,7 +141,7 @@ udp.on('message', (msg, remote) => {
                 return
             }
             
-            let unknownPeerMessage = peer.key.encrypt(str( [`unknown`] ))
+            let unknownPeerMessage = peer.key.encrypt(str( [`unknown`, message[1]] ))
             udp.send(unknownPeerMessage, 0, unknownPeerMessage.length, remote.port, remote.address, showError)
 
             console.log(`Announce Request ${remoteAddress} -> ${message[1]}`)

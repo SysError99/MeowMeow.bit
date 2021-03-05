@@ -417,12 +417,9 @@ const Receiver = class {
                 /**
                  * Tracker told this peer is unknown
                  */
-            case 'tooOld':
-                /**
-                 * Tracker told this peer is outdated
-                 */
+
                 this.callback(null, new Result({
-                    message: `Peer ${BaseN.encode(peer.pub, '62')} is ${message[0]}.` //LOCALE_NEEDED
+                    message: `Peer ${message[1]} is unknown.` //LOCALE_NEEDED
                 }))
                 return
 
