@@ -13,7 +13,6 @@ const Tracker = require('./data/tracker')
 
 /** @type {RegExp} IP address regular expression*/
 const IpRegex = require('./data/ip.regex')
-const { PRIORITY_ABOVE_NORMAL } = require('constants')
 
 /** Account seeders, contains string[] of seeder peers (shares across all receivers)*/
 const seeders = {}
