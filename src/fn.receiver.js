@@ -301,20 +301,18 @@ const Receiver = class {
             if(Try(() => json(peer.key.decrypt(message))) === null)
                 return
 
-            if(peer.isPeer){
-                if(typeof peer.callback === 'function'){
-                    peer.callback()
-                    peer.callback = null
-                }
-            }
-
             peer.connected = true
             return
         }
 
-        if(peer.isPeer)
+        if(peer.isPeer){
+            if(typeof peer.callback === 'function'){
+                peer.callback()
+                peer.callback = null
+            }
             return this.handlePeerMessage(peer, message, sock, peer)
-
+        }
+            
         if(peer.isTracker)
             return this.handleTrackerMessage(message, remote, sock, peer)
     }
