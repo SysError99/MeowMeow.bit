@@ -269,22 +269,21 @@ const Receiver = class {
         if(typeof peer === 'undefined'){
             let computeKey = this.key.computeSecret(message)
             
-            Try(() => {
-                if(computeKey !== null){
-                    let helloMessage = computeKey.encrypt(str( ['nice2meetu'] ))
-    
-                    peer = new Peer([
-                        remote.address,
-                        remote.port
-                    ])
-                    peer.isSender = true
-                    peer.key = computeKey
-                    this.addPeer(peer)
-                    this.sockets[sock].send(helloMessage, 0, helloMessage.length, remote.port, remote.address, showError)
-                }
-                else
-                    this.sockets[sock].send(Crypt.rand(22), 0, 22, remote.port, remote.address, showError)
-            })
+            if(computeKey !== null){
+                let helloMessage = computeKey.encrypt(str( ['nice2meetu'] ))
+
+                peer = new Peer([
+                    remote.address,
+                    remote.port
+                ])
+                peer.isSender = true
+                peer.key = computeKey
+                this.addPeer(peer)
+                this.sockets[sock].send(helloMessage, 0, helloMessage.length, remote.port, remote.address, showError)
+            }
+            else
+                this.sockets[sock].send(Crypt.rand(22), 0, 22, remote.port, remote.address, showError)
+
             return 
         }
 
@@ -319,13 +318,13 @@ const Receiver = class {
         }
 
         if(!peer.isSender){
-            if(!peer.connected){
+            if(!peer.connected()){
                 if(Try(() => json(peer.key.decrypt(message))) === null)
-                return
+                    return
 
-            // NAT transversal successful
-            this.startPolling(peer)
-            return
+                // NAT transversal successful
+                this.startPolling(peer, sock)
+                return
             }
         }
 
@@ -516,7 +515,7 @@ const Receiver = class {
     handleBadPeer (message, remote, sock, peer) {
         if(peer.isSender){
             this.deletePeer(peer)
-            return this.handleSocketMessage(message, remote)
+            this.handleSocketMessage(message, remote, sock)
         }
         else{
             this.stopPolling(peer)
@@ -634,10 +633,7 @@ const Receiver = class {
         if(peer.connected())
             return false
 
-        let fnPolling = () => this.sockets[sock].send('', 0, 0, peer.port, peer.ip, showError)
-        
-        fnPolling()
-        peer.keepAlive = setInterval(fnPolling, 10000)
+        peer.keepAlive = setInterval(() => this.sockets[sock].send('', 0, 0, peer.port, peer.ip, showError), 10000)
         return true
     }
 
