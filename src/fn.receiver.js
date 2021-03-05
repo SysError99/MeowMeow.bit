@@ -93,10 +93,9 @@ const Receiver = class {
     /**
      * Add peer to known list
      * @param {Peer} peer Peer to be added
-     * @param {number} sock Socket number to use
      * @returns {boolean} Did peer been added?
      */
-    addPeer (peer, sock) {
+    addPeer (peer) {
         let remoteAddress = `${peer.ip}:${peer.port}`
         let remotePub = BaseN.encode(peer.pub, '62')
 
@@ -106,7 +105,6 @@ const Receiver = class {
             if(typeof this.peers[remotePub] === 'undefined')
                 this.peers[remotePub] = peer
 
-            peer.keepAlive = setInterval(() => this.sockets[sock].send('', 0, 0, peer.port, peer.ip, showError), 10000)
             return true
         }
         return false
@@ -211,12 +209,6 @@ const Receiver = class {
     deletePeer (peer) {
         let remoteAddress = `${peer.ip}:${peer.port}`
         let remotePub = BaseN.encode(peer.pub, '62')
-        peer.connected = false
-
-        if(peer.keepAlive !== null){
-            clearInterval(peer.keepAlive)
-            peer.keepAlive = null
-        }
 
         if(peer.mediaStream !== null){
             peer.mediaStream.close()
@@ -288,8 +280,7 @@ const Receiver = class {
                     ])
                     peer.isSender = true
                     peer.key = computeKey
-                    peer.connected = true
-                    this.addPeer(peer, sock)
+                    this.addPeer(peer)
                     this.sockets[sock].send(helloMessage, 0, helloMessage.length, remote.port, remote.address, showError)
                 }
                 else
@@ -297,12 +288,12 @@ const Receiver = class {
             })
             return 
         }
-        else if(!peer.connected && !peer.isSender){
+        else if(!peer.isConnected() && !peer.isSender){
             if(Try(() => json(peer.key.decrypt(message))) === null)
                 return
 
-            peer.connected = true
-            return
+            // NAT transversal successful
+            this.startPolling(peer)
         }
 
         if(peer.isPeer){
@@ -357,9 +348,7 @@ const Receiver = class {
             //check last access time from peer
             let currentTime = new Date()
 
-            if(peer.lastAccess.getTime() === 0)
-                peer.lastAccess = currentTime
-            else{
+            if(peer.lastAccess.getTime() !== 0){
                 let lastAccess = currentTime - peer.lastAccess
 
                 if(lastAccess <= __.ACCESS_COOLDOWN)
@@ -367,6 +356,8 @@ const Receiver = class {
                 else if(lastAccess >= __.LAST_ACCESS_LIMIT)
                     return this.handleBadPeer(message, remote, sock, peer)
             }
+
+            peer.lastAccess = currentTime
         }
 
         if(Try(() => message = json(peer.key.decrypt(message))) === null)
@@ -443,7 +434,7 @@ const Receiver = class {
 
                 peer.ip = message[1]
                 peer.port = peerPort
-                this.addPeer(peer, sock)
+                this.addPeer(peer)
                 this.sockets[sock].send(peer.myPub, 0, peer.myPub.length, peer.port, peer.ip, showError)
                 return
 
@@ -523,7 +514,7 @@ const Receiver = class {
             return this.handleSocketMessage(message, remote)
         }
         else{
-            peer.connected = false
+            this.stopPolling(peer)
             this.sockets[sock].send(peer.myPub, 0, peer.myPub.length, peer.port, peer.ip, showError)
         }
     }
@@ -536,13 +527,13 @@ const Receiver = class {
      */
     initializeConnection (peer, sock) {
         return new Promise(resolve => {
-            if(peer.connected)
+            if(peer.isConnected())
                 return resolve(true)
 
             sock = typeof sock === 'number' ? sock : 0
 
             if(peer.public){
-                this.addPeer(peer, sock)
+                this.addPeer(peer)
                 this.sockets[sock].send(
                     peer.myPub, 0, peer.myPub.length,
                     peer.port,
@@ -572,7 +563,7 @@ const Receiver = class {
             this.sockets[sock].send(announceMessage, 0, announceMessage.length, tracker.port, tracker.ip, showError)
 
             setTimeout(() => {
-                if(peer.connected)
+                if(peer.isConnected())
                     return resolve(true)
 
                 if(peer.quality <= 0)
@@ -610,7 +601,7 @@ const Receiver = class {
         else if(typeof peer !== 'object')
             return false
 
-        if(!peer.connected){
+        if(!peer.isConnected()){
             peer.quality = __.MAX_TRIAL
             if(!await this.initializeConnection(peer))
                 return false
@@ -637,6 +628,36 @@ const Receiver = class {
             )()
 
         return true
+    }
+
+    /**
+     * Start polling on this peer
+     * @param {Peer} peer Peer to start polling
+     * @param {number} sock Socket to start polling.
+     */
+    startPolling (peer, sock) {                
+        if(peer.isConnected())
+            return false
+
+        let fnPolling = () => this.sockets[sock].send('', 0, 0, peer.port, peer.ip, showError)
+        
+        fnPolling()
+        peer.keepAlive = setInterval(fnPolling, 10000)
+        return true
+    }
+
+    /**
+     * Stop polling on this peer
+     * @param {Peer} peer Peer to stop polling
+     */
+    stopPolling (peer) {
+        if(peer.isConnected()){
+            clearInterval(peer.keepAlive)
+            peer.keepAlive = null
+            return true
+        }
+
+        return false
     }
 
     /**

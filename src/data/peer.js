@@ -23,7 +23,7 @@ const Peer = class {
     /** @type {Buffer} Peer public key.*/
     pub = Buffer.from([])
 
-    /** @type {boolean} Is this peer connected to this receiver */
+    /** @type {boolean} Is this peer connected to us */
     isSender = false
 
     /** @type {NodeJS.Timeout} Keep alive client polling timer */
@@ -37,9 +37,6 @@ const Peer = class {
 
     /** @type {SymmetricKey} Peer Symmetric key*/
     key = null
-
-    /** @type {boolean} Is the connection established?*/
-    connected = false
 
     /** @type {function} Some of function to be put for special purposes */
     callback = null
@@ -61,6 +58,13 @@ const Peer = class {
 
     /** @type {string} Amount of bytes received */
     mediaStreamPacketsReceived = 0
+
+    /**
+     * Check if this peer has a connection
+     */
+    isConnected () {
+        return this.keepAlive !== null
+    }
 
     /**
      * Export to array
