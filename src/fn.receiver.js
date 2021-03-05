@@ -242,7 +242,7 @@ const Receiver = class {
 
     /**
      * Handshake to a tracker
-     * @param {Peer} tracker Tracker to be initialized
+     * @param {Tracker} tracker Tracker to be initialized
      * @param {number} sock Number of socket number to be used
      */
     helloTracker (tracker, sock) {
