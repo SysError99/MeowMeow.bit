@@ -289,7 +289,7 @@ const Receiver = class {
         }
 
         if(peer.isPeer)
-            return this.handlePeerMessage(peer, message, sock, peer)
+            return this.handlePeerMessage(message, remote, sock, peer)
             
         if(peer.isTracker)
             return this.handleTrackerMessage(message, remote, sock, peer)
