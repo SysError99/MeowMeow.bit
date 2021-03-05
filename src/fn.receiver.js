@@ -268,7 +268,7 @@ const Receiver = class {
 
         if(typeof peer === 'undefined'){
             let computeKey = this.key.computeSecret(message)
-            
+
             if(computeKey !== null){
                 let helloMessage = computeKey.encrypt(str( ['nice2meetu'] ))
 
@@ -312,17 +312,17 @@ const Receiver = class {
             return
         }
 
-        if(typeof peer.callback === 'function'){
-            peer.callback()
-            peer.callback = null
-        }
-
         if(!peer.isSender){
             if(!peer.connected()){
                 if(Try(() => json(peer.key.decrypt(message))) === null)
                     return
 
                 // NAT transversal successful
+                if(typeof peer.callback === 'function'){
+                    peer.callback()
+                    peer.callback = null
+                }
+
                 this.startPolling(peer, sock)
                 return
             }
@@ -555,11 +555,11 @@ const Receiver = class {
             this.sockets[sock].send(announceMessage, 0, announceMessage.length, tracker.port, tracker.ip, showError)
 
             setTimeout(() => {
-                if(peer.connected())
-                    return resolve(true)
-
                 if(peer.quality <= 0)
                     return resolve(false)
+
+                if(peer.connected())
+                    return
 
                 peer.quality--
                 this.initializeConnection(peer, sock + 1 < __.MAX_TRIAL - 1 ? sock + 1 : 0)
@@ -629,7 +629,7 @@ const Receiver = class {
      * @param {Peer} peer Peer to start polling
      * @param {number} sock Socket to start polling.
      */
-    startPolling (peer, sock) {                
+    startPolling (peer, sock) {
         if(peer.connected())
             return false
 
@@ -661,7 +661,7 @@ const Receiver = class {
 
         this.callback = callback
         this.socket.on('error', showError)
-        this.socket.on('message', (msg, remote) => this.handleSocketMessage(msg, remote, 0))    
+        this.socket.on('message', (msg, remote) => this.handleSocketMessage(msg, remote, 0))
 
         // handshake to trackers
         if(Try(() => {
