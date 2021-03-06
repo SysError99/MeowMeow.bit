@@ -703,21 +703,23 @@ const Receiver = class {
         if(this.trackerList.length === 0)
             throw Error('No trackers has been set')
 
+        for(let i = __.MAX_TRIAL - 1; i >= 0; i--){
+            let newSocket = Datagram.createSocket({
+                type: 'udp4',
+                reuseAddr: true
+            })
+
+            newSocket.on('error', showError)
+            newSocket.on('message', (msg, remote) => this.handleSocketMessage(msg, remote, i))
+            this.sockets[i] = newSocket
+        }
+
         for(let t in this.trackerList){
             /** @type {Tracker} */
             let tracker = this.peers[this.trackerList[t]]
 
-            for(let i = __.MAX_TRIAL - 1; i >= 0; i--){
-                let newSocket = Datagram.createSocket({
-                    type: 'udp4',
-                    reuseAddr: true
-                })
-
-                newSocket.on('error', showError)
-                newSocket.on('message', (msg, remote) => this.handleSocketMessage(msg, remote, i))
-                this.sockets[i] = newSocket
+            for(let i = __.MAX_TRIAL - 1; i >= 0; i--)
                 this.helloTracker(tracker, i)
-            }
         }
 
         console.log(`Receiver will be known as '${this.myPub}'.`)
