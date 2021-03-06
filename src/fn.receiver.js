@@ -567,7 +567,7 @@ const Receiver = class {
                     return
 
                 peer.quality--
-                this.initializeConnection(peer, sock + 1 < __.MAX_TRIAL - 1 ? sock + 1 : 0)
+                resolve(this.initializeConnection(peer, sock + 1 < __.MAX_TRIAL - 1 ? sock + 1 : 0))
             }, 4000)
         })
     }
@@ -602,6 +602,7 @@ const Receiver = class {
 
         if(!peer.connected()){
             peer.quality = __.MAX_TRIAL
+
             if(!await this.initializeConnection(peer))
                 return false
         }
@@ -701,8 +702,6 @@ const Receiver = class {
 
         if(this.trackerList.length === 0)
             throw Error('No trackers has been set')
-
-        
 
         for(let t in this.trackerList){
             /** @type {Tracker} */
