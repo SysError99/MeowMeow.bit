@@ -272,6 +272,9 @@ const Receiver = class {
         let peer = this.peers[`${remote.address}:${remote.port}`]
 
         if(typeof peer === 'undefined'){
+            if(message.length !== Crypt.ecdh.length)
+                return 
+
             let computeKey = this.key.computeSecret(message)
 
             if(computeKey !== null){

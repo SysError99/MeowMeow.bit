@@ -106,6 +106,9 @@ const keyCreator = {
 }
 const ecdh = {
 
+    /** @type {number} ECDH Key length*/
+    length: keyCreator.ecdh().getPublicKey().length,
+
     /**
      * Compute a secret key
      * @param {Crypto.ECDH} ecdh ECDH Key object
@@ -116,7 +119,7 @@ const ecdh = {
 
 }
 const sect571k1 = {
-    
+
     /**
      * Restore 'sect571k1' ECDH public key
      * @param {Buffer} buf 
