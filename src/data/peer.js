@@ -26,8 +26,8 @@ const Peer = class {
     /** @type {boolean} Is this peer connected to us */
     isSender = false
 
-    /** @type {NodeJS.Timeout} Keep alive client polling timer */
-    keepAlive = null
+    /** @type {boolean} Keep alive client polling timer? */
+    keepAlive = false
 
     /** @type {Buffer} Randomly generated public key to be shared with another peer*/
     myPub = Buffer.from([])
@@ -63,7 +63,7 @@ const Peer = class {
      * Check if this peer has a connection
      */
     connected () {
-        return this.keepAlive !== null
+        return this.keepAlive
     }
 
     /**

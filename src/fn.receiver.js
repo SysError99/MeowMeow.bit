@@ -80,6 +80,9 @@ const Receiver = class {
     /** @type {Peer[]} Connected peers */
     peers = {}
 
+    /** @type {Peer[]} List of connected peer and needs polling*/
+    pollingList = []
+
     /** Receiver socket module*/
     socket = Datagram.createSocket({
         type: 'udp4',
@@ -287,6 +290,7 @@ const Receiver = class {
                 peer.isSender = true
                 peer.key = computeKey
                 this.addPeer(peer)
+                this.startPolling(peer)
                 this.sockets[sock].send(helloMessage, 0, helloMessage.length, remote.port, remote.address, showError)
             }
             else
@@ -311,27 +315,22 @@ const Receiver = class {
      */
     handlePeerMessage (message, remote, sock, peer) {
         if(message.length === 0){
-            if(peer.isSender)
-                this.sockets[sock].send('', 0, 0, remote.port, remote.address, showError)
-
             peer.lastAccess = currentTime
             return
         }
 
-        if(!peer.isSender){
-            if(!peer.connected()){
-                if(Try(() => json(peer.key.decrypt(message))) === null)
-                    return
-
-                // NAT transversal successful
-                if(typeof peer.callback === 'function'){
-                    peer.callback()
-                    peer.callback = null
-                }
-
-                this.startPolling(peer, sock)
+        if(!peer.connected()){
+            if(Try(() => json(peer.key.decrypt(message))) === null)
                 return
+
+            // NAT transversal successful
+            if(typeof peer.callback === 'function'){
+                peer.callback()
+                peer.callback = null
             }
+
+            this.startPolling(peer)
+            return
         }
 
         if(peer.mediaStream !== null){
@@ -633,13 +632,13 @@ const Receiver = class {
     /**
      * Start polling on this peer
      * @param {Peer} peer Peer to start polling
-     * @param {number} sock Socket to start polling.
      */
-    startPolling (peer, sock) {
+    startPolling (peer) {
         if(peer.connected())
             return false
 
-        peer.keepAlive = setInterval(() => this.sockets[sock].send('', 0, 0, peer.port, peer.ip, showError), 10000)
+        this.pollingList.push(peer)
+        peer.keepAlive = true
         return true
     }
 
@@ -649,8 +648,15 @@ const Receiver = class {
      */
     stopPolling (peer) {
         if(peer.connected()){
-            clearInterval(peer.keepAlive)
-            peer.keepAlive = null
+            peer.keepAlive = false
+
+            for(let i = 0; i < this.pollingList.length; i++){
+                if(this.pollingList[i] === peer){
+                    this.pollingList.splice(i, 1)
+                    break
+                }
+            }
+
             return true
         }
 
@@ -716,6 +722,25 @@ const Receiver = class {
         }
 
         console.log(`Receiver will be known as '${this.myPub}'.`)
+
+        //Polling
+        setInterval(() => {
+            let i = 0
+            /** @type {Peer} */
+            let peer
+
+            while(i < this.pollingList.length){
+                peer = this.pollingList[i]
+
+                if(currentTime - peer.lastAccess > __.LAST_ACCESS_LIMIT){
+                    this.pollingList.splice(i, 1)
+                    continue
+                }
+
+                this.sockets[peer.socket].send('', 0, 0, peer.port, peer.ip, showError)
+                i++
+            }
+        },10000)
     }
 }
 
