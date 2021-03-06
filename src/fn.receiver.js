@@ -567,7 +567,7 @@ const Receiver = class {
                     return
 
                 peer.quality--
-                resolve(this.initializeConnection(peer, sock + 1 < __.MAX_TRIAL - 1 ? sock + 1 : 0))
+                resolve(this.initializeConnection(peer, __.MAX_TRIAL > sock + 1 ? sock + 1 : 0))
             }, 4000)
         })
     }
