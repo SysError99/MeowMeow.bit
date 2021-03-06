@@ -271,8 +271,6 @@ const Receiver = class {
         /** @type {Peer|Tracker} */
         let peer = this.peers[`${remote.address}:${remote.port}`]
 
-        console.log(message.length)
-
         if(typeof peer === 'undefined'){
             if(message.length !== Crypt.ecdh.length)
                 return 

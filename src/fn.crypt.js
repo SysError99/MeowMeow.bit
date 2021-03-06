@@ -107,7 +107,7 @@ const keyCreator = {
 const ecdh = {
 
     /** @type {number} ECDH Key length*/
-    length: keyCreator.ecdh().getPublicKey().length,
+    length: keyCreator.ecdh().getPublicKey().length - 1, //sect571k1.short()
 
     /**
      * Compute a secret key
