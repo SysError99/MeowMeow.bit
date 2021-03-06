@@ -11,6 +11,11 @@ const Peer = require('./data/peer')
 const Result = require('./data/result')
 const Tracker = require('./data/tracker')
 
+/** @type {number} Current time in real-time (milliseconds)*/
+let currentTime = new Date().getTime()
+
+setInterval(() => currentTime = new Date().getTime(), 1000)
+
 /** @type {RegExp} IP address regular expression*/
 const IpRegex = require('./data/ip.regex')
 
@@ -302,8 +307,6 @@ const Receiver = class {
      * @param {Peer} peer Peer sent this
      */
     handlePeerMessage (message, remote, sock, peer) {
-        let currentTime = new Date().getTime()
-
         if(message.length === 0){
             if(peer.isSender)
                 this.sockets[sock].send('', 0, 0, remote.port, remote.address, showError)
