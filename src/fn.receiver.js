@@ -461,7 +461,7 @@ const Receiver = class {
                 if(!IpRegex.test(message[1]))
                     return
 
-                let randomResponse = Crypt.rand(145)
+                let randomResponse = Crypt.rand(Crypt.ecdh.length)
 
                 this.sockets[sock].send(randomResponse, 0, randomResponse.length, message[2], message[1], showError)
                 return
