@@ -59,14 +59,16 @@ const sendRandomBytes = remote => udp.send(Crypt.rand(8), 0, 8, remote.port, rem
  */
 const str = obj => Try(() => JSON.stringify(obj), `["error"]`)
 
+/** @type {number} Current time in real-time (milliseconds)*/
+let currentTime = new Date().getTime()
+
+setInterval(() => currentTime = new Date().getTime(), 1000)
+
 udp.bind(12345)
 udp.on('listening', () => console.log(`Server is running on port `+udp.address().port))
 udp.on('error', showError)
 udp.on('message', (msg, remote) => {
-    if(msg.length === 0)
-        return udp.send('', 0, 0, remote.port, remote.address, showError)
 
-    let currentTime = new Date().getTime()
     let remoteAddress = `${remote.address}:${remote.port}`
     /** @type {Buffer|message} */
     let message
@@ -78,6 +80,9 @@ udp.on('message', (msg, remote) => {
      * @param {boolean} reset Delete this peer? 
      */
     let identifyPeer = reset => {
+        if(msg.length === 0)
+            return true
+
         if(reset)
             delete knownPeers[remoteAddress]
 
@@ -102,17 +107,23 @@ udp.on('message', (msg, remote) => {
         }
 
         peer = knownPeers[remoteAddress]
-
-        if(peer.lastAccess > 0){
-            if(currentTime - peer.lastAccess > __.ACCESS_COOLDOWN)
-                return identifyPeer(true)
-        }
-
-        peer.lastAccess = currentTime
     }
 
     if(identifyPeer())
         return
+
+    if(msg.length === 0){
+        udp.send('', 0, 0, remote.port, remote.address, showError)
+        peer.lastAccess = currentTime
+        return 
+    }
+
+    if(peer.lastAccess > 0){
+        if(currentTime - peer.lastAccess > __.ACCESS_COOLDOWN)
+            return identifyPeer(true)
+    }
+
+    peer.lastAccess = currentTime
 
     if(Try(() => message = JSON.parse(peer.key.decrypt(msg))) === null)
         return

@@ -470,7 +470,7 @@ const Receiver = class {
                 /**
                  * Tracker says welcome!
                  */
-                tracker.keepAlive[sock] = setInterval(() => this.sockets[sock].send('', 0, 0, remote.port, remote.address, showError), 10000)
+                tracker.keepAlive[sock] = setInterval(() => this.sockets[sock].send('', 0, 0, remote.port, remote.address, showError), 6000)
                 return
 
             case 'follower':
