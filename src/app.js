@@ -187,8 +187,7 @@ const receiver = new Receiver((peer, result) => {
             return
 
         default:
-            let unknownCmdMessage = peer.key.encrypt(str( [`what`] ))
-            receiver.send(peer, unknownCmdMessage)
+            receiver.send(peer, [`what`])
             return
     }
 })
