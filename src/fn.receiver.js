@@ -532,12 +532,12 @@ const Receiver = class {
      * Initialize connection for the target
      * @param {Peer} peer Peer to initialize connection
      * @param {number} sock Socket to be used (handle automatically)
-     * @returns {Promise<boolean>} Is connection successfully established?
+     * @returns {Promise<number>} How many tries used to connect to peer (__.MAX_trial means unsuccessful)
      */
     initializeConnection (peer, sock) {
         return new Promise(resolve => {
             if(peer.connected())
-                return resolve(true)
+                return resolve(1)
 
             if(peer.public){
                 this.sockets[sock].send(
@@ -546,7 +546,7 @@ const Receiver = class {
                     peer.ip,
                     showError
                 )
-                resolve(true)
+                resolve(1)
                 return
             }
 
@@ -556,12 +556,12 @@ const Receiver = class {
             let announceMessage = tracker.keys[sock].encrypt(str( [`announce`, `${peer.ip}:${peer.port}`] ))
 
             peer.socket = sock
-            peer.callback = () => resolve(true)
+            peer.callback = () => resolve(__.MAX_TRIAL + 1 - peer.quality)
             this.sockets[sock].send(announceMessage, 0, announceMessage.length, tracker.port, tracker.ip, showError)
 
             setTimeout(() => {
                 if(peer.quality <= 0)
-                    return resolve(false)
+                    return resolve(__.MAX_TRIAL + 1)
 
                 if(peer.connected())
                     return
@@ -577,15 +577,15 @@ const Receiver = class {
      * @param {Peer} peer Peer to send data to
      * @param {string|Array|Buffer} data Data to be sent
      * @param {boolean} mediaStreamWait If on media stream, this need to wait peer responses
-     * @returns {Promise<boolean>} Is the connection successfully established?
+     * @returns {Promise<number>} How many tries used to connect to peer? (0 means parameters invalid, __.MAX_TRIAL + 1 means unsuccessful)
      */
     async send (peer, data, mediaStreamWait) {
         if(Array.isArray(data))
             if(Try(() => data = str(data)) === null)
-                return false
+                return 0
         
         if(typeof data !== 'string')
-            return false
+            return 0
 
         if(typeof peer === 'string'){
             /** @type {string} */
@@ -596,38 +596,42 @@ const Receiver = class {
                 peer = new Peer(['', 0, BaseN.decode(peerStr, '62')])
         }
         else if(typeof peer !== 'object')
-            return false
+            return 0
+
+        let connectionTrialCounter = 1
 
         this.addPeer(peer)
 
         if(!peer.connected()){
             peer.quality = __.MAX_TRIAL
+            connectionTrialCounter = await this.initializeConnection(peer)
 
-            if(!await this.initializeConnection(peer))
-                return false
+            if(connectionTrialCounter > __.MAX_TRIAL)
+                return connectionTrialCounter
         }
 
-        Try(() => {
+        if(Try(() => {
             data = peer.key.encrypt(data)
             this.sockets[peer.socket].send(data, 0, data.length, peer.port, peer.ip, showError)
-        })
+        }))
+            return 0
 
         if(mediaStreamWait)
             return await (() =>
                 new Promise(resolve => {
                     let waitTimeout = setTimeout(() => {
                         peer.mediaStreamReady = null
-                        resolve(false)
+                        resolve(connectionTrialCounter)
                     }, 1000)
 
                     peer.mediaStreamReady = () => {
                         clearTimeout(waitTimeout)
-                        resolve(true)
+                        resolve(connectionTrialCounter)
                     }
                 })
             )()
 
-        return true
+        return connectionTrialCounter
     }
 
     /**
