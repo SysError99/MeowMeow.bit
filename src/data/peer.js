@@ -44,9 +44,6 @@ const Peer = class {
     /** @type {number} Peer quality indicator*/
     quality = __.MAX_TRIAL
 
-    /** @type {number} Socket number currently using*/
-    socket = 0
-
     /** @type {FileSystem.WriteStream} Currently writing stream*/
     mediaStream = null
 
@@ -81,6 +78,26 @@ const Peer = class {
     }
 
     /**
+     * Set target's public key
+     * @param {Buffer|string} pub Public key (Buffer or base62)
+     */
+    setPeerPub (pub) {
+        if(typeof pub === 'string'){
+            if(Try(() => pub = Buffer.from(pub, 'base64'), this.pub))
+                return
+        }
+
+        if(!Buffer.isBuffer(pub))
+            return
+
+        let newECDH = new ECDHKey()
+
+        this.key = newECDH.computeSecret(pub)
+        this.myPub = newECDH.getPub()
+        this.pub = pub
+    }
+
+    /**
      * Create Peer
      * @param {Array} d Array to be imported
      */
@@ -94,24 +111,14 @@ const Peer = class {
         if(typeof d[1] === 'number')
             this.port = d[1]
 
-        Try(() => {
-            if(typeof d[2] === 'string')
-                d[2] = Buffer.from(d[2], 'base64')
+        this.setPeerPub(d[2])
 
-            if(typeof d[3] === 'boolean')
-                this.public = d[3]
+        if(typeof d[3] === 'boolean')
+            this.public = d[3]
 
-            if(typeof d[4] === 'number')
-                this.lastAccess = d[4]
+        if(typeof d[4] === 'number')
+            this.lastAccess = d[4]
 
-            if(!Buffer.isBuffer(d[2]))
-                return
-
-            let newECDH = new ECDHKey()
-            this.key = newECDH.computeSecret(d[2])
-            this.myPub = newECDH.getPub()
-            this.pub = d[2]
-        })
     }
 }
 

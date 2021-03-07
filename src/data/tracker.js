@@ -21,20 +21,14 @@ const Tracker = class {
     /** @type {SymmetricKey} Key for encryption*/
     key = Buffer.from([])
 
-    /** @type {SymmetricKey[]} List of keys for encryption*/
-    keys = []
-
     /** @type {Buffer} Public key for starting communication*/
     myPub = Buffer.from([])
 
-    /** @type {Buffer[]} Public key for starting communication*/
-    myPubs = []
+    /** @type {boolean} List of connection status for each ports */
+    connected = false
 
-    /** @type {boolean[]} List of connection status for each ports */
-    connected = []
-
-    /** @type {NodeJS.Timeout[]} Keep alive client polling timer */
-    keepAlive = []
+    /** @type {NodeJS.Timeout} Keep alive client polling timer */
+    keepAlive = null
 
     /**
      * Generate tracker object
@@ -51,20 +45,15 @@ const Tracker = class {
             this.port = d[1]
 
         if(typeof d[2] === 'string')
-            this.pub = Try(() => Buffer.from(d[2], 'base64'), this.pub)
-        else if(Buffer.isBuffer(d[2]))
-            this.pub = d[2]
+            d[2] = Try(() => Buffer.from(d[2], 'base64'), this.pub)
+        else if(!Buffer.isBuffer(d[2]))
+            return
 
-        for(let i = __.MAX_TRIAL - 1; i >= 0; i--){
-            let ecdh = new ECDHKey()
-
-            this.keys[i] = ecdh.computeSecret(this.pub)
-            this.myPubs[i] = ecdh.getPub()
-            this.connected[i] = false
-        }
-
-        this.key = this.keys[0]
-        this.myPub = this.myPubs[0]
+        let ecdh = new ECDHKey()
+        
+        this.pub = d[2]
+        this.key = ecdh.computeSecret(this.pub)
+        this.myPub = ecdh.getPub()
     }
 }
 

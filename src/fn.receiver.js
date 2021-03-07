@@ -18,6 +18,7 @@ setInterval(() => currentTime = new Date().getTime(), 1000)
 
 /** @type {RegExp} IP address regular expression*/
 const IpRegex = require('./data/ip.regex')
+const { clear } = require('console')
 
 /** Account seeders, contains string[] of seeder peers (shares across all receivers)*/
 const seeders = {}
@@ -88,9 +89,6 @@ const Receiver = class {
         type: 'udp4',
         reuseAddr: true
     })
-
-    /** @type {Datagram.Socket[]} List of all sockets*/
-    sockets = [this.socket]
 
     /** Storage module */
     storage = require('./fn.storage')(this.locale)
@@ -250,12 +248,11 @@ const Receiver = class {
     /**
      * Handshake to a tracker
      * @param {Tracker} tracker Tracker to be initialized
-     * @param {number} sock Number of socket number to be used
      */
-    helloTracker (tracker, sock) {
-        let myPub = tracker.myPubs[sock]
+    helloTracker (tracker) {
+        let myPub = tracker.myPub
 
-        this.sockets[sock].send(
+        this.socket.send(
             myPub, 0, myPub.length,
             tracker.port,
             tracker.ip,
@@ -267,10 +264,9 @@ const Receiver = class {
      * Handle socket incoming message
      * @param {Array|Buffer|string} message 
      * @param {Datagram.RemoteInfo} remote 
-     * @param {number} sock socket number
      * @returns {Promise<void>}
      */
-    async handleSocketMessage (message, remote, sock) {
+    async handleSocketMessage (message, remote) {
         /** @type {Peer|Tracker} */
         let peer = this.peers[`${remote.address}:${remote.port}`]
 
@@ -287,34 +283,32 @@ const Receiver = class {
                     remote.address,
                     remote.port
                 ])
-                peer.socket = sock
                 peer.isSender = true
                 peer.key = computeKey
                 this.addPeer(peer)
                 this.startPolling(peer)
-                this.sockets[sock].send(helloMessage, 0, helloMessage.length, remote.port, remote.address, showError)
+                this.socket.send(helloMessage, 0, helloMessage.length, remote.port, remote.address, showError)
             }
             else
-                this.sockets[sock].send(Crypt.rand(22), 0, 22, remote.port, remote.address, showError)
+                this.socket.send(Crypt.rand(22), 0, 22, remote.port, remote.address, showError)
 
             return 
         }
 
         if(peer.isPeer)
-            return this.handlePeerMessage(message, remote, sock, peer)
+            return this.handlePeerMessage(message, remote, peer)
             
         if(peer.isTracker)
-            return this.handleTrackerMessage(message, remote, sock, peer)
+            return this.handleTrackerMessage(message, remote, peer)
     }
 
     /**
      * Handle Message have sent from peers
      * @param {string} message Encrypted message received
      * @param {Datagram.RemoteInfo} remote Remote info
-     * @param {number} sock Socket number
      * @param {Peer} peer Peer sent this
      */
-    handlePeerMessage (message, remote, sock, peer) {
+    handlePeerMessage (message, remote, peer) {
         if(message.length === 0){
             peer.lastAccess = currentTime
             return
@@ -326,7 +320,7 @@ const Receiver = class {
 
             // NAT transversal successful
             if(typeof peer.callback === 'function'){
-                peer.callback()
+                peer.callback(__.MAX_TRIAL + 1 - (peer.quality - 1))
                 peer.callback = null
             }
 
@@ -336,7 +330,7 @@ const Receiver = class {
 
         if(peer.mediaStream !== null){
             if(Try(() => message = peer.key.decrypt(message)) === null)
-                return this.handleBadPeer(message, remote, sock, peer)
+                return this.handleBadPeer(message, remote, peer)
 
             if(message[0] === __.EOF){
                 peer.mediaStream.close()
@@ -352,13 +346,13 @@ const Receiver = class {
                 peer.mediaStream.close()
                 peer.mediaStream = null
                 this.storage.remove(peer.mediaStreamLocation)
-                return this.handleBadPeer(message, remote, sock, peer)
+                return this.handleBadPeer(message, remote, peer)
             }
 
             let okMessage = peer.key.encrypt(str( [``] ))
             peer.mediaStream.write(message, showError)
             peer.mediaStreamPacketsReceived += message.length
-            this.sockets[sock].send(okMessage, 0, okMessage.length, remote.port, remote.address, showError)
+            this.socket.send(okMessage, 0, okMessage.length, remote.port, remote.address, showError)
             return
         }
 
@@ -369,16 +363,16 @@ const Receiver = class {
             if(lastAccess <= __.ACCESS_COOLDOWN)
                 return
             else if(lastAccess >= __.LAST_ACCESS_LIMIT)
-                return this.handleBadPeer(message, remote, sock, peer)
+                return this.handleBadPeer(message, remote, peer)
         }
 
         peer.lastAccess = currentTime
 
         if(Try(() => message = json(peer.key.decrypt(message))) === null)
-            return this.handleBadPeer(message, remote, sock, peer)
+            return this.handleBadPeer(message, remote, peer)
 
         if(!Array.isArray(message))
-            return this.handleBadPeer(message, remote, sock, peer)
+            return this.handleBadPeer(message, remote, peer)
 
         if(message[0] === ''){
             if(typeof peer.mediaStreamReady === 'function'){
@@ -398,14 +392,13 @@ const Receiver = class {
      * Handle messages from tracker
      * @param {string} message Message received
      * @param {Datagram.RemoteInfo} remote Remote Info
-     * @param {number} sock Socket number
      * @param {Tracker} tracker Tracker have sen message
      */
-    handleTrackerMessage (message, remote, sock, tracker) {
-        if(Try(() => message = json(tracker.keys[sock].decrypt(message))) === null){
-            let trackerPub = tracker.myPubs[sock]
+    handleTrackerMessage (message, remote, tracker) {
+        if(Try(() => message = json(tracker.key.decrypt(message))) === null){
+            let trackerPub = tracker.myPub
 
-            this.sockets[sock].send(trackerPub, 0, trackerPub.length, tracker.port, tracker.address, showError)
+            this.socket.send(trackerPub, 0, trackerPub.length, tracker.port, tracker.address, showError)
             return
         }
 
@@ -434,8 +427,8 @@ const Receiver = class {
                  * [1]: peer ip
                  * [2]: peer port
                  */
-                /** @type {Peer} Requested peer */
                 let peerPort = typeof message[2] === 'number' ? message[2] : 0
+                /** @type {Peer} Requested peer */
                 let peer = this.peers[`${message[1]}:${peerPort}`]
 
                 if(typeof peer === 'undefined' || !IpRegex.test(message[1]) || peerPort <= 1024 || peerPort > 65535)
@@ -445,7 +438,25 @@ const Receiver = class {
 
                 peer.ip = message[1]
                 peer.port = peerPort
-                this.sockets[sock].send(peer.myPub, 0, peer.myPub.length, peer.port, peer.ip, showError)
+
+                let tryToConnect = setInterval(() => {
+                    if(peer.connected())
+                        return clearInterval(tryToConnect)
+
+                    if(peer.quality < 0){
+                        if(typeof peer.callback === 'function'){
+                            peer.callback(__.MAX_TRIAL + 1)
+                            peer.callback = null
+                        }
+
+                        clearInterval(tryToConnect)
+                        return
+                    }
+
+                    peer.quality--
+                    peer.setPeerPub(peer.pub)
+                    this.socket.send(peer.myPub, 0, peer.myPub.length, peer.port, peer.ip, showError)
+                }, 1000)
                 return
 
             case 'sendrand':
@@ -461,9 +472,20 @@ const Receiver = class {
                 if(!IpRegex.test(message[1]))
                     return
 
-                let randomResponse = Crypt.rand(Crypt.ecdh.length)
+                let tryToResponseCount = 0
+                let tryToResponse = setInterval(() => {
+                    let randomResponse = Crypt.rand(Crypt.ecdh.length)
 
-                this.sockets[sock].send(randomResponse, 0, randomResponse.length, message[2], message[1], showError)
+                    if(typeof this.peers[`${message[1]}:${message[2]}`] !== 'undefined')
+                        return clearInterval(tryToResponse)
+
+                    this.socket.send(randomResponse, 0, randomResponse.length, message[2], message[1], showError)
+                    tryToResponseCount++
+
+                    if(__.MAX_TRIAL < tryToResponseCount)
+                        return clearInterval(tryToResponse)
+                }, 1000)
+
                 return
 
             //tracker
@@ -471,7 +493,8 @@ const Receiver = class {
                 /**
                  * Tracker says welcome!
                  */
-                tracker.keepAlive[sock] = setInterval(() => this.sockets[sock].send('', 0, 0, remote.port, remote.address, showError), 6000)
+                tracker.connected = true
+                tracker.keepAlive = setInterval(() => this.socket.send('', 0, 0, remote.port, remote.address, showError), 6000)
                 return
 
             case 'follower':
@@ -515,33 +538,31 @@ const Receiver = class {
      * Handle Bad Peer from socket
      * @param {Buffer|string} message 
      * @param {Datagram.RemoteInfo} remote 
-     * @param {number} sock Socket number
      * @param {Peer} peer 
      */
-    handleBadPeer (message, remote, sock, peer) {
+    handleBadPeer (message, remote, peer) {
         if(peer.isSender){
             this.deletePeer(peer)
-            this.handleSocketMessage(message, remote, sock)
+            this.handleSocketMessage(message, remote)
         }
         else{
             this.stopPolling(peer)
-            this.sockets[sock].send(peer.myPub, 0, peer.myPub.length, peer.port, peer.ip, showError)
+            this.socket.send(peer.myPub, 0, peer.myPub.length, peer.port, peer.ip, showError)
         }
     }
 
     /**
      * Initialize connection for the target
      * @param {Peer} peer Peer to initialize connection
-     * @param {number} sock Socket to be used (handle automatically)
      * @returns {Promise<number>} How many tries used to connect to peer (__.MAX_trial means unsuccessful)
      */
-    initializeConnection (peer, sock) {
+    initializeConnection (peer) {
         return new Promise(resolve => {
             if(peer.connected())
                 return resolve(1)
 
             if(peer.public){
-                this.sockets[sock].send(
+                this.socket.send(
                     peer.myPub, 0, peer.myPub.length,
                     peer.port,
                     peer.ip,
@@ -551,25 +572,13 @@ const Receiver = class {
                 return
             }
 
-            sock = typeof sock === 'number' ? sock : 0
-
             let tracker = randTracker(this)
-            let announceMessage = tracker.keys[sock].encrypt(str( [`announce`, `${peer.ip}:${peer.port}`] ))
+            let announceMessage = tracker.key.encrypt(str( [`announce`, `${peer.ip}:${peer.port}`] ))
 
-            peer.socket = sock
-            peer.callback = () => resolve(__.MAX_TRIAL + 1 - peer.quality)
-            this.sockets[sock].send(announceMessage, 0, announceMessage.length, tracker.port, tracker.ip, showError)
+            peer.callback = trial => resolve(trial)
+            this.socket.send(announceMessage, 0, announceMessage.length, tracker.port, tracker.ip, showError)
 
-            setTimeout(() => {
-                if(peer.quality <= 0)
-                    return resolve(__.MAX_TRIAL + 1)
-
-                if(peer.connected())
-                    return
-
-                peer.quality--
-                resolve(this.initializeConnection(peer, __.MAX_TRIAL > sock + 1 ? sock + 1 : 0))
-            }, 4000)
+            // Have a look at this.handleTrackerMessage() -> 'sendpub' to find more clues.
         })
     }
 
@@ -578,7 +587,7 @@ const Receiver = class {
      * @param {Peer} peer Peer to send data to
      * @param {string|Array|Buffer} data Data to be sent
      * @param {boolean} mediaStreamWait If on media stream, this need to wait peer responses
-     * @returns {Promise<number>} How many tries used to connect to peer? (0 means parameters invalid, __.MAX_TRIAL + 1 means unsuccessful)
+     * @returns {Promise<number>} How many tries used to connect to peer? (0 means parameters invalid, __.MAX_TRIAL means unsuccessful)
      */
     async send (peer, data, mediaStreamWait) {
         if(Array.isArray(data))
@@ -607,13 +616,13 @@ const Receiver = class {
             peer.quality = __.MAX_TRIAL
             connectionTrialCounter = await this.initializeConnection(peer)
 
-            if(connectionTrialCounter > __.MAX_TRIAL)
+            if(__.MAX_TRIAL < connectionTrialCounter)
                 return connectionTrialCounter
         }
 
         if(Try(() => {
             data = peer.key.encrypt(data)
-            this.sockets[peer.socket].send(data, 0, data.length, peer.port, peer.ip, showError)
+            this.socket.send(data, 0, data.length, peer.port, peer.ip, showError)
         }))
             return 0
 
@@ -708,23 +717,11 @@ const Receiver = class {
         if(this.trackerList.length === 0)
             throw Error('No trackers has been set')
 
-        for(let i = __.MAX_TRIAL - 1; i >= 0; i--){
-            let newSocket = Datagram.createSocket({
-                type: 'udp4',
-                reuseAddr: true
-            })
-
-            newSocket.on('error', showError)
-            newSocket.on('message', (msg, remote) => this.handleSocketMessage(msg, remote, i))
-            this.sockets[i] = newSocket
-        }
-
         for(let t in this.trackerList){
             /** @type {Tracker} */
             let tracker = this.peers[this.trackerList[t]]
 
-            for(let i = __.MAX_TRIAL - 1; i >= 0; i--)
-                this.helloTracker(tracker, i)
+            this.helloTracker(tracker)
         }
 
         console.log(`Receiver will be known as '${this.myPub}'.`)
@@ -743,7 +740,7 @@ const Receiver = class {
                     continue
                 }
 
-                this.sockets[peer.socket].send('', 0, 0, peer.port, peer.ip, showError)
+                this.socket.send('', 0, 0, peer.port, peer.ip, showError)
                 i++
             }
         },10000)

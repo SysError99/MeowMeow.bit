@@ -16,8 +16,8 @@ const constants = {
     /** @type {number} Max amount of data accepted (default: 32 MiB)*/
     MAX_PAYLOAD: 1048576 * 32,
 
-    /** @type {number} Max amount of trial times */
-    MAX_TRIAL: 10,
+    /** @type {number} Max amount of trial times (n - 1) times */
+    MAX_TRIAL: 10 - 1,
 
     /** @type {number} Max size of UDP packet in bytes*/
     MTU: 1460,
