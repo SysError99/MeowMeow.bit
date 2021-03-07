@@ -84,6 +84,9 @@ const Receiver = class {
     /** @type {Peer[]} List of connected peer and needs polling*/
     pollingList = []
 
+    /** @type {boolean} If this receiver is now ready (at least one tracker has found) */
+    ready = false
+
     /** Receiver socket module*/
     socket = Datagram.createSocket({
         type: 'udp4',
@@ -493,6 +496,7 @@ const Receiver = class {
                 /**
                  * Tracker says welcome!
                  */
+                this.ready = true
                 tracker.connected = true
                 tracker.keepAlive = setInterval(() => this.socket.send('', 0, 0, remote.port, remote.address, showError), 6000)
                 return
