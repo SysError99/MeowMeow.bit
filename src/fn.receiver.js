@@ -287,6 +287,7 @@ const Receiver = class {
                     remote.address,
                     remote.port
                 ])
+                peer.socket = sock
                 peer.isSender = true
                 peer.key = computeKey
                 this.addPeer(peer)
