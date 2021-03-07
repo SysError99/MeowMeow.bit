@@ -42,8 +42,13 @@ app.get('/find/:id', (req,res) => {
 })
 
 /** Receiver Object*/
-const receiver = new Receiver((peer, data) => {
-    console.log(`Packet ${debug.packetCount++}:${data.data}`) //debug
+const receiver = new Receiver((peer, result) => {
+    if(!result.success)
+        return
+
+    let data = result.data
+
+    console.log(`Packet ${debug.packetCount++}:${result.data}`) //TEST
 
     /**
      * [0]:string   post owner (public key)
@@ -177,7 +182,13 @@ const receiver = new Receiver((peer, data) => {
             peer.mediaStream = receiver.storage.writeStream(mediaLocation)
             return
 
+        //unknown messages
+        case 'what':
+            return
+
         default:
+            let unknownCmdMessage = peer.key.encrypt(str( [`what`] ))
+            receiver.send(peer, unknownCmdMessage)
             return
     }
 })
