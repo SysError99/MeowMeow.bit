@@ -80,13 +80,13 @@ udp.on('message', (msg, remote) => {
      * @param {boolean} reset Delete this peer? 
      */
     let identifyPeer = reset => {
-        if(msg.length === 0)
-            return true
-
         if(reset)
             delete knownPeers[remoteAddress]
 
         if(typeof knownPeers[remoteAddress] === 'undefined'){
+            if(msg.length === 0)
+                return true
+
             peer = new Peer([
                 remote.address,
                 remote.port,
