@@ -576,10 +576,10 @@ const Receiver = class {
      * Send message to specific peer
      * @param {Peer} peer Peer to send data to
      * @param {string|Array|Buffer} data Data to be sent
-     * @param {boolean} wait If sending this need to wait peer to response back
+     * @param {boolean} mediaStreamWait If on media stream, this need to wait peer responses
      * @returns {Promise<boolean>} Is the connection successfully established?
      */
-    async send (peer, data, wait) {
+    async send (peer, data, mediaStreamWait) {
         if(Array.isArray(data))
             if(Try(() => data = str(data)) === null)
                 return false
@@ -612,7 +612,7 @@ const Receiver = class {
             this.sockets[peer.socket].send(data, 0, data.length, peer.port, peer.ip, showError)
         })
 
-        if(wait)
+        if(mediaStreamWait)
             return await (() =>
                 new Promise(resolve => {
                     let waitTimeout = setTimeout(() => {
@@ -620,7 +620,7 @@ const Receiver = class {
                         resolve(false)
                     }, 1000)
 
-                    peer.mediaStreamReady = () =>{
+                    peer.mediaStreamReady = () => {
                         clearTimeout(waitTimeout)
                         resolve(true)
                     }
