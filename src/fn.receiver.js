@@ -323,7 +323,7 @@ const Receiver = class {
 
             // NAT transversal successful
             if(typeof peer.callback === 'function'){
-                peer.callback(__.MAX_TRIAL + 1 - (peer.quality - 1))
+                peer.callback(__.MAX_TRIAL - peer.quality)
                 peer.callback = null
             }
 
