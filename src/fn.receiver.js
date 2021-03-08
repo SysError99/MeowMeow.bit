@@ -254,13 +254,20 @@ const Receiver = class {
      */
     helloTracker (tracker) {
         let myPub = tracker.myPub
+        let trialCount = __.MAX_TRIAL
 
-        this.socket.send(
-            myPub, 0, myPub.length,
-            tracker.port,
-            tracker.ip,
-            showError
-        )
+        let tryToConnect = setInterval(() => {
+            if(tracker.connected || trialCount < 0)
+                return clearInterval(tryToConnect)
+
+            trialCount--
+            this.socket.send(
+                myPub, 0, myPub.length,
+                tracker.port,
+                tracker.ip,
+                showError
+            )
+        }, 1000)
     }
 
     /**
