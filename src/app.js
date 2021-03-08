@@ -48,11 +48,6 @@ const receiver = new Receiver((peer, result) => {
 
     let data = result.data
 
-    console.log(`Packet ${debug.packetCount++}:${result.data}`) //TEST
-    receiver.send(peer, [`what`])
-    console.log(`sent`)
-    return
-
     /**
      * [0]:string   post owner (public key)
      * [1]:number   post position
