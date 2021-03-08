@@ -401,7 +401,7 @@ const Receiver = class {
         if(Try(() => message = json(tracker.key.decrypt(message))) === null){
             let trackerPub = tracker.myPub
 
-            this.socket.send(trackerPub, 0, trackerPub.length, tracker.port, tracker.address, showError)
+            this.socket.send(trackerPub, 0, trackerPub.length, remote.port, remote.address, showError)
             return
         }
 
@@ -551,7 +551,7 @@ const Receiver = class {
         }
         else{
             this.stopPolling(peer)
-            this.socket.send(peer.myPub, 0, peer.myPub.length, peer.port, peer.ip, showError)
+            this.socket.send(peer.myPub, 0, peer.myPub.length, remote.port, remote.address, showError)
         }
     }
 
