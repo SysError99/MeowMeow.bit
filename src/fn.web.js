@@ -71,9 +71,10 @@ const WebResponse = class {
     /**
      * Send data back to client
      * @param {Buffer|string} data Data to be sent back to client
+     * @param {string|undefined} encoding Encoding to be used
      * @returns {WebResponse} 
      */
-    send (data) {
+    send (data, encoding) {
         switch(typeof data){
             case 'object':
                 data = Try(() => JSON.stringify(data), '')
@@ -82,7 +83,7 @@ const WebResponse = class {
                 data = Try(() => `${data}`, '')
                 break
         }
-        this.HTTP.end(data)
+        this.HTTP.end(data, typeof encoding === 'string' ? encoding : 'utf-8')
         return this
     }
 
