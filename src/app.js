@@ -3,10 +3,13 @@
  * 
  * By SysError99, Licensed with MIT
  */
+const FileSystem = require('fs')
+
 const __ = require('./const')
 const BaseN = require('./fn.base.n')
 const Crypt = require('./fn.crypt')
 const Receiver = require('./fn.receiver')
+const Try = require('./fn.try.catch')
 const Web = require('./fn.web')
 
 const Acc = require('./data/acc')
@@ -17,6 +20,9 @@ const PostLike = require('./data/post.like')
 const debug = {
     packetCount: 0
 }
+
+/** @type {string} Web Directory */
+const wDir = `./src/web/`
 
 /**
  * Stringify JSON object or array
@@ -30,15 +36,47 @@ const app = new Web()
 app.get('/', (req,res) => {
     res.send('Hello world!')
 })
-app.get('/:var', (req,res) => {
-    let txt = ''
-    if(typeof req.query.name === 'string'){
-        txt = ', and your name is ' + req.query.name
+app.get('/web/:type/:pages', async (req, res) => {
+    let fileLocation = wDir + req.params.pages
+
+    if(Try(() => FileSystem.accessSyncfile(fileLocation)))
+        return
+
+    let file = FileSystem.readFileSync(fileLocation, {encoding: 'utf-8'})
+    /** @type {string} */
+    let contentType
+    let encoding = 'utf-8'
+
+    switch(req.params.type){
+        case 'html':
+            contentType = 'text/html'
+            break
+
+        case 'css':
+            contentType = 'text/css'
+            break
+
+        case 'js':
+            contentType = 'text/javascript'
+            break
+
+        case 'text':
+            contentType = 'text/plain'
+            break
+
+        case 'png':
+            contentType = 'text/png'
+            encoding = 'binary'
+            break
+
+        default:
+            contentType = 'appliaction/octet-stream'
+            encoding = 'binary'
+            break
     }
-    res.send('Your paramter is ' + req.params.var+txt)
-})
-app.get('/find/:id', (req,res) => {
-    res.send('You request for: '+req.params.id)
+
+    res.contentType(contentType)
+    res.send(file, encoding)
 })
 
 /** Receiver Object*/
