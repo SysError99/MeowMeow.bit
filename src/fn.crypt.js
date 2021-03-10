@@ -13,7 +13,7 @@ const header = {
     /** @type {[string,string]} Private key encryption functions*/
     private: ['-----BEGIN ENCRYPTED PRIVATE KEY-----', '-----END ENCRYPTED PRIVATE KEY-----'],
     /** @type {[string,string]} Public key encryption functions*/
-    pubilc: ['-----BEGIN PUBLIC KEY-----', '-----END PUBLIC KEY-----']
+    public: ['-----BEGIN PUBLIC KEY-----', '-----END PUBLIC KEY-----']
 }
 
 /** @type {number} Public key length per row*/
