@@ -61,7 +61,7 @@ const Post = class {
             this.owner,
             this.media,
             this.mediaType,
-            this.mention,
+            this.mention === null ? null : this.mention.export(),
             this.tag,
             this.text,
             this.time
