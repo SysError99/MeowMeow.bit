@@ -36,7 +36,7 @@ const SignKey = class {
     verify (str, signature) {
         if(this.public.length === 0 || str.length === 0)
             return false
-        return Try(() => Crypt.sign.verify(str, this.public, signature), '')
+        return Try(() => Crypt.sign.verify(str, this.public.split('').reverse().join(''), signature), '')
     }
 
     /**
@@ -80,7 +80,7 @@ const SignKey = class {
 
             this.password = password
             this.private = newKey.privateKey
-            this.public = newKey.publicKey
+            this.public = newKey.publicKey.split('').reverse().join('')
             return
         }
     }

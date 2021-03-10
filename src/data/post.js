@@ -119,7 +119,7 @@ const Post = class {
             this.signature = d[7]
 
         if(this.signature.length  > 0)
-            this.valid = Try(() => Crypt.sign.verify(JSON.stringify(this.exportPost()), this.owner, this.signature))
+            this.valid = Try(() => Crypt.sign.verify(JSON.stringify(this.exportPost()), this.owner.split('').reverse().join(''), this.signature))
     }
 }
 
