@@ -39,7 +39,7 @@ app.get('/', (req,res) => {
 app.get('/web/:type/:pages', async (req, res) => {
     let fileLocation = wDir + req.params.pages
 
-    if(Try(() => FileSystem.accessSyncfile(fileLocation)))
+    if(Try(() => FileSystem.accessSync(fileLocation)))
         return
 
     let file = FileSystem.readFileSync(fileLocation, {encoding: 'utf-8'})
