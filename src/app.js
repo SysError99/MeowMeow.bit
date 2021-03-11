@@ -31,10 +31,17 @@ const wDir = `./src/web/`
  */
 const str = o => JSON.stringify(o)
 
+/** @type {string} Page body to be used as template */
+const appBody = FileSystem.readFileSync(`${wDir}template/body.html`, {encoding: 'utf-8'})
+
 /** HTTP web front-end app object*/
 const app = new Web()
 app.get('/', (req,res) => {
-    res.send('Hello world!')
+    res.send(
+        appBody
+            .split(`{{body}}`)
+            .join(`Hello World!`)
+    )
 })
 app.get('/web/:type/:file', async (req, res) => {
     let fileLocation = wDir + req.params.type + '/' + req.params.file
@@ -45,6 +52,8 @@ app.get('/web/:type/:file', async (req, res) => {
     /** @type {string} */
     let contentType
     let encoding = 'utf-8'
+    /** @type {string[]} */
+    let fileName = req.params.file.split('.')
 
     switch(req.params.type){
         case 'html':
@@ -64,11 +73,28 @@ app.get('/web/:type/:file', async (req, res) => {
             break
 
         case 'img':
-            /** @type {string[]} */
-            let fileName = req.params.file.split('.')
-
             contentType = `image/${fileName[fileName.length - 1]}`
             encoding = 'binary'
+            break
+
+        case 'fontawesome':
+            switch(fileName[fileName.length - 1]){
+                case 'css':
+                case 'txt':
+                    contentType = 'text/css'
+                    break
+
+                case 'svg':
+                    contentType = 'image/svg+xml'
+                    break
+                
+                case 'ttf':
+                case 'woff':
+                case 'woff2':
+                    contentType = `fonts/${fileName[fileName.length - 1]}`
+                    encoding = 'binary'
+                    break
+            }
             break
 
         default:
