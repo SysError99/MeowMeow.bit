@@ -21,13 +21,13 @@ const WebRequest = class {
     /** @type {HTTP.IncomingMessage} Unimplemented features live here*/
     HTTP = {}
     /** @type {HTTP.IncomingHttpHeaders} Request headers*/
-    header = req.headers
+    header = null
     /** @type {Object} Request URL parameters*/
     params = {}
     /** @type {Object} Request URL queries*/
     query = {}
     /** @type {string} Request URL String*/
-    url = req.url
+    url = ''
 
     /**
      * Generate web request
@@ -42,6 +42,9 @@ const WebRequest = class {
 
         if(!isAny(d))
             return
+
+        this.header = req.headers
+        this.url = req.url
 
         if(isAny(d.params))
             this.params = d.params
