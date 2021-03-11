@@ -36,13 +36,12 @@ const app = new Web()
 app.get('/', (req,res) => {
     res.send('Hello world!')
 })
-app.get('/web/:type/:pages', async (req, res) => {
-    let fileLocation = wDir + req.params.pages
+app.get('/web/:type/:file', async (req, res) => {
+    let fileLocation = wDir + req.params.type + '/' + req.params.file
 
     if(Try(() => FileSystem.accessSync(fileLocation)))
         return
 
-    let file = FileSystem.readFileSync(fileLocation, {encoding: 'utf-8'})
     /** @type {string} */
     let contentType
     let encoding = 'utf-8'
@@ -64,8 +63,11 @@ app.get('/web/:type/:pages', async (req, res) => {
             contentType = 'text/plain'
             break
 
-        case 'png':
-            contentType = 'text/png'
+        case 'img':
+            /** @type {string[]} */
+            let fileName = req.params.file.split('.')
+
+            contentType = `image/${fileName[fileName.length - 1]}`
             encoding = 'binary'
             break
 
@@ -74,6 +76,8 @@ app.get('/web/:type/:pages', async (req, res) => {
             encoding = 'binary'
             break
     }
+
+    let file = FileSystem.readFileSync(fileLocation, {encoding: encoding})
 
     res.contentType(contentType)
     res.send(file, encoding)
