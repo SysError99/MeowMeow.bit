@@ -3,11 +3,11 @@ const PostPointer = class {
     /** This is a 'PostPointer' Object*/
     isPostPointer = true
 
-    /** @type {number} Position of a post*/
-    pos = -1
-
     /** @type {string} Account owner*/
     owner = ''
+
+    /** @type {number} Position of a post*/
+    pos = -1
 
     /**
      * Export to array
@@ -15,8 +15,8 @@ const PostPointer = class {
      */
     export () {
         return [
-            this.pos,
-            this.owner
+            this.owner,
+            this.pos
         ]
     }
 
@@ -28,11 +28,11 @@ const PostPointer = class {
         if(!Array.isArray(d))
             return
 
-        if(typeof d[0] === 'number')
-            this.pos = d[0]
+        if(typeof d[0] === 'string')
+            this.owner = d[0]
 
-        if(typeof d[1] === 'string')
-            this.owner = d[1]
+        if(typeof d[1] === 'number')
+            this.pos = d[1]
     }
 }
 
