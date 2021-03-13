@@ -18,7 +18,6 @@ setInterval(() => currentTime = new Date().getTime(), 1000)
 
 /** @type {RegExp} IP address regular expression*/
 const IpRegex = require('./data/ip.regex')
-const { clear } = require('console')
 
 /** Account seeders, contains string[] of seeder peers (shares across all receivers)*/
 const seeders = {}
@@ -670,20 +669,32 @@ const Receiver = class {
 
     /**
      * Stop polling on this peer
-     * @param {Peer} peer Peer to stop polling
+     * @param {number|Peer} peer Peer to stop polling
      */
     stopPolling (peer) {
+        if(typeof peer === 'numebr'){
+            /** @type {Peer} */
+            let peerToDelete = this.pollingList[peer]
+
+            if(typeof peerToDelete === 'object'){
+                if(peerToDelete.connected()){
+                    this.pollingList.splice(peer, 1)
+                    return true
+                }
+            }
+
+            return false
+        }
+
         if(peer.connected()){
             peer.keepAlive = false
 
             for(let i = 0; i < this.pollingList.length; i++){
                 if(this.pollingList[i] === peer){
                     this.pollingList.splice(i, 1)
-                    break
+                    return true
                 }
             }
-
-            return true
         }
 
         return false
@@ -747,7 +758,10 @@ const Receiver = class {
                 peer = this.pollingList[i]
 
                 if(currentTime - peer.lastAccess > __.LAST_ACCESS_LIMIT){
-                    this.pollingList.splice(i, 1)
+                    this.stopPolling(i)
+
+                    if(peer.isSender)
+                        this.deletePeer(peer)
                     continue
                 }
 
