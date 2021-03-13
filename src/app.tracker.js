@@ -125,7 +125,7 @@ udp.on('message', (msg, remote) => {
 
     peer.lastAccess = currentTime
 
-    if(Try(() => message = JSON.parse(peer.key.decrypt(msg))) === null)
+    if(Try(() => message = JSON.parse(peer.key.decryptToString(msg))) === null)
         return
 
     //Tracker

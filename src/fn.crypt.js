@@ -158,8 +158,8 @@ const sign = {
 const symmetric = {
 
     /**
-     * Encrypt a string
-     * @param {string} str string to be encrypted
+     * Encrypt a string or buffer
+     * @param {Buffer|string} str string to be encrypted
      * @param {Buffer} key Key that will be used
      * @returns {Buffer} Encrypted string
      */
@@ -171,15 +171,15 @@ const symmetric = {
     },
 
     /**
-     * Decrypt a string
+     * Decrypt a buffer
      * @param {Buffer} buf Buffer to be decrypted (Can be decoded from string)
      * @param {Buffer} key Key to be used
-     * @returns {string} Decrypted string
+     * @returns {Buffer} Decrypted buffer
      */
     decrypt: (buf, key) => {
         let iv  = buf.slice(0,16)
         buf = buf.slice(16, buf.length)
-        return Crypto.createDecipheriv('aes-256-gcm', key, iv).update(buf).toString('utf-8')
+        return Crypto.createDecipheriv('aes-256-gcm', key, iv).update(buf)
     }
 
 }

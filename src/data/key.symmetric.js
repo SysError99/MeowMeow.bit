@@ -21,14 +21,22 @@ const SymmetricKey = class {
     }
 
     /**
-     * Decrypt a string
+     * Decrypt a buffer
      * @param {Buffer} buf String to be decrypted
-     * @returns {string} Decrypted string
+     * @returns {Buffer} Decrypted string
      */
     decrypt (buf) {
         if(buf.length === 0)
             return ''
         return Try(() => Crypt.symmetric.decrypt(buf, this.key), '')
+    }
+
+    /**
+     * Decrypt a buffer to string
+     * @param {Buffer} buf Buffer to be decrypted
+     */
+    decryptToString (buf) {
+        return this.decrypt(buf).toString('utf-8')
     }
 
     /**

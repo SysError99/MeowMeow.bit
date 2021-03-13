@@ -324,7 +324,7 @@ const Receiver = class {
         }
 
         if(!peer.connected()){
-            if(Try(() => json(peer.key.decrypt(message))) === null)
+            if(Try(() => json(peer.key.decryptToString(message))) === null)
                 return
 
             // NAT transversal successful
@@ -338,7 +338,7 @@ const Receiver = class {
         }
 
         if(peer.mediaStream !== null){
-            if(Try(() => message = peer.key.decrypt(message)) === null)
+            if(Try(() => message = peer.key.decryptToString(message)) === null)
                 return this.handleBadPeer(message, remote, peer)
 
             if(message[0] === __.EOF){
@@ -377,7 +377,7 @@ const Receiver = class {
 
         peer.lastAccess = currentTime
 
-        if(Try(() => message = json(peer.key.decrypt(message))) === null)
+        if(Try(() => message = json(peer.key.decryptToString(message))) === null)
             return this.handleBadPeer(message, remote, peer)
 
         if(!Array.isArray(message))
@@ -404,7 +404,7 @@ const Receiver = class {
      * @param {Tracker} tracker Tracker have sen message
      */
     handleTrackerMessage (message, remote, tracker) {
-        if(Try(() => message = json(tracker.key.decrypt(message))) === null){
+        if(Try(() => message = json(tracker.key.decryptToString(message))) === null){
             let trackerPub = tracker.myPub
 
             this.socket.send(trackerPub, 0, trackerPub.length, remote.port, remote.address, showError)
