@@ -122,7 +122,7 @@ const Receiver = class {
 
     /**
      * Broadcast data to certain amount of peers
-     * @param {string} account Account
+     * @param {string} account Account Public key (Base62)
      * @param {number} n Amount of peers to broadcast
      * @param {Array|string} data Data to be sent
      */
@@ -132,6 +132,7 @@ const Receiver = class {
 
         /** @type {string[]} */
         let peers = seeders[account]
+        let y = 0
 
         if(!Array.isArray(peers))
             return false
@@ -146,7 +147,6 @@ const Receiver = class {
 
         if(!seedersSorted[account]){
             let x = 0
-            let y = 0
 
             peers.sort()
 
@@ -190,15 +190,17 @@ const Receiver = class {
         let peerToAdd = ''
         let pos = 0
 
+        y = seedersMyPos[account]
+
         while(n > 0){
             if(p > 0)
                 pos = - Math.abs(pos)
             else
                 pos =  Math.abs(pos) + 1
 
-            peerToAdd = array[y + pos]
+            peerToAdd = peers[y + pos]
 
-            if(typeof str === 'string')
+            if(typeof peerToAdd === 'string')
                 peersSelected.push(peerToAdd)
 
             n--
