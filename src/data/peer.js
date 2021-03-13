@@ -1,5 +1,3 @@
-const FileSystem = require('fs')
-
 const Try = require('../fn.try.catch')
 
 const __ = require('../const')
@@ -44,17 +42,17 @@ const Peer = class {
     /** @type {number} Peer quality indicator*/
     quality = __.MAX_TRIAL
 
-    /** @type {FileSystem.WriteStream} Currently writing stream*/
-    mediaStream = null
-
-    /** @type {function} Call this if peer is now ready to receive next bytes */
-    mediaStreamReady = null
+    /** @type {boolean} Is this peer currently writing a stream*/
+    mediaStream = false
 
     /** @type {string} Location of media stream*/
     mediaStreamLocation = ''
 
     /** @type {string} Amount of bytes received */
     mediaStreamPacketsReceived = 0
+
+    /** @type {function} Call this function if this peer is now ready to receive next bytes */
+    mediaStreamCb = null
 
     /**
      * Check if this peer has a connection

@@ -234,6 +234,9 @@ const receiver = new Receiver((peer, result) => {
              * 
              * [3]:number media number
              */
+            if(peer.mediaStream)
+                return
+
             if(typeof data[3] !== 'number')
                 return
             
@@ -246,12 +249,10 @@ const receiver = new Receiver((peer, result) => {
 
             if(receiver.storage.access(mediaLocation))
                 return
-            
-            if(peer.mediaStream !== null)
-                return
 
             peer.mediaStreamLocation = mediaLocation
-            peer.mediaStream = receiver.storage.writeStream(mediaLocation)
+            peer.mediaStreamPacketsReceived = 0
+            peer.mediaStream = true
             return
 
         //unknown messages

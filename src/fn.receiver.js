@@ -337,31 +337,26 @@ const Receiver = class {
             return
         }
 
-        if(peer.mediaStream !== null){
+        if(peer.mediaStream){
             if(Try(() => message = peer.key.decryptToString(message)) === null)
                 return this.handleBadPeer(message, remote, peer)
 
             if(message[0] === __.EOF){
-                peer.mediaStream.close()
-                peer.mediaStream = null
+                peer.mediaStream = false
 
                 let mediaLocation = peer.mediaStreamLocation.split('.')
                 // [ <owner>, <post-number>, 'media', <media-number> ]
-                // TODO: continue verifying file
+                // TODO: verify file
                 return
             }
 
             if(peer.mediaStreamPacketsReceived > __.MAX_PAYLOAD){
-                peer.mediaStream.close()
-                peer.mediaStream = null
+                peer.mediaStream = false
                 this.storage.remove(peer.mediaStreamLocation)
                 return this.handleBadPeer(message, remote, peer)
             }
 
-            let okMessage = peer.key.encrypt(str( [``] ))
-            peer.mediaStream.write(message, showError)
-            peer.mediaStreamPacketsReceived += message.length
-            this.socket.send(okMessage, 0, okMessage.length, remote.port, remote.address, showError)
+            //TODO: write chunk to 'file.number'
             return
         }
 
@@ -383,12 +378,17 @@ const Receiver = class {
         if(!Array.isArray(message))
             return this.handleBadPeer(message, remote, peer)
 
-        if(message[0] === ''){
-            if(typeof peer.mediaStreamReady === 'function'){
-                peer.mediaStreamReady()
-                peer.mediaStreamReady = null
-            }
-            return
+        switch(message[0]){
+            /**
+             * Peer low-level commands
+             */
+            case '':
+                /**
+                 * Peer accept the media stream
+                 */
+                if(typeof peer.mediaStreamCb === 'function')
+                    peer.mediaStreamCb()
+                return
         }
 
         this.callback(peer, new Result({
@@ -640,11 +640,11 @@ const Receiver = class {
             return await (() =>
                 new Promise(resolve => {
                     let waitTimeout = setTimeout(() => {
-                        peer.mediaStreamReady = null
+                        peer.mediaStreamCb = null
                         resolve(connectionTrialCounter)
                     }, 1000)
 
-                    peer.mediaStreamReady = () => {
+                    peer.mediaStreamCb = () => {
                         clearTimeout(waitTimeout)
                         resolve(connectionTrialCounter)
                     }
