@@ -39,8 +39,14 @@ const app = new Web()
 app.get('/', (req,res) => {
     res.send(
         appBody
-            .split(`{{body}}`)
-            .join(`Hello World!`)
+            .split(`{{title}}`)
+            .join(``)
+            .split(`{{noti-number}}`)
+            .join(``)
+            .split(`{{noti-list}}`)
+            .join(``)
+            .split('{{url-my-avatar}}')
+            .join(`/web/img/avatar2.png`)
     )
 })
 app.get('/web/:type/:file', async (req, res) => {
