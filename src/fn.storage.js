@@ -98,13 +98,6 @@ const write = (location, data) => {
     }))
 }
 
-/**
- * Create a write stream to the location
- * @param {string} location File location to be written to
- * @returns {FileSystem.WriteStream} Created write stream
- */
-const writeStream = location => FileSystem.createWriteStream(P.a + location + P.b, {encoding: 'utf-8', flags: 'a'})
-
 /** Shared storage module*/
 const storage = {
     /** @type {Locale} Locale object, will be retreived from server*/
@@ -114,7 +107,6 @@ const storage = {
     read: read,
     remove: remove,
     write: write,
-    writeStream, writeStream
 }
 
 /**
