@@ -7,8 +7,8 @@ const constants = {
         LOCATION: 'key.server'
     },
 
-    /** @type {number} Access cooldown (in milliseconds, default: 30 seconds)*/
-    ACCESS_COOLDOWN: 1000 * 30,
+    /** @type {number} Access cooldown (in milliseconds, default: 1 second)*/
+    ACCESS_COOLDOWN: 1000,
 
     /** @type {number} Max number of broadcasting to other peers */
     BROADCAST_AMOUNT: 3,
