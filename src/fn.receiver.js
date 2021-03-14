@@ -1,4 +1,5 @@
 const Datagram = require('dgram')
+const FileSystem = require('fs')
 
 const __ = require('./const')
 const BaseN = require('./fn.base.n')
@@ -340,15 +341,28 @@ const Receiver = class {
         }
 
         if(peer.mediaStream){
-            if(Try(() => message = peer.key.decryptToString(message)) === null)
+            if(Try(() => message = peer.key.decrypt(message)) === null)
                 return this.handleBadPeer(message, remote, peer)
 
-            if(message[0] === __.EOF){
-                peer.mediaStream = false
+            if(message[0] === 255 && message[1] === 255){
+                //End of file
+                let fileNumber = 0
+                let fileLocation = ''
+                let fileStream = FileSystem.createWriteStream(`./data/${mediaStreamLocation}`, {encoding: 'binary', flags: 'a+'})
 
-                let mediaLocation = peer.mediaStreamLocation.split('.')
-                // [ <owner>, <post-number>, 'media', <media-number> ]
-                // TODO: verify file
+                while(Try(() => {
+                    fileLocation = `./data/tmp.${fileNumber}.${mediaStreamLocation}`
+                    FileSystem.accessSync(fileLocation)
+                })){
+                    let file = FileSystem.readFileSync(fileLocation)
+
+                    fileStream.write(file, showError)
+                    FileSystem.unlinkSync(fileLocation)
+                }
+
+                fileStream.close()
+
+                //TODO: verify it
                 return
             }
 
@@ -358,7 +372,9 @@ const Receiver = class {
                 return this.handleBadPeer(message, remote, peer)
             }
 
-            //TODO: write chunk to 'file.number'
+            let packetNumber = message[0] * message[1]
+
+            FileSystem.writeFileSync(`./data/tmp.${packetNumber}.${mediaStreamLocation}`, message.slice(2, message.length), {encoding: 'binary'})
             return
         }
 
