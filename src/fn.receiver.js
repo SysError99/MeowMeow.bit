@@ -340,49 +340,11 @@ const Receiver = class {
             return
         }
 
-        if(peer.mediaStream){
-            if(Try(() => message = peer.key.decrypt(message)) === null)
-                return this.handleBadPeer(message, remote, peer)
-
-            if(message[0] === 255 && message[1] === 255){
-                //End of file
-                let fileNumber = 0
-                let fileLocation = ''
-                let fileStream = FileSystem.createWriteStream(`./data/${mediaStreamLocation}`, {encoding: 'binary', flags: 'a+'})
-
-                while(Try(() => {
-                    fileLocation = `./data/tmp.${fileNumber}.${mediaStreamLocation}`
-                    FileSystem.accessSync(fileLocation)
-                })){
-                    let file = FileSystem.readFileSync(fileLocation)
-
-                    fileStream.write(file, showError)
-                    FileSystem.unlinkSync(fileLocation)
-                }
-
-                fileStream.close()
-
-                //TODO: verify it
-                return
-            }
-
-            if(peer.mediaStreamPacketsReceived > __.MAX_PAYLOAD){
-                peer.mediaStream = false
-                this.storage.remove(peer.mediaStreamLocation)
-                return this.handleBadPeer(message, remote, peer)
-            }
-
-            let packetNumber = message[0] * message[1]
-
-            FileSystem.writeFileSync(`./data/tmp.${packetNumber}.${mediaStreamLocation}`, message.slice(2, message.length), {encoding: 'binary'})
-            return
-        }
-
         //check last access time from peer
         if(peer.lastAccess !== 0){
             let lastAccess = currentTime - peer.lastAccess
 
-            if(lastAccess <= __.ACCESS_COOLDOWN)
+            if(lastAccess <= __.ACCESS_COOLDOWN && !peer.mediaStream)
                 return
             else if(lastAccess >= __.LAST_ACCESS_LIMIT)
                 return this.handleBadPeer(message, remote, peer)
@@ -390,23 +352,118 @@ const Receiver = class {
 
         peer.lastAccess = currentTime
 
-        if(Try(() => message = json(peer.key.decryptToString(message))) === null)
+        if(Try(() => message = peer.key.decrypt(message)) === null)
             return this.handleBadPeer(message, remote, peer)
 
-        if(!Array.isArray(message))
-            return this.handleBadPeer(message, remote, peer)
-
-        switch(message[0]){
-            /**
-             * Peer low-level commands
-             */
-            case '':
-                /**
-                 * Peer accept the media stream
-                 */
-                if(typeof peer.mediaStreamCb === 'function')
-                    peer.mediaStreamCb()
+        if(Try(() => message = json(message)) === null){
+            if(peer.mediaStream){
+                // Streaming media
+                if(message[0] === 255 && message[1] === 255){
+                    //End of file
+                    let fileNumber = 0
+                    let fileLocation = ''
+                    let fileStream = FileSystem.createWriteStream(`./data/${mediaStreamLocation}`, {encoding: 'binary', flags: 'a+'})
+    
+                    if(peer.mediaStreamPacketsReceived < peer.mediaStreamPacketsTotal){
+                        //There is some of missing packets
+                        /** @type {string[]|string} */
+                        let lostPackets = []
+    
+                        while(fileNumber < peer.mediaStreamPacketsTotal){
+                            fileLocation = `./data/tmp.${fileNumber}.${mediaStreamLocation}`
+    
+                            if(!Try(() => FileSystem.accessSync(fileLocation)))
+                                lostPackets.push(fileNumber)
+                        }
+    
+                        if(lostPackets.toString().length + 15 > __.MTU) { // + 15 means ... 'mediaMissing',
+                            // Too many missing packets
+                            let mediaStreamErrorMessage = peer.key.encrypt(str( ['mediaError'] ))
+                            
+                            this.socket.send(mediaStreamErrorMessage, 0, mediaStreamErrorMessage.length, peer.port, peer.ip, showError)
+                        }
+                        else{
+                            //acceptable range of missing packets
+                            let mediaStreamMissingPackets = peer.key.encrypt(str( ['mediaMissing'].concat(lostPackets) ))
+    
+                            this.socket.send(mediaStreamMissingPackets, 0, mediaStreamMissingPackets, peer.port, peer.ip, showError)
+                        }
+    
+                        return
+                    }
+    
+                    let file = FileSystem.readFileSync(fileLocation)
+    
+                    while(Try(() => {
+                        fileLocation = `./data/tmp.${fileNumber}.${mediaStreamLocation}`
+                        FileSystem.accessSync(fileLocation)
+                    })){
+                        fileStream.write(file, showError)
+                        FileSystem.unlinkSync(fileLocation)
+                    }
+    
+                    fileStream.close()
+    
+                    //TODO: verify it
+                    let mediaAcceptMessage = peer.key.encrypt(str( ['mediaAccept'] ))
+    
+                    peer.mediaStream = false
+                    this.socket.send(mediaAcceptMessage, 0, mediaAcceptMessage.length, peer.port, peer.ip, showError)
+                    return
+                }
+    
+                if(peer.mediaStreamPacketsReceived >= peer.mediaStreamPacketsTotal){
+                    // Packet number exceeds the limited amount
+                    let fileLocation = ''
+                    let mediaDeclineMessage = peer.key.encrypt(str( ['mediaDecline'] ))
+                
+                    for(let i = 0; i < peer.mediaStreamPaketsTotal; i++){
+                        fileLocation = `./data/tmp.${i}.${mediaStreamLocation}`
+    
+                        if(!Try(() => FileSystem.accessSync(fileLocation)))
+                            FileSystem.unlinkSync(fileLocation)
+                    }
+    
+                    peer.mediaStream = false
+                    this.socket.send(mediaDeclineMessage, 0, mediaDeclineMessage.length, peer.port, peer.ip, showError)
+                }
+    
+                //write packet
+                let packetNumber = message[0] * message[1]
+    
+                FileSystem.writeFileSync(`./data/tmp.${packetNumber}.${mediaStreamLocation}`, message.slice(2, message.length), {encoding: 'binary'})
+                peer.mediaStreamPacketsReceived++
                 return
+            }
+            else if(!Array.isArray(message))
+                return this.handleBadPeer(message, remote, peer)
+        }
+
+        if(typeof peer.mediaStreamCb === 'function'){
+            switch(message[0]){
+                /**
+                 * Peer low-level commands
+                 */
+                case 'mediaAccept':
+                    /**
+                     * Peer has finished and accepted the media stream
+                     */ 
+                case 'mediaDecline':
+                    /**
+                     * Peer has declined that package
+                     */
+                case 'mediaError':
+                    /**
+                     * Peer has encountered an error while streaming
+                     */
+                case 'mediaMissing':
+                    /**
+                     * Some of packets are missing
+                     */
+                    peer.mediaStreamCb(message)
+                    peer.mediaStreamCb = null
+                    return
+            }
         }
 
         this.callback(peer, new Result({
