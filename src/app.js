@@ -136,7 +136,7 @@ const receiver = new Receiver((peer, result) => {
         typeof data[2] !== 'string' )
         return
 
-    if(!receiver.storage.access(`${data[0]}`)) // !account exists
+    if(!Try(() => receiver.storage.access(`${data[0]}`))) // !account exists
         return
 
     switch(data[2]){
@@ -151,7 +151,7 @@ const receiver = new Receiver((peer, result) => {
              */
             let likeFile = `${data[0]}.${data[1]}.like.${data[3]}`
 
-            if(!receiver.storage.access(likeFile))
+            if(!Try(() => receiver.storage.access(likeFile))) //like file exists
                 return
 
             let like = new PostLike([
@@ -205,7 +205,7 @@ const receiver = new Receiver((peer, result) => {
 
             let newPostLocation = `${data[0]}.${data[1]}`
 
-            if(receiver.storage.access(newPostLocation))
+            if(!Try(() => receiver.storage.access(newPostLocation))) //post exists
                 return
 
             let newPost = new Post([
@@ -233,24 +233,30 @@ const receiver = new Receiver((peer, result) => {
              * !! UNSTABLE, NOT TESTED !!
              * 
              * [3]:number media number
+             * [4]:number media total packets that will be received
              */
             if(peer.mediaStream)
                 return
 
-            if(typeof data[3] !== 'number')
+            if( typeof data[3] !== 'number' ||
+                typeof data[4] !== 'number' )
+                return
+
+            if(data[4].length * 1024 > __.MAX_PAYLOAD)
                 return
             
             let mediaPostLocation = `${data[0]}.${data[1]}`
             let mediaLocation = `${mediaPostLocation}.media.${data[3]}`
             let postMedia = new Post(receiver.storage.read(mediaPostLocation))
 
-            if(typeof postMedia.media[data[3]] === `undefined`)
+            if(typeof postMedia.media[data[3]] === `undefined`) //no such media ever logged
                 return
 
-            if(receiver.storage.access(mediaLocation))
+            if(!Try(() => receiver.storage.access(mediaLocation))) //media exists
                 return
 
             peer.mediaStreamLocation = mediaLocation
+            peer.mediaStreamPacketsTotal = data[4]
             peer.mediaStreamPacketsReceived = 0
             peer.mediaStream = true
             return
