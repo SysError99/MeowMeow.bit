@@ -52,7 +52,10 @@ app.get('/', (req,res) => {
 app.get('/web/:type/:file', async (req, res) => {
     let fileLocation = wDir + req.params.type + '/' + req.params.file
 
-    if(Try(() => FileSystem.accessSync(fileLocation)))
+    if(Try(() => {
+        FileSystem.accessSync(fileLocation)
+        return false
+    }, true))
         return
 
     /** @type {string} */
@@ -136,7 +139,7 @@ const receiver = new Receiver((peer, result) => {
         typeof data[2] !== 'string' )
         return
 
-    if(!Try(() => receiver.storage.access(`${data[0]}`))) // !account exists
+    if(!receiver.storage.access(`${data[0]}`)) // account not exist
         return
 
     switch(data[2]){
@@ -151,7 +154,7 @@ const receiver = new Receiver((peer, result) => {
              */
             let likeFile = `${data[0]}.${data[1]}.like.${data[3]}`
 
-            if(!Try(() => receiver.storage.access(likeFile))) //like file exists
+            if(receiver.storage.access(likeFile)) //like file exists
                 return
 
             let like = new PostLike([
@@ -165,7 +168,7 @@ const receiver = new Receiver((peer, result) => {
             if(!like.valid)
                 return
 
-            if(!receiver.storage.write(likeFile, like.export()))
+            if(!receiver.storage.write(likeFile, like.export()).success)
                 return
             
             let likeCount = 0
@@ -177,7 +180,7 @@ const receiver = new Receiver((peer, result) => {
 
             likeCount++
 
-            if(!receiver.storage.write(likeCountFileLocation, likeCount))
+            if(!receiver.storage.write(likeCountFileLocation, likeCount).success)
                 return
 
             receiver.broadcast(data[0], __.BROADCAST_AMOUNT, data)
@@ -205,7 +208,7 @@ const receiver = new Receiver((peer, result) => {
 
             let newPostLocation = `${data[0]}.${data[1]}`
 
-            if(!Try(() => receiver.storage.access(newPostLocation))) //post exists
+            if(receiver.storage.access(newPostLocation)) //post exists
                 return
 
             let newPost = new Post([
@@ -247,12 +250,17 @@ const receiver = new Receiver((peer, result) => {
             
             let mediaPostLocation = `${data[0]}.${data[1]}`
             let mediaLocation = `${mediaPostLocation}.media.${data[3]}`
-            let postMedia = new Post(receiver.storage.read(mediaPostLocation))
+            let postMediaFile = receiver.storage.read(mediaPostLocation)
+
+            if(!postMediaFile.success) //no such post ever exist
+                return
+
+            let postMedia = new Post(postMediaFile.data)
 
             if(typeof postMedia.media[data[3]] === `undefined`) //no such media ever logged
                 return
 
-            if(!Try(() => receiver.storage.access(mediaLocation))) //media exists
+            if(receiver.storage.access(mediaLocation)) //media exists
                 return
 
             peer.mediaStreamLocation = mediaLocation
