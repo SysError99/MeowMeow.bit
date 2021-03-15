@@ -2,6 +2,12 @@
 const constants = {
     EOF: String.fromCharCode(5),
 
+    /** @type {string} List of errors that will be ingored by Try() & Return() */
+    TRY_CATCH_IGNORE: [
+        'JSON',
+        'Bad Peer'
+    ],
+
     /**  Constants about key*/
     KEY: {
         LOCATION: 'key.server'

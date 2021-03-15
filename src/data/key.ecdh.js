@@ -1,6 +1,6 @@
 const Crypto = require('crypto')
 
-const Try = require('../fn.try.catch')
+const Return = require('../fn.try.return')
 const Crypt = require('../fn.crypt')
 
 const SymmetricKey = require('./key.symmetric')
@@ -19,7 +19,7 @@ const ECDHKey = class {
      * @returns {SymmetricKey} Symmetric key
      */
     computeSecret (pub) {
-        return Try(() => new SymmetricKey(Crypt.ecdh.computeSecret(this.ecdh, Crypt.sect571k1.long(pub))), null)
+        return Return(() => new SymmetricKey(Crypt.ecdh.computeSecret(this.ecdh, Crypt.sect571k1.long(pub))), null)
     }
 
     /**
@@ -27,7 +27,7 @@ const ECDHKey = class {
      * @returns {Buffer} Public key
      */
     getPrv () {
-        return Try(() => this.ecdh.getPrivateKey(), Buffer.from([]))
+        return Return(() => this.ecdh.getPrivateKey(), Buffer.from([]))
     }
 
      /**
@@ -35,7 +35,7 @@ const ECDHKey = class {
      * @returns {Buffer} Public key
      */
     getPub () {
-        return Try(() => Crypt.sect571k1.short(this.ecdh.getPublicKey()), Buffer.from([]))
+        return Return(() => Crypt.sect571k1.short(this.ecdh.getPublicKey()), Buffer.from([]))
     }
 
     /**
@@ -43,7 +43,7 @@ const ECDHKey = class {
      * @returns {string} Private key
      */
     export () {
-        return Try(() => this.ecdh.getPrivateKey().toString('base64'), Buffer.from([]))
+        return Return(() => this.ecdh.getPrivateKey().toString('base64'), Buffer.from([]))
     }
 
     /**
@@ -51,7 +51,7 @@ const ECDHKey = class {
      * @param {Array} d 
      */
     constructor (d) {
-        this.ecdh = Try(() => Crypt.newKey.ecdh(d), null)
+        this.ecdh = Return(() => Crypt.newKey.ecdh(d), null)
     }
 }
 

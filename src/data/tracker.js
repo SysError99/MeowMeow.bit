@@ -1,5 +1,5 @@
 const BaseN = require('../fn.base.n')
-const Try = require('../fn.try.catch')
+const Return = require('../fn.try.return')
 
 const __ = require('../const')
 const ECDHKey = require('./key.ecdh')
@@ -45,7 +45,7 @@ const Tracker = class {
             this.port = d[1]
 
         if(typeof d[2] === 'string')
-            d[2] = Try(() => Buffer.from(d[2], 'base64'), this.pub)
+            d[2] = Return(() => Buffer.from(d[2], 'base64'), this.pub)
         else if(!Buffer.isBuffer(d[2]))
             return
 

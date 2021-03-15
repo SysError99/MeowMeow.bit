@@ -5,6 +5,7 @@ const Datagram = require('dgram')
 
 const __ = require('./const')
 const Try = require('./fn.try.catch')
+const Return = require('./fn.try.return')
 const BaseN = require('./fn.base.n')
 const Crypt = require('./fn.crypt')
 const Locale = require('./locale/locale')
@@ -57,7 +58,7 @@ const sendRandomBytes = remote => udp.send(Crypt.rand(8), 0, 8, remote.port, rem
  * @param {Array|Object} obj Object to be stringified
  * @returns {string} converted string
  */
-const str = obj => Try(() => JSON.stringify(obj), `["error"]`)
+const str = obj => Return(() => JSON.stringify(obj), `["error"]`)
 
 /** @type {number} Current time in real-time (milliseconds)*/
 let currentTime = new Date().getTime()
@@ -125,7 +126,7 @@ udp.on('message', (msg, remote) => {
 
     peer.lastAccess = currentTime
 
-    if(Try(() => message = JSON.parse(peer.key.decryptToString(msg))) === null)
+    if(Try(() => message = JSON.parse(peer.key.decryptToString(msg))))
         return
 
     //Tracker

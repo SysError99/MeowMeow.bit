@@ -1,5 +1,5 @@
 const Crypt = require('../fn.crypt')
-const Try = require('../fn.try.catch')
+const Return = require('../fn.try.return')
 
 const PostPointer = require('./post.pointer')
 
@@ -119,7 +119,7 @@ const Post = class {
             this.signature = d[7]
 
         if(this.signature.length  > 0)
-            this.valid = Try(() => Crypt.sign.verify(JSON.stringify(this.exportPost()), this.owner.split('').reverse().join(''), this.signature))
+            this.valid = Return(() => Crypt.sign.verify(JSON.stringify(this.exportPost()), this.owner.split('').reverse().join(''), this.signature))
     }
 }
 

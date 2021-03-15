@@ -5,7 +5,7 @@
  */
 const HTTP = require('http')
 const isAny = require('./fn.is.any')
-const Try = require('./fn.try.catch')
+const Return = require('./fn.try.return')
 
 /**
  * @callback RequestCallback
@@ -80,10 +80,10 @@ const WebResponse = class {
     send (data, encoding) {
         switch(typeof data){
             case 'object':
-                data = Try(() => JSON.stringify(data), '')
+                data = Return(() => JSON.stringify(data), '')
                 break
             default:
-                data = Try(() => `${data}`, '')
+                data = Return(() => `${data}`, '')
                 break
         }
         this.HTTP.end(data, typeof encoding === 'string' ? encoding : 'utf-8')

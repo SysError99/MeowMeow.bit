@@ -1,4 +1,5 @@
 const Try = require('../fn.try.catch')
+const Return = require('../fn.try.return')
 const Crypt = require('../fn.crypt')
 
 /** Symmetric key object, used for encrypting messages */
@@ -17,7 +18,7 @@ const SymmetricKey = class {
     encrypt (str) {
         if(str.length === 0)
             return Buffer.from([])
-        return Try(() => Crypt.symmetric.encrypt(str, this.key), '')
+        return Return(() => Crypt.symmetric.encrypt(str, this.key), '')
     }
 
     /**
@@ -28,7 +29,7 @@ const SymmetricKey = class {
     decrypt (buf) {
         if(buf.length === 0)
             return ''
-        return Try(() => Crypt.symmetric.decrypt(buf, this.key), '')
+        return Return(() => Crypt.symmetric.decrypt(buf, this.key), '')
     }
 
     /**

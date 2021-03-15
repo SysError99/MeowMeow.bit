@@ -5,6 +5,7 @@ const __ = require('./const')
 const BaseN = require('./fn.base.n')
 const Crypt = require('./fn.crypt')
 const Try = require('./fn.try.catch')
+const Return = require('./fn.try.return')
 const Locale = require('./locale/locale')
 
 const ECDHKey = require('./data/key.ecdh')
@@ -327,7 +328,7 @@ const Receiver = class {
         }
 
         if(!peer.connected()){
-            if(Try(() => json(peer.key.decryptToString(message))) === null)
+            if(Return(() => json(peer.key.decryptToString(message))) === null)
                 return
 
             // NAT transversal successful
@@ -352,10 +353,10 @@ const Receiver = class {
 
         peer.lastAccess = currentTime
 
-        if(Try(() => message = peer.key.decrypt(message)) === null)
+        if(Try(() => message = peer.key.decrypt(message)))
             return this.handleBadPeer(message, remote, peer)
 
-        if(Try(() => message = json(message)) === null){
+        if(Try(() => message = json(message))){
             if(peer.mediaStream){
                 // Streaming media
                 if(message[0] === 255 && message[1] === 255){
@@ -479,7 +480,7 @@ const Receiver = class {
      * @param {Tracker} tracker Tracker have sen message
      */
     handleTrackerMessage (message, remote, tracker) {
-        if(Try(() => message = json(tracker.key.decryptToString(message))) === null){
+        if(Try(() => message = json(tracker.key.decryptToString(message)))){
             let trackerPub = tracker.myPub
 
             this.socket.send(trackerPub, 0, trackerPub.length, remote.port, remote.address, showError)
@@ -675,7 +676,7 @@ const Receiver = class {
      */
     async send (peer, data) {
         if(Array.isArray(data))
-            if(Try(() => data = str(data)) === null)
+            if(Try(() => data = str(data)))
                 return 0
         
         if(typeof data !== 'string')

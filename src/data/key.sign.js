@@ -1,4 +1,4 @@
-const Try = require('../fn.try.catch')
+const Return = require('../fn.try.return')
 
 const Crypt = require('../fn.crypt')
 
@@ -24,7 +24,7 @@ const SignKey = class {
     sign (str) {
         if(this.private.length === 0 || str.length === 0)
             return ''
-        return Try(() => Crypt.sign.perform(str, this.private, this.password), '')
+        return Return(() => Crypt.sign.perform(str, this.private, this.password), '')
     }
 
     /**
@@ -36,7 +36,7 @@ const SignKey = class {
     verify (str, signature) {
         if(this.public.length === 0 || str.length === 0)
             return false
-        return Try(() => Crypt.sign.verify(str, this.public.split('').reverse().join(''), signature), '')
+        return Return(() => Crypt.sign.verify(str, this.public.split('').reverse().join(''), signature), '')
     }
 
     /**

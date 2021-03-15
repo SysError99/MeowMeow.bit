@@ -2,6 +2,7 @@ const FileSystem = require('fs')
 
 const isAny = require('./fn.is.any')
 const Try = require('./fn.try.catch')
+const Return = require('./fn.try.return')
 
 const Locale = require('./locale/locale')
 const Result = require('./data/result')
@@ -57,10 +58,7 @@ const promise = {
  * @param {string} location Location to be check for existing files
  * @returns {boolean} If specified file has been found on disk
  */
-const access = location => Try(() => {
-    FileSystem.accessSync(P.a + location + P.b)
-    return true
-}, false)
+const access = location => Return(() => FileSystem.accessSync(P.a + location + P.b))
 
 /**
  * Remove file from storage
@@ -73,16 +71,15 @@ const remove = location => Try(() => FileSystem.rmSync(P.a + location + P.b))
  * @param {string} location File location
  * @returns {Result} Result of a read JSON
  */
-const read = location => {
-    return Try(() =>
-        new Result({
-            success: true,
-            data: JSON.parse(FileSystem.readFileSync(P.a + location + P.b, {encoding:'utf-8'}))
-        }),
+const read = location => Return(() =>
+    new Result({
+        success: true,
+        data: JSON.parse(FileSystem.readFileSync(P.a + location + P.b, {encoding:'utf-8'}))
+    }),
     new Result({
         message: storage.locale.str.file.readErr
-    }))
-}
+    })
+)
 
 /**
  * Write an object to storage
@@ -90,17 +87,21 @@ const read = location => {
  * @param {Object} data JSON data object
  * @returns {Result} Result of a read JSON
  */
-const write = (location, data) => {
-    return Try(() => {
-        FileSystem.writeFileSync(P.a + location + P.b, typeof data === 'object' ? JSON.stringify(data) : data, {encoding:'utf-8'})
+const write = (location, data) => Return(
+    () => {
+        FileSystem.writeFileSync(
+            P.a + location + P.b,
+            typeof data === 'object' ? JSON.stringify(data) : data, {encoding:'utf-8'}
+        )
+
         return new Result({
             success: true
         })
     },
     new Result({
         message: storage.locale.str.file.writeErr
-    }))
-}
+    })
+)
 
 /** Shared storage module*/
 const storage = {

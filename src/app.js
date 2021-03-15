@@ -52,10 +52,7 @@ app.get('/', (req,res) => {
 app.get('/web/:type/:file', async (req, res) => {
     let fileLocation = wDir + req.params.type + '/' + req.params.file
 
-    if(Try(() => {
-        FileSystem.accessSync(fileLocation)
-        return false
-    }, true))
+    if(Try(() => FileSystem.accessSync(fileLocation)))
         return
 
     /** @type {string} */

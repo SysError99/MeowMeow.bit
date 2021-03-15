@@ -1,19 +1,22 @@
 const ignore = require('./const').TRY_CATCH_IGNORE
+
 /**
- * Try to execute this function, and handle error automatically
+ * Try to execute this function and return value back if success, return null or specified value if fail.
  * @param {function} fn A function
+ * @param {any} errreturn What to return when error has occured
  */
-const tryCatch = fn => {
+const tryCatch = (fn, errreturn) => {
     if(typeof fn === 'function'){
         try{
-            fn()
-            return false
+            return fn()
         }catch(e){
+            errreturn = typeof errreturn === 'undefined' ? null : errreturn
+
             let err = new Error(e)
 
             for(let i = 0; i < ignore.length; i++){
                 if(err.stack.indexOf(ignore[i]) >= 0)
-                    return true
+                    return errreturn
             }
 
             let errTime = new Date()
@@ -33,7 +36,7 @@ const tryCatch = fn => {
                  + err.stack
             )
 
-            return true
+            return errreturn
         }
     }else
         throw Error('tryCatch() expects function!')
