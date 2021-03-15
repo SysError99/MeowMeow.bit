@@ -373,7 +373,7 @@ const Receiver = class {
                         while(fileNumber < peer.mediaStreamPacketsTotal){
                             fileLocation = `./data/tmp.${fileNumber}.${mediaStreamLocation}`
     
-                            if(!Try(() => FileSystem.accessSync(fileLocation)))
+                            if(Try(() => FileSystem.accessSync(fileLocation)))
                                 lostPackets.push(fileNumber)
                         }
     
@@ -422,7 +422,7 @@ const Receiver = class {
                         fileLocation = `./data/tmp.${i}.${mediaStreamLocation}`
     
                         if(!Try(() => FileSystem.accessSync(fileLocation)))
-                            FileSystem.unlinkSync(fileLocation)
+                            FileSystem.rmSync(fileLocation)
                     }
     
                     peer.mediaStream = false
