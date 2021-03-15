@@ -671,10 +671,9 @@ const Receiver = class {
      * Send message to specific peer
      * @param {Peer} peer Peer to send data to
      * @param {string|Array|Buffer} data Data to be sent
-     * @param {boolean} mediaStreamWait If on media stream, this need to wait peer responses
      * @returns {Promise<number>} How many tries used to connect to peer? (0 means parameters invalid, __.MAX_TRIAL means unsuccessful)
      */
-    async send (peer, data, mediaStreamWait) {
+    async send (peer, data) {
         if(Array.isArray(data))
             if(Try(() => data = str(data)) === null)
                 return 0
@@ -710,21 +709,6 @@ const Receiver = class {
             this.socket.send(data, 0, data.length, peer.port, peer.ip, showError)
         }))
             return 0
-
-        if(mediaStreamWait)
-            return await (() =>
-                new Promise(resolve => {
-                    let waitTimeout = setTimeout(() => {
-                        peer.mediaStreamCb = null
-                        resolve(connectionTrialCounter)
-                    }, 1000)
-
-                    peer.mediaStreamCb = () => {
-                        clearTimeout(waitTimeout)
-                        resolve(connectionTrialCounter)
-                    }
-                })
-            )()
 
         return connectionTrialCounter
     }
