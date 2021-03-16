@@ -54,7 +54,7 @@ const Peer = class {
     /** @type {string} Number of total packets that will be received*/
     mediaStreamPacketsTotal = 0
 
-    /** @type {function} Call this function if this peer is now ready to receive next bytes */
+    /** @type {function} Peer callback to be used when sending large bytes*/
     mediaStreamCb = null
 
     /**

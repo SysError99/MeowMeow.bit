@@ -232,7 +232,7 @@ const receiver = new Receiver((peer, result) => {
             /**
              * !! UNSTABLE, NOT TESTED !!
              * 
-             * [3]:number media number
+             * [3]:number media index
              * [4]:number media total packets that will be received
              */
             if(peer.mediaStream)
@@ -242,7 +242,7 @@ const receiver = new Receiver((peer, result) => {
                 typeof data[4] !== 'number' )
                 return
 
-            if(data[4].length * 1024 > __.MAX_PAYLOAD)
+            if(data[4].length > __.MAX_PAYLOAD)
                 return
             
             let mediaPostLocation = `${data[0]}.${data[1]}`
@@ -264,6 +264,7 @@ const receiver = new Receiver((peer, result) => {
             peer.mediaStreamPacketsTotal = data[4]
             peer.mediaStreamPacketsReceived = 0
             peer.mediaStream = true
+            receiver.send(peer, ['mediaReady'])
             return
 
         //unknown messages
