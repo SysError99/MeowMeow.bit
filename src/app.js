@@ -32,7 +32,7 @@ const wDir = `./src/web/`
 const str = o => JSON.stringify(o)
 
 /** @type {string} Page body to be used as template */
-const appBody = FileSystem.readFileSync(`${wDir}template/body.html`, {encoding: 'utf-8'})
+const appBody = FileSystem.readFileSync(`${wDir}html/body.html`, {encoding: 'utf-8'})
 
 /** HTTP web front-end app object*/
 const app = new Web()
@@ -83,7 +83,7 @@ app.get('/web/:type/:file', async (req, res) => {
             encoding = 'binary'
             break
 
-        case 'fontawesome':
+        case 'fas':
             switch(fileName[fileName.length - 1]){
                 case 'css':
                 case 'txt':
