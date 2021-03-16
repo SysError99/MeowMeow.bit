@@ -11,18 +11,14 @@ const Crypt = require('./fn.crypt')
 const Receiver = require('./fn.receiver')
 const Try = require('./fn.try.catch')
 const Web = require('./fn.web')
+const W = require('./web.ui')
 
 const Acc = require('./data/acc')
 const Post = require('./data/post')
 const PostLike = require('./data/post.like')
 
-/** Debugging parameters */
-const debug = {
-    packetCount: 0
-}
-
-/** @type {string} Web Directory */
-const wDir = `./src/web/`
+/** @type {string[]} List of all notifications*/
+const notifications = []
 
 /**
  * Stringify JSON object or array
@@ -31,26 +27,17 @@ const wDir = `./src/web/`
  */
 const str = o => JSON.stringify(o)
 
-/** @type {string} Page body to be used as template */
-const appBody = FileSystem.readFileSync(`${wDir}html/body.html`, {encoding: 'utf-8'})
-
 /** HTTP web front-end app object*/
 const app = new Web()
 app.get('/', (req,res) => {
-    res.send(
-        appBody
-            .split(`{{title}}`)
-            .join(``)
-            .split(`{{noti-number}}`)
-            .join(``)
-            .split(`{{noti-list}}`)
-            .join(``)
-            .split('{{url-my-avatar}}')
-            .join(`/web/img/avatar2.png`)
-    )
+    let body = W.body()
+
+    body[7] = '/web/img/avatar2.png'
+
+    res.send(body.join(''))
 })
 app.get('/web/:type/:file', async (req, res) => {
-    let fileLocation = wDir + req.params.type + '/' + req.params.file
+    let fileLocation = W.dir + req.params.type + '/' + req.params.file
 
     if(Try(() => FileSystem.accessSync(fileLocation)))
         return
