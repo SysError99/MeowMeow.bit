@@ -400,7 +400,7 @@ const Receiver = class {
                         FileSystem.accessSync(fileLocation)
                     })){
                         fileStream.write(file, showError)
-                        FileSystem.unlinkSync(fileLocation)
+                        FileSystem.rmSync(fileLocation)
                     }
     
                     fileStream.close()
