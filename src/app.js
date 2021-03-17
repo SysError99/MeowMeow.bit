@@ -102,7 +102,7 @@ app.get('/web/:type/:file', async (req, res) => {
     res.send(file, encoding)
 })
 
-/** Receiver Object*/
+/** @type {Receiver} Receiver Object*/
 const receiver = new Receiver((peer, result) => {
     if(!result.success)
         return
@@ -219,36 +219,33 @@ const receiver = new Receiver((peer, result) => {
              * [3]:number media index
              * [4]:number media total packets that will be received
              */
-            if(peer.mediaStream)
-                return
+            if(peer.mediaStream >= 0)
+                return receiver.send(peer, [__.MEDIA_STREAM_NOT_READY])
 
             if( typeof data[3] !== 'number' ||
                 typeof data[4] !== 'number' )
-                return
+                return receiver.send(peer, [__.MEDIA_STREAM_INFO_INVALID])
 
-            if(data[4].length > __.MAX_PAYLOAD)
-                return
+            if(data[4].length > __.MAX_PAYLOAD || data[4].length > 65536)
+                return receiver.send(peer, [__.MEDIA_STREAM_FILE_TOO_LARGE])
             
             let mediaPostLocation = `${data[0]}.${data[1]}`
             let mediaLocation = `${mediaPostLocation}.media.${data[3]}`
 
             if(!receiver.storage.access(mediaPostLocation))
-                return
+                return receiver.send(peer, [__.MEDIA_STREAM_POST_NOT_FOUND])
 
             let postMediaFile = receiver.storage.read(mediaPostLocation)
             let postMedia = new Post(postMediaFile)
 
             if(typeof postMedia.media[data[3]] === `undefined`) //no such media ever logged
-                return
+                return receiver.send(peer, [__.MEDIA_STREAM_NO_MEDIA])
 
             if(receiver.storage.access(mediaLocation)) //media exists
-                return
+                return receiver.send(peer, [__.MEDIA_STREAM_MEDIA_FOUND])
 
-            peer.mediaStreamLocation = mediaLocation
-            peer.mediaStreamPacketsTotal = data[4]
-            peer.mediaStreamPacketsReceived = 0
-            peer.mediaStream = true
-            receiver.send(peer, ['mediaReady'])
+            peer.openMediaStream(mediaLocation, data[4])
+            receiver.send(peer, [__.MEDIA_STREAM_READY])
             return
 
         //unknown messages
