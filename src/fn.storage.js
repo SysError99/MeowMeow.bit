@@ -5,30 +5,22 @@ const Try = require('./fn.try.catch')
 const Return = require('./fn.try.return')
 
 const Locale = require('./locale/locale')
-const Result = require('./data/result')
 
 /** File path structure*/
 const P = {a: './data/', b: '.json'}
-/** @type {Result} Pameter Invalid template*/
-let paramInvalid = new Result()
 
 /** Promisify storage functions*/
 const promise = {
     /**
      * Retrieve a file from storage
      * @param {string} location File location
-     * @returns {Promise<Result>} JSON of a file.
+     * @returns {Promise<any|any[]|null>} JSON of a file.
      */
     read: location => {
         return new Promise(resolve => {
-            resolve(Try(async () => 
-                new Result({
-                    success: true,
-                    data: JSON.parse(await FileSystem.promises.readFile(P.a + location + P.b, {encoding:'utf-8'}))
-                }),
-                new Result({
-                    message: storage.locale.str.file.readErr
-                })
+            resolve(Return(async () => 
+                JSON.parse(await FileSystem.promises.readFile(P.a + location + P.b, {encoding:'utf-8'})),
+                null
             ))
         })
     },
@@ -36,18 +28,12 @@ const promise = {
      * Write an object to storage
      * @param {string} location File location
      * @param {Object} data JSON data object
-     * @returns {Promise<Result>}
+     * @returns {Promise<boolean>}
      */
     write: (location, data) => {
         return new Promise(resolve => {
             resolve(Try(async () => 
-                new Result({
-                    success: true, 
-                    data: await FileSystem.promises.writeFile(P.a + location + P.b, typeof data === 'object' ? JSON.stringify(data) : data, {encoding:'utf-8'})
-                }),
-                new Result({
-                    message: storage.locale.str.file.writeErr
-                })
+                await FileSystem.promises.writeFile(P.a + location + P.b, typeof data === 'object' ? JSON.stringify(data) : data, {encoding:'utf-8'})
             ))
         })
     }
@@ -58,50 +44,29 @@ const promise = {
  * @param {string} location Location to be check for existing files
  * @returns {boolean} If specified file has been found on disk
  */
-const access = location => Return(() => FileSystem.accessSync(P.a + location + P.b))
+const access = location => Try(() => FileSystem.accessSync(P.a + location + P.b))
 
 /**
  * Remove file from storage
- * @param {string} location 
+ * @param {string} location Location of the file to be removed
+ * @returns {boolean} Did the file been successfully removed
  */
 const remove = location => Try(() => FileSystem.rmSync(P.a + location + P.b))
 
 /**
  * Retrieve a file from storage
  * @param {string} location File location
- * @returns {Result} Result of a read JSON
+ * @returns {any[]|null} Result of a read JSON
  */
-const read = location => Return(() =>
-    new Result({
-        success: true,
-        data: JSON.parse(FileSystem.readFileSync(P.a + location + P.b, {encoding:'utf-8'}))
-    }),
-    new Result({
-        message: storage.locale.str.file.readErr
-    })
-)
+const read = location => Return(() => JSON.parse(FileSystem.readFileSync(P.a + location + P.b, {encoding:'utf-8'})))
 
 /**
  * Write an object to storage
  * @param {string} location File location
  * @param {Object} data JSON data object
- * @returns {Result} Result of a read JSON
+ * @returns {boolean} Result of a read JSON
  */
-const write = (location, data) => Return(
-    () => {
-        FileSystem.writeFileSync(
-            P.a + location + P.b,
-            typeof data === 'object' ? JSON.stringify(data) : data, {encoding:'utf-8'}
-        )
-
-        return new Result({
-            success: true
-        })
-    },
-    new Result({
-        message: storage.locale.str.file.writeErr
-    })
-)
+const write = (location, data) => Try(() => FileSystem.writeFileSync(P.a + location + P.b,typeof data === 'object' ? JSON.stringify(data) : data, {encoding:'utf-8'}))
 
 /** Shared storage module*/
 const storage = {
@@ -126,8 +91,6 @@ module.exports = locale => {
 
     if(storage.locale === null)
         storage.locale = new Locale()
-        
-    paramInvalid.message = storage.locale.str.paramInvalid
-    
+
     return storage
 }

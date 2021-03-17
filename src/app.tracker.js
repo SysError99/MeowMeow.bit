@@ -19,7 +19,7 @@ const knownPeers = {}
 const myKey = (() => {
     /** @type {ECDHKey} */
     let ecdhKey = null
-    let keySaved = Storage.read('key.server').data
+    let keySaved = Storage.read('key.server')
 
     if(keySaved === null){
         ecdhKey = new ECDHKey()

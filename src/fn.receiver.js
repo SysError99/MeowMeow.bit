@@ -931,7 +931,7 @@ const Receiver = class {
         // handshake to trackers
         if(Try(() => {
             /** @type {Array} */
-            let trackersLoaded = this.storage.read('trackers').data
+            let trackersLoaded = this.storage.read('trackers')
 
             trackersLoaded.forEach((el, ind) => {
                 let newTracker = new Tracker([

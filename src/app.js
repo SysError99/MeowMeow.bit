@@ -152,21 +152,18 @@ const receiver = new Receiver((peer, result) => {
             if(!like.valid)
                 return
 
-            if(!receiver.storage.write(likeFile, like.export()).success)
+            if(!receiver.storage.write(likeFile, like.export()))
                 return
             
             let likeCount = 0
             let likeCountFileLocation = `${data[0]}.${data[1]}.likes`
-            let readLikeCountFile = receiver.storage.read(likeCountFileLocation)
 
-            if(readLikeCountFile.success)
-                likeCount = readLikeCountFile.data
+            if(receiver.storage.access(likeCountFileLocation))
+                likeCount = receiver.storage.read(likeCountFileLocation)
 
             likeCount++
 
-            if(!receiver.storage.write(likeCountFileLocation, likeCount).success)
-                return
-
+            receiver.storage.write(likeCountFileLocation, likeCount)
             receiver.broadcast(data[0], __.BROADCAST_AMOUNT, data)
             return
 
@@ -209,7 +206,7 @@ const receiver = new Receiver((peer, result) => {
             if(!newPost.valid)
                 return
 
-            if(!receiver.storage.write(newPostLocation, postData).success)
+            if(!receiver.storage.write(newPostLocation, postData))
                 return
 
             receiver.broadcast(data[0], __.BROADCAST_AMOUNT, data)
@@ -234,12 +231,12 @@ const receiver = new Receiver((peer, result) => {
             
             let mediaPostLocation = `${data[0]}.${data[1]}`
             let mediaLocation = `${mediaPostLocation}.media.${data[3]}`
-            let postMediaFile = receiver.storage.read(mediaPostLocation)
 
-            if(!postMediaFile.success) //no such post ever exist
+            if(!receiver.storage.access(mediaPostLocation))
                 return
 
-            let postMedia = new Post(postMediaFile.data)
+            let postMediaFile = receiver.storage.read(mediaPostLocation)
+            let postMedia = new Post(postMediaFile)
 
             if(typeof postMedia.media[data[3]] === `undefined`) //no such media ever logged
                 return
