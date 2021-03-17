@@ -44,11 +44,7 @@ const SignKey = class {
      * @returns {Array} Array object
      */
     export () {
-        return [
-            this.password,
-            this.private,
-            this.public
-        ]
+        return [this.password, this.private, this.public]
     }
 
     /**
@@ -56,7 +52,7 @@ const SignKey = class {
      * @returns {string} A public key
      */
     exportPub () {
-        return this.public
+        return ['', '', this.public]
     }
 
     /**
