@@ -5,6 +5,32 @@
  */
 const FileSystem = require('fs')
 
+// Setup folder
+if(FileSystem.readdirSync('./data/').length <= 1) (() => {
+    let path = require("path")
+
+    /**
+     * @param {string} src 
+     * @param {string} dest 
+     */
+    let copyDirSync = (src, dest) => {
+        FileSystem.mkdirSync(dest, { recursive: true })
+
+        let entries = FileSystem.readdirSync(src, { withFileTypes: true })
+
+        for (let entry of entries) {
+            let srcPath = path.join(src, entry.name)
+            let destPath = path.join(dest, entry.name)
+
+            entry.isDirectory() ?
+                copyDirSync(srcPath, destPath) :
+                FileSystem.copyFileSync(srcPath, destPath)
+        }
+    }
+
+    copyDirSync('./default', './data')
+})()
+
 const __ = require('./const')
 const BaseN = require('./fn.base.n')
 const Crypt = require('./fn.crypt')
