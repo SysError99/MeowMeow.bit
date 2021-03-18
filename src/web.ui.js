@@ -98,6 +98,9 @@ const wBody = (() => {
 /** @type {string} */
 const wPostSubmit = FileSystem.readFileSync(`${wDir}html/post-submit.html`, {encoding: 'utf-8'})
 
+/** @type {string[]} */
+const wScript = (() => extract(FileSystem.readFileSync(`${wDir}html/script-src.html`, {encoding: 'utf-8'}), [`url`]))()
+
 module.exports = {
     dir: wDir,
     body: () => {
@@ -108,5 +111,10 @@ module.exports = {
         wBody[11] = wPostSubmit
         wBody[13] = ''
         return wBody
+    },
+    login: `<h2 class="w3-center"> Please choose your account, or create a new one </h2>`,
+    scrpit: url => {
+        wScript[1] = url
+        return wScript[1]
     }
 }
