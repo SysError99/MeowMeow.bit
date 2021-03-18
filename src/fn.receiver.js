@@ -108,12 +108,12 @@ const Receiver = class {
     addPeer (peer) {
         let remoteAddress = `${peer.ip}:${peer.port}`
 
-        if(typeof this.peers[remoteAddress] === 'undefined'){
+        if(this.peers[remoteAddress] === undefined){
             this.peers[remoteAddress] = peer
 
             let remotePub = BaseN.encode(peer.pub, '62')
 
-            if(typeof this.peers[remotePub] === 'undefined')
+            if(this.peers[remotePub] === undefined)
                 this.peers[remotePub] = peer
 
             return true
@@ -281,13 +281,13 @@ const Receiver = class {
         /** @type {Peer|Tracker} */
         let peer = this.peers[`${remote.address}:${remote.port}`]
 
-        if(typeof peer === 'undefined'){
+        if(peer === undefined){
             if(message.length !== Crypt.ecdh.length)
                 return 
 
             let computeKey = this.key.computeSecret(message)
 
-            if(computeKey !== null){
+            if(computeKey !== undefined){
                 let helloMessage = computeKey.encrypt(str( ['nice2meetu'] ))
 
                 peer = new Peer([
@@ -326,13 +326,13 @@ const Receiver = class {
         }
 
         if(!peer.connected()){
-            if(Return(() => json(peer.key.decryptToString(message))) === null)
+            if(Return(() => json(peer.key.decryptToString(message))) === undefined)
                 return
 
             // NAT transversal successful
             if(typeof peer.callback === 'function'){
                 peer.callback(__.MAX_TRIAL - peer.quality)
-                peer.callback = null
+                peer.callback = undefined
             }
 
             this.startPolling(peer)
@@ -451,7 +451,6 @@ const Receiver = class {
                      * Peer responds with ACK
                      */
                     peer.mediaStreamCb(message)
-                    peer.mediaStreamCb = null
                     return
             }
         }
@@ -489,7 +488,7 @@ const Receiver = class {
                  * Tracker told this peer is unknown
                  */
 
-                this.callback(null, new Result({
+                this.callback(undefined, new Result({
                     message: `Peer ${message[1]} is unknown.` //LOCALE_NEEDED
                 }))
                 return
@@ -505,8 +504,8 @@ const Receiver = class {
                 /** @type {Peer} Requested peer */
                 let peer = this.peers[`${message[1]}:${peerPort}`]
 
-                if(typeof peer === 'undefined' || !IpRegex.test(message[1]) || peerPort <= 1024 || peerPort > 65535)
-                    return this.callback(null, new Result({
+                if(peer === undefined || !IpRegex.test(message[1]) || peerPort <= 1024 || peerPort > 65535)
+                    return this.callback(undefined, new Result({
                         message: `Tracker ${BaseN.encode(tracker.pub, '62')} had sent an invalid address.` //LOCALE_NEEDED
                     }))
 
@@ -520,7 +519,7 @@ const Receiver = class {
                     if(peer.quality < 0){
                         if(typeof peer.callback === 'function'){
                             peer.callback(__.MAX_TRIAL + 1)
-                            peer.callback = null
+                            peer.callback = undefined
                         }
 
                         clearInterval(tryToConnect)
@@ -550,7 +549,7 @@ const Receiver = class {
                 let tryToResponse = setInterval(() => {
                     let randomResponse = Crypt.rand(Crypt.ecdh.length)
 
-                    if(typeof this.peers[`${message[1]}:${message[2]}`] !== 'undefined')
+                    if(this.peers[`${message[1]}:${message[2]}`] !== undefined)
                         return clearInterval(tryToResponse)
 
                     this.socket.send(randomResponse, 0, randomResponse.length, message[2], message[1], showError)
@@ -593,7 +592,7 @@ const Receiver = class {
                     followerPeers[p] = BaseN.encode(peer.public, '62')
                 }
 
-                if(typeof seeders[message[1]] === 'undefined'){
+                if(seeders[message[1]] === undefined){
                     seeders[message[1]] = followerPeers
                     seedersMyPos [message[1]] = 0
                     seedersSorted[message[1]] = false
@@ -681,7 +680,7 @@ const Receiver = class {
             let peerStr = peer
             peer = this.peers[peerStr]
 
-            if(typeof peer === 'undefined')
+            if(peer === undefined)
                 peer = new Peer(['', 0, BaseN.decode(peerStr, '62')])
         }
         else if(typeof peer !== 'object')
@@ -719,7 +718,7 @@ const Receiver = class {
      * @returns {Promise<Number>}
      */
     async sendMedia (peer, info) {
-        if(peer.mediaStreamCb !== null)
+        if(peer.mediaStreamCb !== undefined)
             return __.MEDIA_STREAM_NOT_READY
 
         if(typeof info !== 'object')
@@ -747,13 +746,15 @@ const Receiver = class {
         let fileStreamIndex0 = 0
         let fileStreamIndex1 = 0
         let fileStreamByte = Buffer.from([])
-        let fileStreamStatus = null
+        let fileStreamStatus
+        /** @type {NodeJS.Timeout} */
+        let fileStreamTimeout
         let fileStreamResolver = resolve => {
-            if(fileStreamStatus !== null){
+            if(fileStreamStatus !== undefined){
                 clearTimeout(fileStreamTimeout)
                 resolve(fileStreamStatus)
-                fileStreamTimeout = null
-                fileStreamStatus = null
+                fileStreamTimeout = undefined
+                fileStreamStatus = undefined
             }
         }
         let mediaSendMessage = peer.key.encrypt(
@@ -765,11 +766,10 @@ const Receiver = class {
                 Math.ceil(fileStats.size / 1024)
             ])
         )
-        /** @type {NodeJS.Timeout} */
-        let fileStreamTimeout = null
-        /** @type {Buffer} */
-        let fileStreamMissedPacket = null
+
         let fileStreamResendCount = 0
+        /** @type {Buffer} */
+        let fileStreamMissedPacket
         /** @type {number} */
         let peerResponse
 
@@ -786,7 +786,7 @@ const Receiver = class {
         peerResponse = await (() => new Promise(fileStreamResolver))()
 
         if(peerResponse !== __.MEDIA_STREAM_READY){
-            peer.mediaStreamCb = null
+            peer.mediaStreamCb = undefined
             return peerResponse
         }
 
@@ -801,19 +801,19 @@ const Receiver = class {
 
             if(fileStreamStatus === __.MEDIA_STREAM_DECLINED){
                 // peer declined the package
-                peer.mediaStreamCb = null
+                peer.mediaStreamCb = undefined
                 return __.MEDIA_STREAM_DECLINED
             }
 
             // If peer missed the package, send the old one
-            if(fileStreamMissedPacket === null)
+            if(fileStreamMissedPacket === undefined)
                 fileStreamByte = fileStream.read(__.MTU)
             else{
                 fileStreamByte = fileStreamMissedPacket
-                fileStreamMissedPacket = null
+                fileStreamMissedPacket = undefined
             }
             
-            if(fileStreamByte === null)
+            if(!fileStreamByte) // FALSY
                 break
 
             let mediaStream = peer.key.encrypt(
@@ -888,7 +888,7 @@ const Receiver = class {
                 break
         }
 
-        peer.mediaStreamCb = null
+        peer.mediaStreamCb = undefined
         return peerResponse
     }
 
@@ -964,7 +964,7 @@ const Receiver = class {
 
                 delete trackersLoaded [ind]
 
-                if(newTracker.key === null)
+                if(newTracker.key === undefined)
                     return
 
                 let trackerAddress = `${el.ip}:${el.port}`

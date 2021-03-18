@@ -20,7 +20,7 @@ const Acc = class {
     }
 
     /** @type {SignKey} Signing key*/
-    key = null
+    key
 
     /** @type {string} Account name*/
     name = ''
@@ -42,7 +42,7 @@ const Acc = class {
         return [
             this.description,
             this.follower,
-            null,
+            undefined,
             this.name,
             [
                 this.pic.cover,

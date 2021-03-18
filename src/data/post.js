@@ -15,7 +15,7 @@ const Post = class {
     mediaType = []
 
     /** @type {PostPointer} Post mention*/
-    mention = null
+    mention
 
     /** @type {string} Post owner public key*/
     owner = ''
@@ -61,7 +61,7 @@ const Post = class {
             this.owner,
             this.media,
             this.mediaType,
-            this.mention === null ? null : this.mention.export(),
+            this.mention === undefined ? undefined : this.mention.export(),
             this.tag,
             this.text,
             this.time

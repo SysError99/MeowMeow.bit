@@ -18,10 +18,10 @@ const knownPeers = {}
 /** @type {ECDHKey} ECDH key being used on the tracker */
 const myKey = (() => {
     /** @type {ECDHKey} */
-    let ecdhKey = null
+    let ecdhKey
     let keySaved = Storage.read('key.server')
 
-    if(keySaved === null){
+    if(keySaved === undefined){
         ecdhKey = new ECDHKey()
         Storage.write('key.server', ecdhKey.export())
         console.log(`Server key is now generated.`)
@@ -30,7 +30,7 @@ const myKey = (() => {
 
     ecdhKey = new ECDHKey(keySaved)
     
-    if(ecdhKey === null)
+    if(ecdhKey === undefined)
         throw Error(`key.server is invalid.`)
 
     return ecdhKey
@@ -84,7 +84,7 @@ udp.on('message', (msg, remote) => {
         if(reset)
             delete knownPeers[remoteAddress]
 
-        if(typeof knownPeers[remoteAddress] === 'undefined'){
+        if(knownPeers[remoteAddress] === undefined){
             if(msg.length === 0)
                 return true
 
@@ -93,9 +93,8 @@ udp.on('message', (msg, remote) => {
                 remote.port,
             ])
             peer.key = myKey.computeSecret(msg) //not using random generated key
-            
 
-            if(peer.key === null)
+            if(peer.key === undefined)
                 return sendRandomBytes(remote)
 
             peer.lastAccess = currentTime

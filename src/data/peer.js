@@ -37,10 +37,10 @@ const Peer = class {
     public = false
 
     /** @type {SymmetricKey} Peer Symmetric key*/
-    key = null
+    key
 
     /** @type {function} Some of function to be put for special purposes */
-    callback = null
+    callback
 
     /** @type {number} Peer quality indicator*/
     quality = __.MAX_TRIAL
@@ -58,7 +58,7 @@ const Peer = class {
     mediaStreamPacketsTotal = 0
 
     /** @type {function} Peer callback to be used when sending large bytes*/
-    mediaStreamCb = null
+    mediaStreamCb
 
     /**
      * Check if this peer has a connection

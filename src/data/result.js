@@ -6,7 +6,7 @@ const Result = class {
     isResult = true
 
     /** @type {Array} Data received*/
-    data = null
+    data
 
     /** @type {string} Result message*/
     message = ''
@@ -33,7 +33,7 @@ const Result = class {
         if(typeof d !== 'object')
             return
 
-        if(typeof d.data !== 'undefined') 
+        if(d.data !== undefined)
             this.data = d.data
 
         if(typeof d.message === 'string')

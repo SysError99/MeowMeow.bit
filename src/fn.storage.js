@@ -14,14 +14,11 @@ const promise = {
     /**
      * Retrieve a file from storage
      * @param {string} location File location
-     * @returns {Promise<any|any[]|null>} JSON of a file.
+     * @returns {Promise<any[]>} JSON of a file.
      */
     read: location => {
         return new Promise(resolve => {
-            resolve(Return(async () => 
-                JSON.parse(await FileSystem.promises.readFile(P.a + location + P.b, {encoding:'utf-8'})),
-                null
-            ))
+            resolve(Return(async () => JSON.parse(await FileSystem.promises.readFile(P.a + location + P.b, {encoding:'utf-8'}))))
         })
     },
     /**
@@ -56,7 +53,7 @@ const remove = location => Try(() => FileSystem.rmSync(P.a + location + P.b))
 /**
  * Retrieve a file from storage
  * @param {string} location File location
- * @returns {any[]|null} Result of a read JSON
+ * @returns {any[]} Result of a read JSON
  */
 const read = location => Return(() => JSON.parse(FileSystem.readFileSync(P.a + location + P.b, {encoding:'utf-8'})))
 
@@ -71,7 +68,7 @@ const write = (location, data) => Try(() => FileSystem.writeFileSync(P.a + locat
 /** Shared storage module*/
 const storage = {
     /** @type {Locale} Locale object, will be retreived from server*/
-    locale: null,
+    locale: undefined,
     promise: promise,
     access: access,
     read: read,
@@ -89,7 +86,7 @@ module.exports = locale => {
             storage.locale = locale
     }
 
-    if(storage.locale === null)
+    if(storage.locale === undefined)
         storage.locale = new Locale()
 
     return storage

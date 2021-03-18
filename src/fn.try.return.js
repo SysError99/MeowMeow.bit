@@ -1,7 +1,7 @@
 const ignore = require('./const').TRY_CATCH_IGNORE
 
 /**
- * Try to execute this function and return value back if success, return null or specified value if fail.
+ * Try to execute this function and return value back if success, return undefined or specified value if fail.
  * @param {function} fn A function
  * @param {any} errreturn What to return when error has occured
  */
@@ -10,8 +10,6 @@ const tryCatch = (fn, errreturn) => {
         try{
             return fn()
         }catch(e){
-            errreturn = typeof errreturn === 'undefined' ? null : errreturn
-
             let err = new Error(e)
 
             for(let i = 0; i < ignore.length; i++){

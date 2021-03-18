@@ -17,11 +17,11 @@ const Return = require('./fn.try.return')
 const WebRequest = class {
     /** @type {boolean} This is 'WebRequest' object*/
     isWebRequest = true
-    
+
+    /** @type {HTTP.IncomingHttpHeaders} Request headers*/
+    header
     /** @type {HTTP.IncomingMessage} Unimplemented features live here*/
     HTTP = {}
-    /** @type {HTTP.IncomingHttpHeaders} Request headers*/
-    header = null
     /** @type {Object} Request URL parameters*/
     params = {}
     /** @type {Object} Request URL queries*/
@@ -105,7 +105,7 @@ const WebResponse = class {
      * @param {HTTP.ServerResponse} res Outgoing response
      */
     constructor (res) {
-        if(typeof res !== 'undefined')
+        if(res !== undefined)
             this.HTTP = res
     }
 }
@@ -162,8 +162,7 @@ const Web = class {
     isWeb = true
 
     /** @type {WebEvent} 404 Error event*/
-    ev404 = null
-
+    ev404
     /** @type {WebEvent[]} List of app events*/
     events = []
 

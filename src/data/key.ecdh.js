@@ -11,7 +11,7 @@ const ECDHKey = class {
     isECDHKey = true
 
     /** @type {Crypto.ECDH} ECDH key object*/
-    ecdh = null
+    ecdh
 
     /**
      * Compute a secret key
@@ -19,7 +19,7 @@ const ECDHKey = class {
      * @returns {SymmetricKey} Symmetric key
      */
     computeSecret (pub) {
-        return Return(() => new SymmetricKey(Crypt.ecdh.computeSecret(this.ecdh, Crypt.sect571k1.long(pub))), null)
+        return Return(() => new SymmetricKey(Crypt.ecdh.computeSecret(this.ecdh, Crypt.sect571k1.long(pub))))
     }
 
     /**
@@ -51,7 +51,7 @@ const ECDHKey = class {
      * @param {Array} d 
      */
     constructor (d) {
-        this.ecdh = Return(() => Crypt.newKey.ecdh(d), null)
+        this.ecdh = Return(() => Crypt.newKey.ecdh(d))
     }
 }
 

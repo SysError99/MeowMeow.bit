@@ -28,7 +28,7 @@ const Tracker = class {
     connected = false
 
     /** @type {NodeJS.Timeout} Keep alive client polling timer */
-    keepAlive = null
+    keepAlive
 
     /**
      * Generate tracker object

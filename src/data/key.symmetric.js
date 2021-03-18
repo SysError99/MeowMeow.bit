@@ -8,7 +8,7 @@ const SymmetricKey = class {
     isSymmetricKey = true
 
     /** @type {Buffer} Key buffer*/
-    key = null
+    key
 
     /**
      * Encrypt a string
