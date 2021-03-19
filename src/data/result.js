@@ -1,5 +1,3 @@
-const isAny = require('../fn.is.any')
-
 /** Result object */
 const Result = class {
     /** @type {boolean} This is 'Result' object*/
@@ -33,7 +31,7 @@ const Result = class {
         if(typeof d !== 'object')
             return
 
-        if(d.data !== undefined)
+        if(typeof d.data !== 'undefined')
             this.data = d.data
 
         if(typeof d.message === 'string')

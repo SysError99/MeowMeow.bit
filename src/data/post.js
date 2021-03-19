@@ -1,5 +1,6 @@
 const Crypt = require('../fn.crypt')
 const Return = require('../fn.try.return')
+const {str} = require('../fn.json')
 
 const PostPointer = require('./post.pointer')
 
@@ -61,7 +62,7 @@ const Post = class {
             this.owner,
             this.media,
             this.mediaType,
-            this.mention === undefined ? undefined : this.mention.export(),
+            typeof this.mention === 'object' ? this.mention.export() : undefined,
             this.tag,
             this.text,
             this.time
@@ -83,7 +84,7 @@ const Post = class {
      * @param {string} password Owner's password (passphrase)
      */
     sign (privateKey, password) {
-        this.signature = Crypt.sign.perform(JSON.stringify(this.exportPost()), privateKey, typeof password === 'string' ? password : '')
+        this.signature = Crypt.sign.perform(str(this.exportPost()), privateKey, typeof password === 'string' ? password : '')
     }
 
     /**
@@ -119,7 +120,7 @@ const Post = class {
             this.signature = d[7]
 
         if(this.signature.length  > 0)
-            this.valid = Return(() => Crypt.sign.verify(JSON.stringify(this.exportPost()), this.owner.split('').reverse().join(''), this.signature))
+            this.valid = Return(() => Crypt.sign.verify(str(this.exportPost()), this.owner.split('').reverse().join(''), this.signature))
     }
 }
 

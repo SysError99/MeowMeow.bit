@@ -5,11 +5,11 @@ const Datagram = require('dgram')
 
 const __ = require('./const')
 const Try = require('./fn.try.catch')
-const Return = require('./fn.try.return')
 const BaseN = require('./fn.base.n')
 const Crypt = require('./fn.crypt')
 const Locale = require('./locale/locale')
 const Storage = require('./fn.storage')(new Locale())
+const {json, str} = require('./fn.json')
 
 const ECDHKey = require('./data/key.ecdh')
 const Peer = require('./data/peer')
@@ -21,7 +21,7 @@ const myKey = (() => {
     let ecdhKey
     let keySaved = Storage.read('key.server')
 
-    if(keySaved === undefined){
+    if(typeof keySaved === 'undefined'){
         ecdhKey = new ECDHKey()
         Storage.write('key.server', ecdhKey.export())
         console.log(`Server key is now generated.`)
@@ -30,7 +30,7 @@ const myKey = (() => {
 
     ecdhKey = new ECDHKey(keySaved)
     
-    if(ecdhKey === undefined)
+    if(typeof ecdhKey === 'undefined')
         throw Error(`key.server is invalid.`)
 
     return ecdhKey
@@ -52,13 +52,6 @@ const udp = Datagram.createSocket('udp4')
  * @param {Datagram.RemoteInfo} remote Target remote to send random bytes to
  */
 const sendRandomBytes = remote => udp.send(Crypt.rand(8), 0, 8, remote.port, remote.address, showError)
-
-/**
- * Stringify Array of JSON object
- * @param {Array|Object} obj Object to be stringified
- * @returns {string} converted string
- */
-const str = obj => Return(() => JSON.stringify(obj), `["error"]`)
 
 /** @type {number} Current time in real-time (milliseconds)*/
 let currentTime = new Date().getTime()
@@ -84,7 +77,7 @@ udp.on('message', (msg, remote) => {
         if(reset)
             delete knownPeers[remoteAddress]
 
-        if(knownPeers[remoteAddress] === undefined){
+        if(typeof knownPeers[remoteAddress] === 'undefined'){
             if(msg.length === 0)
                 return true
 
@@ -94,7 +87,7 @@ udp.on('message', (msg, remote) => {
             ])
             peer.key = myKey.computeSecret(msg) //not using random generated key
 
-            if(peer.key === undefined)
+            if(typeof peer.key === 'undefined')
                 return sendRandomBytes(remote)
 
             peer.lastAccess = currentTime
@@ -125,7 +118,7 @@ udp.on('message', (msg, remote) => {
 
     peer.lastAccess = currentTime
 
-    if(Try(() => message = JSON.parse(peer.key.decryptToString(msg))))
+    if(Try(() => message = json(peer.key.decryptToString(msg))))
         return
 
     //Tracker

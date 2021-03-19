@@ -6,6 +6,7 @@
 const HTTP = require('http')
 const isAny = require('./fn.is.any')
 const Return = require('./fn.try.return')
+const {str} = require('./fn.json')
 
 /**
  * @callback RequestCallback
@@ -80,7 +81,7 @@ const WebResponse = class {
     send (data, encoding) {
         switch(typeof data){
             case 'object':
-                data = Return(() => JSON.stringify(data), '')
+                data = Return(() => str(data), '')
                 break
             default:
                 data = Return(() => `${data}`, '')
@@ -105,7 +106,7 @@ const WebResponse = class {
      * @param {HTTP.ServerResponse} res Outgoing response
      */
     constructor (res) {
-        if(res !== undefined)
+        if(typeof res !== 'undefined')
             this.HTTP = res
     }
 }

@@ -3,6 +3,7 @@ const FileSystem = require('fs')
 const isAny = require('./fn.is.any')
 const Try = require('./fn.try.catch')
 const Return = require('./fn.try.return')
+const {json, str} = require('./fn.json')
 
 const Locale = require('./locale/locale')
 
@@ -18,7 +19,7 @@ const promise = {
      */
     read: location => {
         return new Promise(resolve => {
-            resolve(Return(async () => JSON.parse(await FileSystem.promises.readFile(P.a + location + P.b, {encoding:'utf-8'}))))
+            resolve(Return(async () => json(await FileSystem.promises.readFile(P.a + location + P.b, {encoding:'utf-8'}))))
         })
     },
     /**
@@ -30,7 +31,7 @@ const promise = {
     write: (location, data) => {
         return new Promise(resolve => {
             resolve(Try(async () => 
-                await FileSystem.promises.writeFile(P.a + location + P.b, typeof data === 'object' ? JSON.stringify(data) : data, {encoding:'utf-8'})
+                await FileSystem.promises.writeFile(P.a + location + P.b, typeof data === 'object' ? str(data) : data, {encoding:'utf-8'})
             ))
         })
     }
@@ -55,7 +56,7 @@ const remove = location => Try(() => FileSystem.rmSync(P.a + location + P.b))
  * @param {string} location File location
  * @returns {any[]} Result of a read JSON
  */
-const read = location => Return(() => JSON.parse(FileSystem.readFileSync(P.a + location + P.b, {encoding:'utf-8'})))
+const read = location => Return(() => json(FileSystem.readFileSync(P.a + location + P.b, {encoding:'utf-8'})))
 
 /**
  * Write an object to storage
@@ -63,7 +64,7 @@ const read = location => Return(() => JSON.parse(FileSystem.readFileSync(P.a + l
  * @param {Object} data JSON data object
  * @returns {boolean} Result of a read JSON
  */
-const write = (location, data) => Try(() => FileSystem.writeFileSync(P.a + location + P.b,typeof data === 'object' ? JSON.stringify(data) : data, {encoding:'utf-8'}))
+const write = (location, data) => Try(() => FileSystem.writeFileSync(P.a + location + P.b,typeof data === 'object' ? str(data) : data, {encoding:'utf-8'}))
 
 /** Shared storage module*/
 const storage = {
@@ -86,7 +87,7 @@ module.exports = locale => {
             storage.locale = locale
     }
 
-    if(storage.locale === undefined)
+    if(typeof storage.locale === 'undefined')
         storage.locale = new Locale()
 
     return storage

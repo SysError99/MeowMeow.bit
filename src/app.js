@@ -46,13 +46,6 @@ const PostLike = require('./data/post.like')
 /** @type {string[]} List of all notifications*/
 const notifications = []
 
-/**
- * Stringify JSON object or array
- * @param {Object} o JSON or array object to be stringified
- * @returns {string}
- */
-const str = o => JSON.stringify(o)
-
 /** HTTP web front-end app object*/
 const app = new Web()
 app.get('/', (req,res) => {

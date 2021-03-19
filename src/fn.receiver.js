@@ -7,6 +7,7 @@ const Crypt = require('./fn.crypt')
 const Try = require('./fn.try.catch')
 const Return = require('./fn.try.return')
 const Locale = require('./locale/locale')
+const {json, str} = require('./fn.json')
 
 const ECDHKey = require('./data/key.ecdh')
 const Peer = require('./data/peer')
@@ -31,23 +32,9 @@ const seedersMyPos = {}
 const seedersSorted = {}
 
 /**
- * Convert JSON string to object or array
- * @param {string} str String to be converted
- * @returns {Array} JSON object
- */
-const json = str => JSON.parse(str)
-
-/**
  * @param {Error} err 
  */
 const showError = err => err ? console.error(err) : 0
-
-/**
- * Convert JSON object to string
- * @param {Array|Object} obj JSON object
- * @returns {string} 
- */
-const str = obj => JSON.stringify(obj)
 
 /**
  * @callback RequestFunction Event handler function
@@ -108,12 +95,12 @@ const Receiver = class {
     addPeer (peer) {
         let remoteAddress = `${peer.ip}:${peer.port}`
 
-        if(this.peers[remoteAddress] === undefined){
+        if(typeof this.peers[remoteAddress] === 'undefined'){
             this.peers[remoteAddress] = peer
 
             let remotePub = BaseN.encode(peer.pub, '62')
 
-            if(this.peers[remotePub] === undefined)
+            if(typeof this.peers[remotePub] === 'undefined')
                 this.peers[remotePub] = peer
 
             return true
@@ -281,13 +268,13 @@ const Receiver = class {
         /** @type {Peer|Tracker} */
         let peer = this.peers[`${remote.address}:${remote.port}`]
 
-        if(peer === undefined){
+        if(typeof peer === 'undefined'){
             if(message.length !== Crypt.ecdh.length)
                 return 
 
             let computeKey = this.key.computeSecret(message)
 
-            if(computeKey !== undefined){
+            if(typeof computeKey !== 'undefined'){
                 let helloMessage = computeKey.encrypt(str( ['nice2meetu'] ))
 
                 peer = new Peer([
@@ -326,7 +313,7 @@ const Receiver = class {
         }
 
         if(!peer.connected()){
-            if(Return(() => json(peer.key.decryptToString(message))) === undefined)
+            if(typeof Return(() => json(peer.key.decryptToString(message))) === 'undefined')
                 return
 
             // NAT transversal successful
@@ -504,7 +491,7 @@ const Receiver = class {
                 /** @type {Peer} Requested peer */
                 let peer = this.peers[`${message[1]}:${peerPort}`]
 
-                if(peer === undefined || !IpRegex.test(message[1]) || peerPort <= 1024 || peerPort > 65535)
+                if(typeof peer === 'undefined' || !IpRegex.test(message[1]) || peerPort <= 1024 || peerPort > 65535)
                     return this.callback(undefined, new Result({
                         message: `Tracker ${BaseN.encode(tracker.pub, '62')} had sent an invalid address.` //LOCALE_NEEDED
                     }))
@@ -549,7 +536,7 @@ const Receiver = class {
                 let tryToResponse = setInterval(() => {
                     let randomResponse = Crypt.rand(Crypt.ecdh.length)
 
-                    if(this.peers[`${message[1]}:${message[2]}`] !== undefined)
+                    if(typeof this.peers[`${message[1]}:${message[2]}`] !== 'undefined')
                         return clearInterval(tryToResponse)
 
                     this.socket.send(randomResponse, 0, randomResponse.length, message[2], message[1], showError)
@@ -592,7 +579,7 @@ const Receiver = class {
                     followerPeers[p] = BaseN.encode(peer.public, '62')
                 }
 
-                if(seeders[message[1]] === undefined){
+                if(typeof seeders[message[1]] === 'undefined'){
                     seeders[message[1]] = followerPeers
                     seedersMyPos [message[1]] = 0
                     seedersSorted[message[1]] = false
@@ -680,7 +667,7 @@ const Receiver = class {
             let peerStr = peer
             peer = this.peers[peerStr]
 
-            if(peer === undefined)
+            if(typeof peer === 'undefined')
                 peer = new Peer(['', 0, BaseN.decode(peerStr, '62')])
         }
         else if(typeof peer !== 'object')
@@ -718,7 +705,7 @@ const Receiver = class {
      * @returns {Promise<Number>}
      */
     async sendMedia (peer, info) {
-        if(peer.mediaStreamCb !== undefined)
+        if(typeof peer.mediaStreamCb !== 'undefined')
             return __.MEDIA_STREAM_NOT_READY
 
         if(typeof info !== 'object')
@@ -750,7 +737,7 @@ const Receiver = class {
         /** @type {NodeJS.Timeout} */
         let fileStreamTimeout
         let fileStreamResolver = resolve => {
-            if(fileStreamStatus !== undefined){
+            if(typeof fileStreamStatus !== 'undefined'){
                 clearTimeout(fileStreamTimeout)
                 resolve(fileStreamStatus)
                 fileStreamTimeout = undefined
@@ -806,7 +793,7 @@ const Receiver = class {
             }
 
             // If peer missed the package, send the old one
-            if(fileStreamMissedPacket === undefined)
+            if(typeof fileStreamMissedPacket === 'undefined')
                 fileStreamByte = fileStream.read(__.MTU)
             else{
                 fileStreamByte = fileStreamMissedPacket
@@ -964,7 +951,7 @@ const Receiver = class {
 
                 delete trackersLoaded [ind]
 
-                if(newTracker.key === undefined)
+                if(typeof newTracker.key === 'undefined')
                     return
 
                 let trackerAddress = `${el.ip}:${el.port}`
