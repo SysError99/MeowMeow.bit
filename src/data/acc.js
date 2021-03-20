@@ -11,6 +11,9 @@ const Acc = class {
     /** @type {string[]} List of followers (account public key)*/
     follower = []
 
+    /** @type {string[]} List of following users (account public key)*/
+    following = []
+
     /** Account images */
     img = {
         /** @type {string} Cover image */
@@ -41,7 +44,6 @@ const Acc = class {
     exportBase () {
         return [
             this.description,
-            this.follower,
             undefined,
             this.name,
             [
@@ -93,32 +95,29 @@ const Acc = class {
             this.description = d[0]
 
         if(Array.isArray(d[1]))
-            this.follower = d[1]
-
-        if(Array.isArray(d[2]))
-            this.key = new SignKey(d[2])
+            this.key = new SignKey(d[1])
         else
             this.key = new SignKey()
 
-        if(typeof d[3] === 'string')
-            this.name = d[3]
+        if(typeof d[2] === 'string')
+            this.name = d[2]
 
-        if(Array.isArray(d[4])){
-            if(typeof d[4][0] === 'string')
-                this.pic.cover = d[4][0]
+        if(Array.isArray(d[3])){
+            if(typeof d[3][0] === 'string')
+                this.pic.cover = d[3][0]
 
-            if(typeof d[4][1] === 'string')
-                this.pic.profile = d[4][1]
+            if(typeof d[3][1] === 'string')
+                this.pic.profile = d[3][1]
         }
 
-        if(typeof d[5] === 'number')
+        if(typeof d[4] === 'number')
+            this.posts = d[4]
+
+        if(typeof d[5] === 'boolean')
             this.posts = d[5]
 
-        if(typeof d[6] === 'boolean')
-            this.posts = d[6]
-
-        if(Array.isArray(d[7]))
-            this.tag = d[7]
+        if(Array.isArray(d[6]))
+            this.tag = d[6]
     }
 }
 
