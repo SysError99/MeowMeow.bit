@@ -19,7 +19,7 @@ const timelineRetrieve = () => {
         }
     }
 
-    request.open('GET', `/post/`)
+    request.open('GET', `/timeline`)
     request.send()
 }
 
