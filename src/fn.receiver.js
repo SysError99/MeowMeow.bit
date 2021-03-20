@@ -705,9 +705,37 @@ const Receiver = class {
      * @returns {Promise<Number>}
      */
     async sendMedia (peer, info) {
-        if(typeof peer.mediaStreamCb !== 'undefined')
-            return __.MEDIA_STREAM_NOT_READY
+        let dummyQueue = {}
 
+        peer.mediaStreamQueue.push(dummyQueue)
+        await (() => new Promise(resolve => {    
+            setInterval(() =>{
+                if(peer.mediaStreamQueue[0] === dummyQueue){
+                    if(typeof peer.mediaStreamCb !== 'function'){
+                        peer.mediaStreamQueue.splice(0,1)
+                        resolve()
+                    }
+                }
+            })
+        }))()
+
+        let sendMediaResult = await this.#sendMedia(peer, info)
+
+        peer.mediaStreamCb = undefined
+        return sendMediaResult
+    }
+
+    /**
+     * Send media to target peer
+     * @param {Peer} peer Peer to send file to
+     * @param {{
+     *   owner:string,
+     *   position:string,
+     *   index:number
+     * }} info Media Information
+     * @returns {Promise<Number>}
+     */
+    async #sendMedia (peer, info) {
         if(typeof info !== 'object')
             return __.MEDIA_STREAM_INFO_INVALID
 
@@ -772,10 +800,8 @@ const Receiver = class {
         this.socket.send(mediaSendMessage, 0, mediaSendMessage.length, peer.port, peer.ip, showError)
         peerResponse = await (() => new Promise(fileStreamResolver))()
 
-        if(peerResponse !== __.MEDIA_STREAM_READY){
-            peer.mediaStreamCb = undefined
+        if(peerResponse !== __.MEDIA_STREAM_READY)
             return peerResponse
-        }
 
         while(true){
             if(fileStreamResendCount > __.MAX_TRIAL){
@@ -786,11 +812,9 @@ const Receiver = class {
                 return __.MEDIA_STREAM_TIME_OUT
             }
 
-            if(fileStreamStatus === __.MEDIA_STREAM_DECLINED){
+            if(fileStreamStatus === __.MEDIA_STREAM_DECLINED)
                 // peer declined the package
-                peer.mediaStreamCb = undefined
                 return __.MEDIA_STREAM_DECLINED
-            }
 
             // If peer missed the package, send the old one
             if(typeof fileStreamMissedPacket === 'undefined')
@@ -875,7 +899,6 @@ const Receiver = class {
                 break
         }
 
-        peer.mediaStreamCb = undefined
         return peerResponse
     }
 
