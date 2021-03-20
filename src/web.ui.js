@@ -103,6 +103,19 @@ const wScript = (() => extract(FileSystem.readFileSync(`${wDir}html/script-src.h
 
 module.exports = {
     dir: wDir,
+    accInfo: async () => {
+        let accInfo = extract(
+            await FileSystem.promises.readFile('./'),
+            [
+                'acc-pub',
+                'acc-name',
+                'acc-tag',
+                'acc-public'
+            ]
+        )
+
+        return accInfo
+    },
     body: () => {
         for(let i=1; i<=7; i+=2){
             wBody[i] = '' 
@@ -112,6 +125,7 @@ module.exports = {
         wBody[13] = ''
         return wBody
     },
+    extract: extract,
     login: `<h2 class="w3-center"> Please choose your account, or create a new one </h2>`,
     scrpit: url => {
         wScript[1] = url

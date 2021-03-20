@@ -6,7 +6,7 @@
 const FileSystem = require('fs')
 
 // Setup folder
-if(FileSystem.readdirSync('./data/').length <= 1) (() => {
+if(FileSystem.readdirSync('./data/').length <= FileSystem.readdirSync('./default/')) (() => {
     let path = require("path")
 
     /**
@@ -36,15 +36,26 @@ const BaseN = require('./fn.base.n')
 const Crypt = require('./fn.crypt')
 const Receiver = require('./fn.receiver')
 const Try = require('./fn.try.catch')
+const Return = require('./fn.try.return')
 const Web = require('./fn.web')
 const W = require('./web.ui')
 
 const Acc = require('./data/acc')
 const Post = require('./data/post')
 const PostLike = require('./data/post.like')
+const PostPointer = require('./data/post.pointer')
 
 /** @type {string[]} List of all notifications*/
 const notifications = []
+
+/** @type {Acc} Active account*/
+let acc
+
+/** @type {number} Currently read head of timeline post*/
+let currentTimelinePost = 0
+
+/** @type {boolean} If we are in home page */
+let inHomePage = true
 
 /** HTTP web front-end app object*/
 const app = new Web()
@@ -53,13 +64,67 @@ app.get('/', (req,res) => {
 
     body[7] = '/web/img/avatar2.png'
 
+    if(!inHomePage)
+        inHomePage = true
+    else if(acc !== undefined){
+        let postCountLocation = `./${acc.key.public}.posts`
+
+        if(!receiver.storage.access(postCountLocation))
+            receiver.storage.write(postCountLocation, 0)
+        
+      currentTimelinePost = Return(() => receiver.storage.read(postCountLocation), 0) //move to latest post
+    }
+
     res.send(body.join(''))
 })
-app.get('/web/:type/:file', async (req, res) => {
-    let fileLocation = W.dir + req.params.type + '/' + req.params.file
+app.post('/create-account', async (req, res) => {
+    let body = W.body()
+
+    body[7] = '/web/img/avatar2.png'
+    body[11] += (await W.accInfo()).join('')
+
+    res.send(body.join(''))
+})
+app.get('/timeline', (req, res) => {
+    inHomePage = false
+
+    if(acc === undefined)
+        return res.send(W.login)
+
+    let currentPostLocation = `${acc.key.public}.timeline.${currentTimelinePost}`
+
+    if(!receiver.storage.access(currentPostLocation))
+        return res.send('Storage Access Error.') //LOCALE_NEEDED
+
+    let postPointer = new PostPointer(receiver.storage.read(currentPostLocation))
+    // TODO: render timeline post
+    res.send('UNIMPLEMENTED')
+})
+app.get('/post/:pub/:number', (req, res) => {
+    inHomePage = false
+    // TODO: render specified post
+    res.send('UNIMPLEMENTED')
+})
+app.get('/:location/:type/:file', async (req, res) => {
+    inHomePage = false
+
+    /** @type {string} */
+    let fileLocation
+
+    switch(req.params.locaton){
+        case 'web':
+            fileLocation = W.dir + req.params.type + '/' + req.params.file
+            break
+        
+        case 'data':
+            fileLocation = './data/' + req.params.file
+            break
+    }
+
+    fileLocation = W.dir + req.params.type + '/' + req.params.file
 
     if(Try(() => FileSystem.accessSync(fileLocation)))
-        return
+        return app.ev404.callback(res)
 
     /** @type {string} */
     let contentType
