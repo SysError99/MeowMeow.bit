@@ -96,8 +96,8 @@ const WebResponse = class {
      * @param {number} status Status
      * @returns {WebResponse} 
      */
-    status () {
-        this.HTTP.writeHead(status)
+    status (s) {
+        this.HTTP.writeHead(s)
         return this
     }
 
@@ -163,7 +163,9 @@ const Web = class {
     isWeb = true
 
     /** @type {WebEvent} 404 Error event*/
-    ev404
+    ev404 = new WebEvent({
+        callback: res => res.status(404).send('Not found.')
+    })
     /** @type {WebEvent[]} List of app events*/
     events = []
 
@@ -289,13 +291,8 @@ const Web = class {
                         }), new WebResponse(res))
                         return
                     }
-                    if(isAny(this.ev404)){
-                        if(typeof this.ev404.callback === 'function') {
-                            this.ev404.callback(new WebRequest(req), new WebResponse(res))
-                            return
-                        }
-                    }
-                    res.writeHead(404).end('Not found.')
+                    this.ev404.callback(new WebResponse(res))
+                    return
                 })
                 req.on('error', err => {
                     console.error('E -> http.on(\'error\'): ' + err.message)
