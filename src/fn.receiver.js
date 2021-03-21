@@ -726,14 +726,6 @@ const Receiver = class {
         return sendMediaResult
     }
 
-    async #sendMedia_queueAwait () {
-        return new Promise(resolve => {
-            setInterval(() => {
-
-            })
-        })
-    }
-
     /**
      * Send media to target peer
      * @param {Peer} peer Peer to send file to
