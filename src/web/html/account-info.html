@@ -4,14 +4,20 @@
         <div class="w3-card w3-round w3-white">
             <div class="w3-container w3-padding">
                 <h4 class="w3-opacity">Account Information</h4>
-                <h6 class="w3-opacity">Account Public Key</h6>
-                <p id="account-pub" class="w3-border w3-padding">{{acc-pub}}</p>
-                <h6 class="w3-opacity">Name:</h6>
+                <h6 class="w3-opacity">Account Public Key:</h6>
+                <p id="account-pub" contenteditable="true" class="w3-border w3-padding">{{acc-pub}}</p>
+                <h6 class="w3-opacity">Display  Name:</h6>
                 <p id="account-name" contenteditable="true" class="w3-border w3-padding">{{acc-name}}</p>
                 <h6 class="w3-opacity">Tags:</h6>
                 <p id="account-tag" contenteditable="true" class="w3-border w3-padding">{{acc-tag}}</p>
-                <input type="checkbox" id="vehicle1" value="public" {{acc-public}}> Everyone can post on this t (If you waaccounnt this account to be web board)<br>
-                <button type="button" class="w3-button w3-theme"><i class="fa fa-pen"></i>  Submit</button> 
+                <h6 class="w3-opacity">Set Profile Image:</h6>
+                {{acc-avatar}}
+                <input id="file" type="file">
+                <br><br>
+                <input type="checkbox" id="vehicle1" value="public" {{acc-public}}> Everyone can post on this (If you waaccounnt this account to be web board)
+                <br><br>
+                <button type="button" class="w3-button w3-theme" onclick="accountRemove()"><i class="fa fa-trash"></i>  Remove</button> 
+                <button type="button" class="w3-button w3-theme w3-right" onclick="accountSubmit()"><i class="fa fa-pen"></i>  Submit</button> 
             </div>
         </div>
     </div>
