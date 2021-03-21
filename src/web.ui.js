@@ -31,7 +31,7 @@ const extract = (str, extractList) => {
 }
 
 /** @type {string[]} Template of the avatar icon*/
-const wAvatar = Return(() => extract(FileSystem.readFileSync(`${wDir}html/account-icon.html`, {encoding: 'utf-8'}), ['link', 'url', 'text']))
+const wAvatar = Return(() => extract(FileSystem.readFileSync(`${wDir}html/avatar.html`, {encoding: 'utf-8'}), ['link', 'right', 'url', 'text']))
 const wAvatar2Default = wAvatar[2]
 
 /** @type {string[]} Template of the body*/
@@ -108,45 +108,78 @@ const wPostSubmit = FileSystem.readFileSync(`${wDir}html/post-submit.html`, {enc
 const wScript = Return(() => extract(FileSystem.readFileSync(`${wDir}html/script-src.html`, {encoding: 'utf-8'}), [`url`]))
 
 module.exports = {
-    dir: wDir,
-    accInfo: async () => {
+    dir: () => wDir,
+
+    accInfo: async ({
+        pub,
+        name,
+        tag,
+        avatar,
+        public
+    }) => {
         let accInfo = extract(
-            await FileSystem.promises.readFile('./'),
+            await FileSystem.promises.readFile(`${wDir}html/account-info.html`, {encoding: 'utf-8'}),
             [
                 'acc-pub',
                 'acc-name',
                 'acc-tag',
+                'acc-avatar',
                 'acc-public'
             ]
         )
 
-        return accInfo
-    },
-    avatar: right => {
-        for(let i=1; i <= 5; i+=2)
-            wAvatar[i] = ''
+        accInfo[1] = typeof pub === 'string' ? pub : ''
+        accInfo[3] = typeof name === 'string' ? name : ''
+        accInfo[5] = typeof tag === 'string' ? tag : ''
+        accInfo[7] = typeof avatar === 'string' ? avatar : ''
+        accInfo[9] = typeof public === 'string' ? public : ''
 
-        let r = wAvatar2Default.split('{{right}}')
-        
-        if(right)
-            wAvatar[2] = r.join('w3-right')
-        else
-            wAvatar[2] = r.join('')
-
-        return wAvatar
+        return accInfo.join('')
     },
-    body: () => {
-        for(let i=1; i<=7; i+=2)
-            wBody[i] = ''
 
-        wBody[11] = wPostSubmit
-        wBody[13] = ''
-        return wBody
+    avatar: ({
+        link,
+        right,
+        url,
+        text
+    }) => {
+        wAvatar[1] = typeof link === 'string' ? link : '#'
+        wAvatar[3] = right ? 'w3-right' : ''
+        wAvatar[5] = typeof url === 'string' ? url : '/web/img/avatar2.png'
+        wAvatar[7] = typeof text === 'string' ? text : ''
+
+        return wAvatar.join('')
     },
+
+    body: ({
+        title,
+        notiNumber,
+        notiList,
+        avatar,
+        bodyLeft,
+        body,
+        bodyRight,
+        script
+    }) => {
+        wBody[1] = typeof title === 'string' ? title : ''
+        wBody[3] = typeof notiNumber === 'string' ? notiNumber : ''
+        wBody[5] = typeof notiList === 'string' ? notiList : ''
+        wBody[7] = typeof avatar === 'string' ? avatar : ''
+        wBody[9] = typeof bodyLeft === 'string' ? bodyLeft : ''
+        wBody[11] = typeof body === 'string' ? body : ''
+        wBody[13] = typeof bodyRight === 'string' ? bodyRight : ''
+        wBody[15] = typeof script === 'string' ? script : ''
+        return wBody.join('')
+    },
+
     extract: extract,
-    login: `<h2 class="w3-center"> Please choose your account, or create a new one </h2>`,
-    scrpit: url => {
+
+    login: () => `<h2 class="w3-center"> Please choose your account, or create a new one </h2>`,
+
+    postSubmit: () => wPostSubmit,
+
+    script: ({url}) => {
         wScript[1] = url
-        return wScript[1]
+        return wScript.join('')
     }
 }
