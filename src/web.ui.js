@@ -53,7 +53,11 @@ const wBody = Return(() => {
         ]
     )
 
-    //body-left
+    return body
+})
+
+/** @type {string} Left body of this page */
+const wBodyLeft = Return(() => {
     let accordion = extract(
         FileSystem.readFileSync(`${wDir}html/accordion.html`, {encoding: 'utf-8'}),
         [
@@ -96,9 +100,7 @@ const wBody = Return(() => {
     aEl[5] = 'Profile'
     accordion[1] += aEl.join('')
 
-    body[9] = accordion.join('')
-
-    return body
+    return accordion.join('')
 })
 
 /** @type {string} */
@@ -165,7 +167,7 @@ module.exports = {
         wBody[3] = typeof notiNumber === 'string' ? notiNumber : ''
         wBody[5] = typeof notiList === 'string' ? notiList : ''
         wBody[7] = typeof avatar === 'string' ? avatar : ''
-        wBody[9] = typeof bodyLeft === 'string' ? bodyLeft : ''
+        wBody[9] = typeof bodyLeft === 'string' ? wBodyLeft + bodyLeft : wBodyLeft
         wBody[11] = typeof body === 'string' ? body : ''
         wBody[13] = typeof bodyRight === 'string' ? bodyRight : ''
         wBody[15] = typeof script === 'string' ? script : ''
