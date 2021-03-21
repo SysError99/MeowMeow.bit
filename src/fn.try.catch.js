@@ -2,9 +2,15 @@ const ignore = require('./const').TRY_CATCH_IGNORE
 /**
  * Try to execute this function, and handle error automatically
  * @param {function} fn A function
+ * @param {boolean} kick Throws an error if there is an error
  */
-const tryCatch = fn => {
+const tryCatch = (fn, kick) => {
     if(typeof fn === 'function'){
+        if(kick){
+            fn()
+            return
+        }
+
         try{
             fn()
             return false
