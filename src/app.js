@@ -51,23 +51,31 @@ const notifications = []
 /** @type {Acc} Active account*/
 let acc
 
+/** @type {Acc} Account that will being created  */
+let accBeingCreated = undefined
+
 /** @type {number} Currently read head of timeline post*/
 let currentTimelinePost = 0
 
 /** @type {boolean} If we are in home page */
 let inHomePage = true
 
+/**
+ * Load current 'acc' avatar
+ */
+let loadMyAvatar = () => {
+    return WebUI.avatar({
+        right: true
+    })
+    // TODO: get real avatar loader working, this code is just a test.
+}
+
+/** @type {string} Current 'acc' avatar element for top right corner */
+let myAvatar = Return(loadMyAvatar)
+
 /** HTTP web front-end app object*/
 const app = new Web()
 app.get('/', (req,res) => {
-    let body = WebUI.body()
-    let avatar = WebUI.avatar(true)
-
-    avatar[1] = '#'
-    avatar[3] = '/web/img/avatar2.png'
-
-    body[7] = avatar.join('')
-
     if(!inHomePage)
         inHomePage = true
     else if(acc !== undefined){
@@ -76,48 +84,55 @@ app.get('/', (req,res) => {
         if(!receiver.storage.access(postCountLocation))
             receiver.storage.write(postCountLocation, 0)
         
-      currentTimelinePost = Return(() => receiver.storage.read(postCountLocation), 0) //move to latest post
+        currentTimelinePost = Return(() => receiver.storage.read(postCountLocation), 0) //move to latest post
     }
 
-    res.send(body.join(''))
+    res.send(WebUI.body({
+        avatar: myAvatar,
+        body: WebUI.postSubmit(),
+        script: WebUI.script({
+            url: '/web/js/post-fetch.js'
+        })
+    }))
 })
-app.post('/create-account', async (req, res) => {
-    let body = WebUI.body()
-
-    body[7] = '/web/img/avatar2.png'
-    body[11] += (await WebUI.accInfo()).join('')
-
-    res.send(body.join(''))
+app.get('/create-account', async (req, res) => {
+    inHomePage = false
+    accBeingCreated = new Acc()
+    res.send(WebUI.body({
+        avatar: myAvatar,
+        body: (await WebUI.accInfo({
+            pub: accBeingCreated.key.public
+        }))
+    }))
 })
 app.get('/timeline', (req, res) => {
     inHomePage = false
 
     if(acc === undefined)
-        return res.send(WebUI.login)
+        return res.send(WebUI.login())
 
     let currentPostLocation = `${acc.key.public}.timeline.${currentTimelinePost}`
 
     if(!receiver.storage.access(currentPostLocation))
         return res.send('Storage Access Error.') //LOCALE_NEEDED
 
-    let postPointer = new PostPointer(receiver.storage.read(currentPostLocation))
-    // TODO: render timeline post
     res.send('UNIMPLEMENTED')
+    // let postPointer = new PostPointer(receiver.storage.read(currentPostLocation))
+    // TODO: render timeline post
 })
 app.get('/post/:pub/:number', (req, res) => {
     inHomePage = false
-    // TODO: render specified post
     res.send('UNIMPLEMENTED')
+    // TODO: render specified post
 })
 app.get('/:location/:type/:file', async (req, res) => {
-    inHomePage = false
-
+    //File server
     /** @type {string} */
     let fileLocation
 
     switch(req.params.locaton){
         case 'web':
-            fileLocation = WebUI.dir + req.params.type + '/' + req.params.file
+            fileLocation = WebUI.dir() + req.params.type + '/' + req.params.file
             break
         
         case 'data':
@@ -125,7 +140,7 @@ app.get('/:location/:type/:file', async (req, res) => {
             break
     }
 
-    fileLocation = WebUI.dir + req.params.type + '/' + req.params.file
+    fileLocation = WebUI.dir() + req.params.type + '/' + req.params.file
 
     if(Try(() => FileSystem.accessSync(fileLocation)))
         return app.ev404.callback(res)
