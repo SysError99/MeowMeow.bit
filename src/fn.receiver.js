@@ -706,9 +706,7 @@ const Receiver = class {
      */
     async sendMedia (peer, info) {
         let dummyQueue = {}
-
-        peer.mediaStreamQueue.push(dummyQueue)
-        await (() => new Promise(resolve => {    
+        let queueAwait = () => new Promise(resolve => {
             setInterval(() =>{
                 if(peer.mediaStreamQueue[0] === dummyQueue){
                     if(typeof peer.mediaStreamCb !== 'function'){
@@ -717,12 +715,23 @@ const Receiver = class {
                     }
                 }
             })
-        }))()
+        })
+
+        peer.mediaStreamQueue.push(dummyQueue)
+        await queueAwait()
 
         let sendMediaResult = await this.#sendMedia(peer, info)
 
         peer.mediaStreamCb = undefined
         return sendMediaResult
+    }
+
+    async #sendMedia_queueAwait () {
+        return new Promise(resolve => {
+            setInterval(() => {
+
+            })
+        })
     }
 
     /**
@@ -772,6 +781,7 @@ const Receiver = class {
                 fileStreamStatus = undefined
             }
         }
+        let fileStreamAwaiter = () => new Promise(fileStreamResolver)
         let mediaSendMessage = peer.key.encrypt(
             str([
                 info.owner,
@@ -798,7 +808,7 @@ const Receiver = class {
             fileStreamResolver()
         }, 8000)
         this.socket.send(mediaSendMessage, 0, mediaSendMessage.length, peer.port, peer.ip, showError)
-        peerResponse = await (() => new Promise(fileStreamResolver))()
+        peerResponse = await fileStreamAwaiter()
 
         if(peerResponse !== __.MEDIA_STREAM_READY)
             return peerResponse
@@ -843,7 +853,7 @@ const Receiver = class {
                 fileStreamResolver()
             }, 10000)
 
-            if(await (() => new Promise(fileStreamResolver))() === __.MEDIA_STREAM_TIME_OUT){
+            if(await fileStreamAwaiter() === __.MEDIA_STREAM_TIME_OUT){
                 fileStreamMissedPacket = fileStreamByte
                 fileStreamResendCount++
                 continue
@@ -891,7 +901,7 @@ const Receiver = class {
                 showError
             )
 
-            peerResponse = await (() => new Promise(fileStreamResolver))()
+            peerResponse = await fileStreamAwaiter()
 
             if(peerResponse === __.MEDIA_STREAM_TIME_OUT)
                 continue

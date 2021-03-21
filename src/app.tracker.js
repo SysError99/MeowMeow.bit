@@ -16,7 +16,7 @@ const Peer = require('./data/peer')
 
 const knownPeers = {}
 /** @type {ECDHKey} ECDH key being used on the tracker */
-const myKey = (() => {
+const myKey = Try(() => {
     /** @type {ECDHKey} */
     let ecdhKey
     let keySaved = Storage.read('key.server')
@@ -34,7 +34,7 @@ const myKey = (() => {
         throw Error(`key.server is invalid.`)
 
     return ecdhKey
-})()
+}, true)
 
 /**
  * Shows error via log

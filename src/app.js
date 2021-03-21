@@ -6,7 +6,7 @@
 const FileSystem = require('fs')
 
 // Setup folder
-if(FileSystem.readdirSync('./data/').length <= FileSystem.readdirSync('./default/')) (() => {
+if(FileSystem.readdirSync('./data/').length <= FileSystem.readdirSync('./default/')){
     let path = require("path")
 
     /**
@@ -29,7 +29,7 @@ if(FileSystem.readdirSync('./data/').length <= FileSystem.readdirSync('./default
     }
 
     copyDirSync('./default', './data')
-})()
+}
 
 const __ = require('./const')
 const BaseN = require('./fn.base.n')

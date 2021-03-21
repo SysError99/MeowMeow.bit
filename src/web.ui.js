@@ -3,6 +3,8 @@
  */
 const FileSystem = require('fs')
 
+const Return = require('./fn.try.return')
+
 const wDir =`./src/web/`
 
 /**
@@ -29,7 +31,7 @@ const extract = (str, extractList) => {
 }
 
 /** @type {string[]} Template of the body*/
-const wBody = (() => {
+const wBody = Return(() => {
     let body = extract(
         FileSystem.readFileSync(
             `${wDir}html/body.html`,
@@ -93,13 +95,13 @@ const wBody = (() => {
     body[9] = accordion.join('')
 
     return body
-})()
+})
 
 /** @type {string} */
 const wPostSubmit = FileSystem.readFileSync(`${wDir}html/post-submit.html`, {encoding: 'utf-8'})
 
 /** @type {string[]} */
-const wScript = (() => extract(FileSystem.readFileSync(`${wDir}html/script-src.html`, {encoding: 'utf-8'}), [`url`]))()
+const wScript = Return(() => extract(FileSystem.readFileSync(`${wDir}html/script-src.html`, {encoding: 'utf-8'}), [`url`]))
 
 module.exports = {
     dir: wDir,
