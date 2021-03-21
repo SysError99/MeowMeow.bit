@@ -30,6 +30,10 @@ const extract = (str, extractList) => {
     return complete
 }
 
+/** @type {string[]} Template of the avatar icon*/
+const wAvatar = Return(() => extract(FileSystem.readFileSync(`${wDir}html/account-icon.html`, {encoding: 'utf-8'}), ['link', 'url', 'text']))
+const wAvatar2Default = wAvatar[2]
+
 /** @type {string[]} Template of the body*/
 const wBody = Return(() => {
     let body = extract(
@@ -41,7 +45,7 @@ const wBody = Return(() => {
             `title`,
             `noti-number`,
             `noti-list`,
-            'url-my-avatar',
+            'avatar',
             `body-left`,
             `body`,
             `body-right`,
@@ -118,10 +122,22 @@ module.exports = {
 
         return accInfo
     },
+    avatar: right => {
+        for(let i=1; i <= 5; i+=2)
+            wAvatar[i] = ''
+
+        let r = wAvatar2Default.split('{{right}}')
+        
+        if(right)
+            wAvatar[2] = r.join('w3-right')
+        else
+            wAvatar[2] = r.join('')
+
+        return wAvatar
+    },
     body: () => {
-        for(let i=1; i<=7; i+=2){
-            wBody[i] = '' 
-        }
+        for(let i=1; i<=7; i+=2)
+            wBody[i] = ''
 
         wBody[11] = wPostSubmit
         wBody[13] = ''

@@ -38,7 +38,7 @@ const Receiver = require('./fn.receiver')
 const Try = require('./fn.try.catch')
 const Return = require('./fn.try.return')
 const Web = require('./fn.web')
-const W = require('./web.ui')
+const WebUI = require('./web.ui')
 
 const Acc = require('./data/acc')
 const Post = require('./data/post')
@@ -60,9 +60,13 @@ let inHomePage = true
 /** HTTP web front-end app object*/
 const app = new Web()
 app.get('/', (req,res) => {
-    let body = W.body()
+    let body = WebUI.body()
+    let avatar = WebUI.avatar(true)
 
-    body[7] = '/web/img/avatar2.png'
+    avatar[1] = '#'
+    avatar[3] = '/web/img/avatar2.png'
+
+    body[7] = avatar.join('')
 
     if(!inHomePage)
         inHomePage = true
@@ -78,10 +82,10 @@ app.get('/', (req,res) => {
     res.send(body.join(''))
 })
 app.post('/create-account', async (req, res) => {
-    let body = W.body()
+    let body = WebUI.body()
 
     body[7] = '/web/img/avatar2.png'
-    body[11] += (await W.accInfo()).join('')
+    body[11] += (await WebUI.accInfo()).join('')
 
     res.send(body.join(''))
 })
@@ -89,7 +93,7 @@ app.get('/timeline', (req, res) => {
     inHomePage = false
 
     if(acc === undefined)
-        return res.send(W.login)
+        return res.send(WebUI.login)
 
     let currentPostLocation = `${acc.key.public}.timeline.${currentTimelinePost}`
 
@@ -113,7 +117,7 @@ app.get('/:location/:type/:file', async (req, res) => {
 
     switch(req.params.locaton){
         case 'web':
-            fileLocation = W.dir + req.params.type + '/' + req.params.file
+            fileLocation = WebUI.dir + req.params.type + '/' + req.params.file
             break
         
         case 'data':
@@ -121,7 +125,7 @@ app.get('/:location/:type/:file', async (req, res) => {
             break
     }
 
-    fileLocation = W.dir + req.params.type + '/' + req.params.file
+    fileLocation = WebUI.dir + req.params.type + '/' + req.params.file
 
     if(Try(() => FileSystem.accessSync(fileLocation)))
         return app.ev404.callback(res)
