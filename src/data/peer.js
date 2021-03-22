@@ -112,7 +112,7 @@ const Peer = class {
 
     /**
      * Set target's public key
-     * @param {Buffer|string} pub Public key (Buffer or base62)
+     * @param {Buffer|string} pub Public key (Buffer or base64)
      */
     setPeerPub (pub) {
         if(typeof pub === 'string'){
