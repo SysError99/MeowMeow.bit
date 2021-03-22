@@ -6,7 +6,7 @@
 const FileSystem = require('fs')
 
 // Setup folder
-if(FileSystem.readdirSync('./data/').length <= FileSystem.readdirSync('./default/')){
+if(FileSystem.readdirSync('./data/').length <= FileSystem.readdirSync('./default/').length){
     let path = require("path")
 
     /**
