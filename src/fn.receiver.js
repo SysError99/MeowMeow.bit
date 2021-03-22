@@ -100,12 +100,6 @@ const Receiver = class {
 
         if(typeof this.peers[remoteAddress] === 'undefined'){
             this.peers[remoteAddress] = peer
-
-            let remotePub = BaseN.encode(peer.pub, '62')
-
-            if(typeof this.peers[remotePub] === 'undefined')
-                this.peers[remotePub] = peer
-
             return true
         }
 
@@ -212,16 +206,12 @@ const Receiver = class {
      */
     deletePeer (peer) {
         let remoteAddress = `${peer.ip}:${peer.port}`
-        let remotePub = BaseN.encode(peer.pub, '62')
 
         if(peer.mediaStream >= 0)
             peer.closeMediaStream()
 
         if(typeof this.peers[remoteAddress] === 'object')
             delete this.peers[remoteAddress]
-
-        if(typeof this.peers[remotePub] === 'object')
-            delete this.peers[remotePub]
     }
 
     /**
@@ -500,7 +490,7 @@ const Receiver = class {
                 let peer = this.peers[`${message[1]}:${peerPort}`]
 
                 if(typeof message[3] === 'string') 
-                    peer.pub = Return(() => BaseN.encode(message[3], '62'), Buffer.alloc(0))
+                    peer.pub = Return(() => BaseN.decode(message[3], '62'), Buffer.alloc(0))
 
                 if( typeof peer === 'undefined' ||
                     !IpRegex.test(message[1]) ||
@@ -958,10 +948,10 @@ const Receiver = class {
 
     /**
      * Stop polling on this peer
-     * @param {number|Peer} peer Peer to stop polling
+     * @param {Peer} peer Peer to stop polling
      */
     stopPolling (peer) {
-        if(typeof peer === 'numebr'){
+        if(typeof peer === 'number'){
             /** @type {Peer} */
             let peerToDelete = this.pollingList[peer]
 
@@ -1047,7 +1037,7 @@ const Receiver = class {
                 peer = this.pollingList[i]
 
                 if(currentTime - peer.lastAccess > __.LAST_ACCESS_LIMIT){
-                    this.stopPolling(i)
+                    this.stopPolling(peer)
 
                     if(peer.isSender)
                         this.deletePeer(peer)
