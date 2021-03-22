@@ -63,6 +63,9 @@ const Receiver = class {
     /** Locale being used in this object */
     locale = new Locale()
 
+    /** @type {string} My public address (told by tracker)*/
+    myAddress = ``
+
     /** @type {string} My public key */
     myPub = BaseN.encode(this.key.getPub(), '62')
 
@@ -167,7 +170,7 @@ const Receiver = class {
             if(y < peers.length)
                 seedersMyPos[account] = y
             else{
-                peers.push(this.myPub)
+                peers.push(this.myAddress)
                 return this.broadcast(account, n, data)
             }
 
@@ -484,14 +487,26 @@ const Receiver = class {
                 /**
                  * Tracker told to send public key to target
                  * 
-                 * [1]: peer ip
-                 * [2]: peer port
+                 * [1]string: peer ip
+                 * [2]number: peer port
+                 * [3]string: peer pub
                  */
+                if( typeof message[1] !== 'string' ||
+                    typeof message[2] !== 'number' )
+                    return
+
                 let peerPort = typeof message[2] === 'number' ? message[2] : 0
                 /** @type {Peer} Requested peer */
                 let peer = this.peers[`${message[1]}:${peerPort}`]
 
-                if(typeof peer === 'undefined' || !IpRegex.test(message[1]) || peerPort <= 1024 || peerPort > 65535)
+                if(typeof message[3] === 'string') 
+                    peer.pub = Return(() => BaseN.encode(message[3], '62'), Buffer.alloc(0))
+
+                if( typeof peer === 'undefined' ||
+                    !IpRegex.test(message[1]) ||
+                    peerPort <= 1024 ||
+                    peerPort > 65535 ||
+                    peer.pub.length <= 0 )
                     return this.callback(undefined, new Result({
                         message: `Tracker ${BaseN.encode(tracker.pub, '62')} had sent an invalid address.` //LOCALE_NEEDED
                     }))
@@ -553,8 +568,20 @@ const Receiver = class {
                 /**
                  * Tracker says welcome!
                  */
+                let setPubMessage = tracker.key.encrypt(str( ['setPub', this.myPub] ))
+
+                if(typeof message[1] === 'string' && typeof message[2] === 'number'){
+                    let myAddress = `${message[1]}:${message[2]}`
+
+                    if(this.myAddress.length <= 0)
+                        console.log(`Your public address: ${myAddress}`)
+
+                    this.myAddress = myAddress
+                }
+
                 this.ready = true
                 tracker.connected = true
+                this.socket.send(setPubMessage, 0, setPubMessage.length, remote.port, remote.address, showError)
                 tracker.keepAlive = setInterval(() => this.socket.send('', 0, 0, remote.port, remote.address, showError), 6000)
                 return
 
@@ -667,8 +694,20 @@ const Receiver = class {
             let peerStr = peer
             peer = this.peers[peerStr]
 
-            if(typeof peer === 'undefined')
-                peer = new Peer(['', 0, BaseN.decode(peerStr, '62')])
+            if(typeof peer === 'undefined'){
+                let ipAndPort = peerStr.split(':')
+
+                if(ipAndPort.length !== 2)
+                    return 0
+
+                if(!IpRegex.test(ipAndPort[0]))
+                    return 0
+
+                peer = new Peer([
+                    ipAndPort[0],
+                    Return(() => parseInt(ipAndPort[1]), 1)
+                ])
+            }
         }
         else if(typeof peer !== 'object')
             return 0

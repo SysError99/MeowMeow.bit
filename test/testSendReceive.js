@@ -5,9 +5,7 @@ const Receiver = require('../src/fn.receiver')
 
 const ip = process.argv[2]
 const port = parseInt(process.argv[3])
-const pub = BaseN.decode(process.argv[4], '62')
-
-const peer = new Peer([ip, port, pub])
+const peer = new Peer([ip, port])
 
 const receiver = new Receiver((peer, data) => {
     console.log(data.data)

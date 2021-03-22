@@ -4,6 +4,7 @@
 const Datagram = require('dgram')
 
 const __ = require('./const')
+const Return = require('./fn.try.return')
 const Try = require('./fn.try.catch')
 const BaseN = require('./fn.base.n')
 const Crypt = require('./fn.crypt')
@@ -16,7 +17,7 @@ const Peer = require('./data/peer')
 
 const knownPeers = {}
 /** @type {ECDHKey} ECDH key being used on the tracker */
-const myKey = Try(() => {
+const myKey = Return(() => {
     /** @type {ECDHKey} */
     let ecdhKey
     let keySaved = Storage.read('key.server')
@@ -93,7 +94,7 @@ udp.on('message', (msg, remote) => {
             peer.lastAccess = currentTime
             knownPeers[remoteAddress] = peer
 
-            let successMessage = peer.key.encrypt(str( [`welcome`] ))
+            let successMessage = peer.key.encrypt(str( [`welcome`, remote.address, remote.port] ))
             udp.send(successMessage, 0, successMessage.length, remote.port, remote.address, showError)
             console.log(`${remoteAddress}, joined!`)
             return true
@@ -137,7 +138,7 @@ udp.on('message', (msg, remote) => {
                     return
                 }
 
-                let payload = peer.key.encrypt(str( [`sendpub`, peerToAnnounce.ip, peerToAnnounce.port] ))
+                let payload = peer.key.encrypt(str( [`sendpub`, peerToAnnounce.ip, peerToAnnounce.port, BaseN.encode(peerToAnnounce.pub, '62')] ))
                 let payload2  = peerToAnnounce.key.encrypt(str( [`sendrand`, remote.address, remote.port] ))
                 udp.send(payload, 0, payload.length, remote.port, remote.address, showError)
                 udp.send(payload2, 0, payload2.length, peerToAnnounce.port, peerToAnnounce.ip, showError)
@@ -158,6 +159,19 @@ udp.on('message', (msg, remote) => {
 
             peer.port = message[1]
             peer.public = true
+            return
+
+        case 'setPub':
+            if(typeof message[1] !== 'string')
+                return
+
+            /** @type {Buffer} */
+            let peerPub
+
+            if(Try(() => peerPub = BaseN.decode(message[1], '62')))
+                return
+
+            peer.pub = peerPub
             return
     }
 })
