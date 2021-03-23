@@ -139,6 +139,20 @@ module.exports = {
         return accInfo.join('')
     },
 
+    accList: async ({
+        list
+    }) => {
+        let accList = extract(
+            await FileSystem.promises.readFile(`${wDir}html/account-list.html`, {encoding: 'utf-8'}),
+            [
+                'list'
+            ]
+        )
+        
+        accList[1] = typeof list === 'string' ? list : ''
+        return accList.join('')
+    },
+
     avatar: ({
         link,
         right,
@@ -176,7 +190,25 @@ module.exports = {
 
     extract: extract,
 
-    login: () => `<h2 class="w3-center"> Please choose your account, or create a new one </h2>`,
+    /** 
+     * @param {string} text 
+     * @param {number} size 
+     */
+    header: (text, size) => {
+        if(typeof size === 'undefined')
+            size = 1
+
+        size = 7 - Math.min(Math.max(size, 6), 1)
+        return `<h${size} class="w3-center w3-opacity">${text}</h${size}>`
+    },
+
+    login: () => `<h2 class="w3-center w3-opacity"> Please choose your account, or create a new one </h2>`,
+
+    nativeAlert: (text, redirect) => `<script>alert('${
+        typeof text === 'string' ? text : 'WebUI.nativeAlert() received invalid data type.'
+    }');${
+        typeof redirect === 'string' ? `window.location = ${redirect};` : `window.history.go(-1);`
+    }</script>`,
 
     postSubmit: () => wPostSubmit,
 
