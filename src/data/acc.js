@@ -16,9 +16,9 @@ const Acc = class {
 
     /** Account images */
     img = {
-        /** @type {string} Cover image */
+        /** @type {string} Cover image hash */
         cover: '',
-        /** @type {string} Profile image */
+        /** @type {string} Profile image hash */
         profile: ''
     }
 
