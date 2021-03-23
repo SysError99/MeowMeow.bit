@@ -32,18 +32,19 @@ if(FileSystem.readdirSync('./data/').length <= FileSystem.readdirSync('./default
 }
 
 const __ = require('./const')
-const BaseN = require('./fn.base.n')
-const Crypt = require('./fn.crypt')
+//const BaseN = require('./fn.base.n')
+//const Crypt = require('./fn.crypt')
 const Receiver = require('./fn.receiver')
 const Try = require('./fn.try.catch')
 const Return = require('./fn.try.return')
 const Web = require('./fn.web')
 const WebUI = require('./web.ui')
+const {json, str} = require('./fn.json')
 
 const Acc = require('./data/acc')
 const Post = require('./data/post')
 const PostLike = require('./data/post.like')
-const PostPointer = require('./data/post.pointer')
+//const PostPointer = require('./data/post.pointer')
 
 /** @type {string[]} List of all notifications*/
 const notifications = []
@@ -51,8 +52,8 @@ const notifications = []
 /** @type {Acc} Active account*/
 let acc
 
-/** @type {Acc} Account that will being created  */
-let accBeingCreated = undefined
+/** @type {Acc} Account that is currently on account info screen  */
+let accInfo = undefined
 
 /** @type {number} Currently read head of timeline post*/
 let currentTimelinePost = 0
@@ -95,15 +96,81 @@ app.get('/', (req,res) => {
         })
     }))
 })
-app.get('/create-account', async (req, res) => {
-    inHomePage = false
-    accBeingCreated = new Acc()
+app.get('/me', (req, res) => {
+    res.status(302, {Location: '/account-list'})
+    res.send('')
+})
+app.get('/account-list', async (req, res) => {
+    /** @type {string[]} */
+    let accList = json(await FileSystem.promises.readFile(`./data/accounts.json`, {encoding: 'utf-8'}))
+
+    if(accList.length > 0){
+        for(let a=0; a < accList.length; a++){
+            let accFound = new Acc(await receiver.storage.promise.read(accList[a]))
+
+            accList[a] = WebUI.avatar({
+                url: accFound.img.profile.length > 0 ? `./data/${accFound.key.public}.avatar.png` : '',
+                link: `/account-info/${accFound.key.public}`,
+                text: `${accFound.name}`
+            })
+        }
+    }
+    else
+        accList = WebUI.header('Empty', 1)
+
+    if(typeof acc !== 'undefined'){
+        //TODO: render current account on the left
+    }
+
     res.send(WebUI.body({
         avatar: myAvatar,
-        body: (await WebUI.accInfo({
-            pub: accBeingCreated.key.public
-        }))
+        body: await WebUI.accList({
+            list: accList
+        })
     }))
+})
+app.get('/account-create', async (req, res) => {
+    inHomePage = false
+    accInfo = new Acc()
+    res.send(WebUI.body({
+        avatar: myAvatar,
+        body: await WebUI.accInfo({
+            pub: accInfo.key.public,
+            avatar: WebUI.header('No profile image specified')
+        })
+    }))
+})
+app.get('/account-info/:pub', async (req,res) => {
+    inHomePage = false
+
+    if(typeof req.params.pub === 'undefined')
+        return res.send(WebUI.nativeAlert('Please specify accnount public key.'))
+
+    if(!receiver.storage.access(req.params.pub))
+        return res.send(WebUI.nativeAlert(`Account public key is invalid.`))
+
+    accInfo = new Acc(await receiver.storage.promise.read(req.params.pub))
+    res.send(WebUI.body({
+        avatar: myAvatar,
+        body: await WebUI.accInfo({
+            pub: acc.key.public,
+            name: acc.name,
+            tag: acc.tag.join(','),
+            avatar: accInfo.img.profile.length > 0 ? WebUI.avatar({
+                url: `./data/${accInfo.key.public}.avatar.png`
+            }) : WebUI.header('No profile image specified')
+        })
+         + accInfo.key.private.length <= 0 ?
+        WebUI.header(
+            'This is not your account!' + 
+            'Editing all of these may cause unexpected behaviors in the app.'
+            ,6 // LOCALE_NEEDED
+        ) : ''
+    }))
+})
+app.post('/account-update', async (req, res) => {
+    res.send('UNIMPLEMENTED')
+    // TODO: Create or update account info.
 })
 app.get('/timeline', (req, res) => {
     inHomePage = false
