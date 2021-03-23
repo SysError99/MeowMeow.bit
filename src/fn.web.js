@@ -93,11 +93,12 @@ const WebResponse = class {
 
     /**
      * Set HTTP status
-     * @param {number} status Status
+     * @param {number} s Status
+     * @param {Object} h Headers
      * @returns {WebResponse} 
      */
-    status (s) {
-        this.HTTP.writeHead(s)
+    status (s,h) {
+        this.HTTP.writeHead(s,h)
         return this
     }
 
