@@ -42,7 +42,7 @@ const promise = {
  * @param {string} location Location to be check for existing files
  * @returns {boolean} If specified file has been found on disk
  */
-const access = location => Try(() => FileSystem.accessSync(P.a + location + P.b))
+const access = location => !Try(() => FileSystem.accessSync(P.a + location + P.b))
 
 /**
  * Remove file from storage
