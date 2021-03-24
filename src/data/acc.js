@@ -42,6 +42,9 @@ const Acc = class {
     /** @type {string} Account signature*/
     signature = ''
 
+    /** @type {boolean} If this account has a valid signature */
+    valid = false
+
     /**
      * Export account base
      * @returns {Array}
@@ -53,12 +56,28 @@ const Acc = class {
             this.name,
             [
                 this.img.cover,
-                this.img.profile
+                this.img.avatar
             ],
             this.posts,
             this.public,
-            this.tag
+            this.tag,
+            this.signature
         ]
+    }
+
+    /**
+     * Export data structure for signing
+     * @returns {string}
+     */
+    exportForSigning () {
+        return str([
+            this.description,
+            this.name,
+            this.img.cover,
+            this.img.avatar,
+            this.public,
+            this.tag
+        ])
     }
 
     /**
@@ -88,17 +107,19 @@ const Acc = class {
         this.key = new SignKey()
     }
 
-    signData () {
-        return str([
-            this.description,
-            this.name,
-            this.img.cover,
-            this.img.profile
-        ])
+    /**
+     * Sign this account
+     */
+    sign () {
+        this.signature = this.key.sign(this.exportForSigning())
     }
 
-    sign () {
-        this.signature = this.key.sign()
+    /**
+     * Vefity the signature
+     */
+    verify () {
+        this.valid = this.key.verify(this.exportForSigning(), this.signature)
+        return this.valid
     }
 
     /**
@@ -136,6 +157,11 @@ const Acc = class {
 
         if(Array.isArray(d[6]))
             this.tag = d[6]
+
+        if(typeof d[6] === 'string'){
+            this.signature = d[6]
+            this.verify()
+        }
     }
 }
 
