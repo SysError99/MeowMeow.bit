@@ -5,6 +5,7 @@ const FileSystem = require('fs')
 
 const Return = require('./fn.try.return')
 
+const enc = {encoding: 'utf-8'}
 const wDir =`./src/web/`
 
 /**
@@ -31,7 +32,7 @@ const extract = (str, extractList) => {
 }
 
 /** @type {string[]} Template of the avatar icon*/
-const wAvatar = Return(() => extract(FileSystem.readFileSync(`${wDir}html/avatar.html`, {encoding: 'utf-8'}), ['link', 'right', 'url', 'text']))
+const wAvatar = Return(() => extract(FileSystem.readFileSync(`${wDir}html/avatar.html`, enc), ['link', 'right', 'url', 'text']))
 const wAvatar2Default = wAvatar[2]
 
 /** @type {string[]} Template of the body*/
@@ -39,7 +40,7 @@ const wBody = Return(() => {
     let body = extract(
         FileSystem.readFileSync(
             `${wDir}html/body.html`,
-            {encoding: 'utf-8'}
+            enc
         ),
         [
             `title`,
@@ -59,7 +60,7 @@ const wBody = Return(() => {
 /** @type {string} Left body of this page */
 const wBodyLeft = Return(() => {
     let accordion = extract(
-        FileSystem.readFileSync(`${wDir}html/accordion.html`, {encoding: 'utf-8'}),
+        FileSystem.readFileSync(`${wDir}html/accordion.html`, enc),
         [
             `content`
         ]
@@ -67,7 +68,7 @@ const wBodyLeft = Return(() => {
     let aEl = extract(
         FileSystem.readFileSync(
             `${wDir}html/accordion-element-link.html`,
-            {encoding: 'utf-8'}
+            enc
         ),
         [
             `link`,
@@ -104,10 +105,10 @@ const wBodyLeft = Return(() => {
 })
 
 /** @type {string} */
-const wPostSubmit = FileSystem.readFileSync(`${wDir}html/post-submit.html`, {encoding: 'utf-8'})
+const wPostSubmit = FileSystem.readFileSync(`${wDir}html/post-submit.html`, enc)
 
 /** @type {string[]} */
-const wScript = Return(() => extract(FileSystem.readFileSync(`${wDir}html/script-src.html`, {encoding: 'utf-8'}), [`url`]))
+const wScript = Return(() => extract(FileSystem.readFileSync(`${wDir}html/script-src.html`, enc), [`url`]))
 
 module.exports = {
     dir: () => wDir,
@@ -120,7 +121,7 @@ module.exports = {
         public
     }) => {
         let accInfo = extract(
-            await FileSystem.promises.readFile(`${wDir}html/account-info.html`, {encoding: 'utf-8'}),
+            await FileSystem.promises.readFile(`${wDir}html/account-info.html`, enc),
             [
                 'acc-pub',
                 'acc-name',
@@ -143,7 +144,7 @@ module.exports = {
         list
     }) => {
         let accList = extract(
-            await FileSystem.promises.readFile(`${wDir}html/account-list.html`, {encoding: 'utf-8'}),
+            await FileSystem.promises.readFile(`${wDir}html/account-list.html`, enc),
             [
                 'list'
             ]
@@ -159,7 +160,7 @@ module.exports = {
         url,
         text
     }) => {
-        wAvatar[1] = typeof link === 'string' ? link : '#'
+        wAvatar[1] = typeof link === 'string' ? link : '/me'
         wAvatar[3] = right ? 'w3-right' : ''
         wAvatar[5] = typeof url === 'string' ? url : '/web/img/avatar2.png'
         wAvatar[7] = typeof text === 'string' ? text : ''
@@ -181,7 +182,7 @@ module.exports = {
         wBody[3] = typeof notiNumber === 'string' ? notiNumber : ''
         wBody[5] = typeof notiList === 'string' ? notiList : ''
         wBody[7] = typeof avatar === 'string' ? avatar : ''
-        wBody[9] = typeof bodyLeft === 'string' ? wBodyLeft + bodyLeft : wBodyLeft
+        wBody[9] = typeof bodyLeft === 'string' ? bodyLeft + wBodyLeft : wBodyLeft
         wBody[11] = typeof body === 'string' ? body : ''
         wBody[13] = typeof bodyRight === 'string' ? bodyRight : ''
         wBody[15] = typeof script === 'string' ? script : ''
@@ -209,6 +210,39 @@ module.exports = {
     }');${
         typeof redirect === 'string' ? `window.location = ${redirect};` : `window.history.go(-1);`
     }</script>`,
+
+    profile: async ({
+        name,
+        urlImgAvatar,
+        altText,
+        description,
+        pub,
+        dateJoin,
+        followers
+    }) => {
+        let profile = extract(
+            await FileSystem.promises.readFile(`${wDir}html/profile.html`, enc),
+            [
+                'name',
+                'url-img-avatar',
+                'alt-text',
+                'description',
+                'pub',
+                'date-join',
+                'followers'
+            ]
+        )
+
+        profile[1] = typeof name === 'string' ? name : ''
+        profile[3] = typeof urlImgAvatar === 'string' ? urlImgAvatar : ''
+        profile[5] = typeof altText === 'string' ? altText : ''
+        profile[7] = typeof description === 'string' ? description : ''
+        profile[9] = typeof pub === 'string' ? pub : ''
+        profile[11] = typeof dateJoin === 'string' ? dateJoin : ''
+        profile[13] = typeof followers === 'string' ? followers : ''
+
+        return profile.join('')
+    },
 
     postSubmit: () => wPostSubmit,
 

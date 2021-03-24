@@ -118,12 +118,20 @@ app.get('/account-list', async (req, res) => {
     else
         accList = WebUI.header('Empty', 1)
 
-    if(typeof acc !== 'undefined'){
-        //TODO: render current account on the left
-    }
-
     res.send(WebUI.body({
         avatar: myAvatar,
+        bodyLeft:typeof acc === 'object' ?
+            await WebUI.profile({
+                name: acc.name,
+                urlImgAvatar: acc.img.profile.length > 0 ? 
+                    `./data/${acc.key.public}.profile.png`
+                    : '/web/img/avatar2.png',
+                description: acc.description,
+                pub: acc.key.public,
+                dateJoin: new Date().toUTCString(),
+                followers: '0'
+            })
+            : '',
         body: await WebUI.accList({
             list: accList
         })
