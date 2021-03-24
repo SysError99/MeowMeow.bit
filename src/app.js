@@ -109,7 +109,7 @@ app.get('/account-list', async (req, res) => {
             let accFound = new Acc(await receiver.storage.promise.read(accList[a]))
 
             accList[a] = WebUI.avatar({
-                url: accFound.img.profile.length > 0 ? `./data/${accFound.key.public}.avatar.png` : '',
+                url: accFound.img.avatar.length > 0 ? `./data/${accFound.key.public}.avatar.png` : '',
                 link: `/account-info/${accFound.key.public}`,
                 text: `${accFound.name}`
             })
@@ -124,7 +124,7 @@ app.get('/account-list', async (req, res) => {
             typeof acc === 'object' ?
                 await WebUI.profile({
                     name: acc.name,
-                    urlImgAvatar: acc.img.profile.length > 0 ? 
+                    urlImgAvatar: acc.img.avatar.length > 0 ? 
                         `./data/${acc.key.public}.profile.png`
                         : '/web/img/avatar2.png',
                     description: acc.description,
@@ -165,7 +165,7 @@ app.get('/account-info/:pub', async (req,res) => {
             pub: acc.key.public,
             name: acc.name,
             tag: acc.tag.join(','),
-            avatar: accInfo.img.profile.length > 0 ? WebUI.avatar({
+            avatar: accInfo.img.avatar.length > 0 ? WebUI.avatar({
                 url: `./data/${accInfo.key.public}.avatar.png`
             }) : WebUI.header('No profile image specified')
         })
@@ -289,16 +289,16 @@ const receiver = new Receiver((peer, result) => {
     let data = result.data
 
     /**
-     * [0]:string   post owner (public key)
-     * [1]:number   post position
+     * [0]:string   target account (public key)
+     * [1]:numStr   target section (avatar, cover, posts, etc.)
      * [2]:string   social Command (such as post, like, comment, share, mention)
      * :
      * [.]:any
-     * [n]:string   Signature (optional)
      */
 
     if( typeof data[0] !== 'string' ||
         typeof data[1] !== 'number' ||
+        typeof data[1] !== 'string' ||
         typeof data[2] !== 'string' )
         return
 
@@ -409,7 +409,18 @@ const receiver = new Receiver((peer, result) => {
                 return receiver.send(peer, [__.MEDIA_STREAM_FILE_TOO_LARGE])
             
             let mediaPostLocation = `${data[0]}.${data[1]}`
-            let mediaLocation = `${mediaPostLocation}.media.${data[3]}`
+            let mediaLocation = data[0] + data[1]
+            
+            switch(data[1]){
+                case 'avatar':
+                case 'cover':
+                    break
+
+                default:
+                    mediaLocation += `.media.${data[3]}`
+                    break
+            }
+            
 
             if(!receiver.storage.access(mediaPostLocation))
                 return receiver.send(peer, [__.MEDIA_STREAM_POST_NOT_FOUND])

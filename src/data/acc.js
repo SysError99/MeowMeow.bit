@@ -18,10 +18,10 @@ const Acc = class {
 
     /** Account images */
     img = {
+        /** @type {string} Avatar (profile) image hash */
+        avatar: '',
         /** @type {string} Cover image hash */
-        cover: '',
-        /** @type {string} Profile image hash */
-        profile: ''
+        cover: ''
     }
 
     /** @type {SignKey} Signing key*/
@@ -55,8 +55,8 @@ const Acc = class {
             undefined,
             this.name,
             [
-                this.img.cover,
-                this.img.avatar
+                this.img.avatar,
+                this.img.cover
             ],
             this.posts,
             this.public,
@@ -73,8 +73,8 @@ const Acc = class {
         return str([
             this.description,
             this.name,
-            this.img.cover,
             this.img.avatar,
+            this.img.cover,
             this.public,
             this.tag
         ])

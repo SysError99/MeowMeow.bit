@@ -771,6 +771,7 @@ const Receiver = class {
 
         if( typeof info.owner !== 'string' ||
             typeof info.position !== 'string' ||
+            typeof info.position !== 'number' ||
             typeof info.index !== 'number' )
             return __.MEDIA_STREAM_INFO_INVALID
 
