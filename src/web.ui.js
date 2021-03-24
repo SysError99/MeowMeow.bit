@@ -2,6 +2,7 @@
  * Web UI template
  */
 const FileSystem = require('fs')
+const { url } = require('inspector')
 
 const Return = require('./fn.try.return')
 
@@ -212,9 +213,9 @@ module.exports = {
     }</script>`,
 
     profile: async ({
-        name,
+        urlImgCover,
         urlImgAvatar,
-        altText,
+        name,
         description,
         pub,
         dateJoin,
@@ -223,9 +224,9 @@ module.exports = {
         let profile = extract(
             await FileSystem.promises.readFile(`${wDir}html/profile.html`, enc),
             [
-                'name',
+                'url-img-cover',
                 'url-img-avatar',
-                'alt-text',
+                'name',
                 'description',
                 'pub',
                 'date-join',
@@ -233,11 +234,15 @@ module.exports = {
             ]
         )
 
-        profile[1] = typeof name === 'string' ? name : ''
+        profile[1] = typeof urlImgCover === 'string' ? urlImgCover : '/web/img/snow.jpg'
         profile[3] = typeof urlImgAvatar === 'string' ? urlImgAvatar : ''
-        profile[5] = typeof altText === 'string' ? altText : ''
+        profile[5] = typeof name === 'string' ? name : ''
         profile[7] = typeof description === 'string' ? description : ''
-        profile[9] = typeof pub === 'string' ? pub : ''
+        profile[9] = typeof pub === 'string' ?
+            (pub.length > 26 ?
+                pub.slice(0, 26) + '\n' + pub.slice(27, pub.length)
+                : pub)
+            : ''
         profile[11] = typeof dateJoin === 'string' ? dateJoin : ''
         profile[13] = typeof followers === 'string' ? followers : ''
 

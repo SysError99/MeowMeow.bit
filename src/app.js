@@ -120,21 +120,22 @@ app.get('/account-list', async (req, res) => {
 
     res.send(WebUI.body({
         avatar: myAvatar,
-        bodyLeft:typeof acc === 'object' ?
-            await WebUI.profile({
-                name: acc.name,
-                urlImgAvatar: acc.img.profile.length > 0 ? 
-                    `./data/${acc.key.public}.profile.png`
-                    : '/web/img/avatar2.png',
-                description: acc.description,
-                pub: acc.key.public,
-                dateJoin: new Date().toUTCString(),
-                followers: '0'
+        body:
+            typeof acc === 'object' ?
+                await WebUI.profile({
+                    name: acc.name,
+                    urlImgAvatar: acc.img.profile.length > 0 ? 
+                        `./data/${acc.key.public}.profile.png`
+                        : '/web/img/avatar2.png',
+                    description: acc.description,
+                    pub: acc.key.public,
+                    dateJoin: new Date().toUTCString(),
+                    followers: '0'
+                })
+            : '' + 
+            await WebUI.accList({
+                list: accList
             })
-            : '',
-        body: await WebUI.accList({
-            list: accList
-        })
     }))
 })
 app.get('/account-create', async (req, res) => {

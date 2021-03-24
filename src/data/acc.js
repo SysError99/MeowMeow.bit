@@ -1,3 +1,5 @@
+const {str} = require('../fn.json')
+
 const SignKey = require('./key.sign')
 
 /** Account object, used for storing account data */
@@ -37,6 +39,9 @@ const Acc = class {
     /** @type {string[]} Account tags (for searching)*/
     tag = []
 
+    /** @type {string} Account signature*/
+    signature = ''
+
     /**
      * Export account base
      * @returns {Array}
@@ -47,8 +52,8 @@ const Acc = class {
             undefined,
             this.name,
             [
-                this.pic.cover,
-                this.pic.profile
+                this.img.cover,
+                this.img.profile
             ],
             this.posts,
             this.public,
@@ -81,6 +86,19 @@ const Acc = class {
      */
     new () {
         this.key = new SignKey()
+    }
+
+    signData () {
+        return str([
+            this.description,
+            this.name,
+            this.img.cover,
+            this.img.profile
+        ])
+    }
+
+    sign () {
+        this.signature = this.key.sign()
     }
 
     /**
