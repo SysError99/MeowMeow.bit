@@ -119,6 +119,7 @@ module.exports = {
         name,
         tag,
         avatar,
+        cover,
         public
     }) => {
         let accInfo = extract(
@@ -128,6 +129,7 @@ module.exports = {
                 'acc-name',
                 'acc-tag',
                 'acc-avatar',
+                'acc-cover',
                 'acc-public'
             ]
         )
@@ -136,7 +138,8 @@ module.exports = {
         accInfo[3] = typeof name === 'string' ? name : ''
         accInfo[5] = typeof tag === 'string' ? tag : ''
         accInfo[7] = typeof avatar === 'string' ? avatar : ''
-        accInfo[9] = typeof public === 'string' ? public : ''
+        accInfo[9] = typeof cover === 'string' ? cover : ''
+        accInfo[11] = typeof public === 'string' ? public : ''
 
         return accInfo.join('')
     },
@@ -203,6 +206,8 @@ module.exports = {
         size = 7 - Math.min(Math.max(size, 6), 1)
         return `<h${size} class="w3-center w3-opacity">${text}</h${size}>`
     },
+
+    image: ({location}) => `<img src="${location}" class="" style="height:100%;width:100%;" alt="Cover image">`,
 
     login: () => `<h2 class="w3-center w3-opacity"> Please choose your account, or create a new one </h2>`,
 

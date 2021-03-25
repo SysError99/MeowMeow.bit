@@ -145,7 +145,8 @@ app.get('/account-create', async (req, res) => {
         avatar: myAvatar,
         body: await WebUI.accInfo({
             pub: accInfo.key.public,
-            avatar: WebUI.header('No profile image specified')
+            avatar: WebUI.header('No profile image specified'), // LOCALE_NEEDED
+            cover: WebUI.header('No cover image specified') //LOCALE_NEEDED
         })
     }))
 })
@@ -165,9 +166,16 @@ app.get('/account-info/:pub', async (req,res) => {
             pub: acc.key.public,
             name: acc.name,
             tag: acc.tag.join(','),
-            avatar: accInfo.img.avatar.length > 0 ? WebUI.avatar({
-                url: `./data/${accInfo.key.public}.avatar.png`
-            }) : WebUI.header('No profile image specified')
+            avatar: accInfo.img.avatar.length > 0 ?
+                WebUI.avatar({
+                    url: `./data/${accInfo.key.public}.avatar.png`
+                })
+                : WebUI.header('No profile image specified'),
+            cover: accInfo.img.cover.length > 0 ? 
+                WebUI.image({
+                    location: `./data/${accInfo.key.public}.cover.png` // LOCALE_NEEDED
+                })
+                : WebUI.header('No cover image specified') // LOCALE_NEEDED
         })
          + accInfo.key.private.length <= 0 ?
         WebUI.header(
