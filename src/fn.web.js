@@ -19,6 +19,8 @@ const WebRequest = class {
     /** @type {boolean} This is 'WebRequest' object*/
     isWebRequest = true
 
+    /** @type {string} Request body */
+    body = ''
     /** @type {HTTP.IncomingHttpHeaders} Request headers*/
     header
     /** @type {HTTP.IncomingMessage} Unimplemented features live here*/
@@ -47,6 +49,8 @@ const WebRequest = class {
         this.header = req.headers
         this.url = req.url
 
+        if(typeof d.body === 'string')
+            this.body = d.body
         if(isAny(d.params))
             this.params = d.params
         if(isAny(d.query)) 
