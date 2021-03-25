@@ -45,6 +45,7 @@ const wBody = Return(() => {
         ),
         [
             `title`,
+            'head',
             `noti-number`,
             `noti-list`,
             'avatar',
@@ -174,6 +175,7 @@ module.exports = {
 
     body: ({
         title,
+        head,
         notiNumber,
         notiList,
         avatar,
@@ -183,15 +185,18 @@ module.exports = {
         script
     }) => {
         wBody[1] = typeof title === 'string' ? title : ''
-        wBody[3] = typeof notiNumber === 'string' ? notiNumber : ''
-        wBody[5] = typeof notiList === 'string' ? notiList : ''
-        wBody[7] = typeof avatar === 'string' ? avatar : ''
-        wBody[9] = typeof bodyLeft === 'string' ? bodyLeft + wBodyLeft : wBodyLeft
-        wBody[11] = typeof body === 'string' ? body : ''
-        wBody[13] = typeof bodyRight === 'string' ? bodyRight : ''
-        wBody[15] = typeof script === 'string' ? script : ''
+        wBody[3] = typeof head === 'string' ? head : ''
+        wBody[5] = typeof notiNumber === 'string' ? notiNumber : ''
+        wBody[7] = typeof notiList === 'string' ? notiList : ''
+        wBody[9] = typeof avatar === 'string' ? avatar : ''
+        wBody[11] = typeof bodyLeft === 'string' ? bodyLeft + wBodyLeft : wBodyLeft
+        wBody[13] = typeof body === 'string' ? body : ''
+        wBody[15] = typeof bodyRight === 'string' ? bodyRight : ''
+        wBody[17] = typeof script === 'string' ? script : ''
         return wBody.join('')
     },
+
+    css: location => `<link rel="stylesheet" href="${location}">`,
 
     extract: extract,
 
