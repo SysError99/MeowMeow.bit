@@ -261,7 +261,7 @@ module.exports = {
 
     postSubmit: () => wPostSubmit,
 
-    script: ({url}) => {
+    script: url => {
         wScript[1] = url
         return wScript.join('')
     }

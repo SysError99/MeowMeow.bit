@@ -91,9 +91,7 @@ app.get('/', (req,res) => {
     res.send(WebUI.body({
         avatar: myAvatar,
         body: WebUI.postSubmit(),
-        script: WebUI.script({
-            url: '/web/js/post-fetch.js'
-        })
+        script: WebUI.script('/web/js/post-fetch.js')
     }))
 })
 app.get('/me', (req, res) => {
@@ -142,12 +140,14 @@ app.get('/account-create', async (req, res) => {
     inHomePage = false
     accInfo = new Acc()
     res.send(WebUI.body({
+        head: WebUI.css('/web/css/croppie.css'),
         avatar: myAvatar,
         body: await WebUI.accInfo({
             pub: accInfo.key.public,
             avatar: WebUI.header('No profile image specified'), // LOCALE_NEEDED
             cover: WebUI.header('No cover image specified') //LOCALE_NEEDED
-        })
+        }),
+        script: WebUI.script('/web/js/croppie.js')
     }))
 })
 app.get('/account-info/:pub', async (req,res) => {
@@ -162,6 +162,7 @@ app.get('/account-info/:pub', async (req,res) => {
     accInfo = new Acc(await receiver.storage.promise.read(req.params.pub))
     res.send(WebUI.body({
         avatar: myAvatar,
+        head: WebUI.css('/web/css/croppie.css'),
         body: await WebUI.accInfo({
             pub: acc.key.public,
             name: acc.name,
@@ -182,7 +183,8 @@ app.get('/account-info/:pub', async (req,res) => {
             'This is not your account!' + 
             'Editing all of these may cause unexpected behaviors in the app.'
             ,6 // LOCALE_NEEDED
-        ) : ''
+        ) : '',
+        script: WebUI.script('/web/js/croppie.js')
     }))
 })
 app.post('/account-update', async (req, res) => {
