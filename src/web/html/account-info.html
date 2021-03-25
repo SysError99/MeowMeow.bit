@@ -1,31 +1,34 @@
 <!-- Creating account -->
 <div class="w3-row-padding">
-    <div class="w3-col m12">
+    <div>
         <div class="w3-card w3-round w3-white">
             <div class="w3-container w3-padding">
                 <h4 class="w3-opacity">Account Information</h4>
                 <h6 class="w3-opacity">Account Public Key:</h6>
-                {{acc-pub}}
+                <input type="text" value="{{acc-pub}}">
                 <h6 class="w3-opacity">Display  Name:</h6>
                 <p id="account-name" contenteditable="true" class="w3-border w3-padding">{{acc-name}}</p>
+                <h6 class="w3-opacity">Description:</h6>
+                <p id="account-description" contenteditable="true" class="w3-border w3-padding">{{acc-description}}</p>
                 <h6 class="w3-opacity">Tags:</h6>
                 <p id="account-tag" contenteditable="true" class="w3-border w3-padding">{{acc-tag}}</p>
                 <h6 class="w3-opacity">Set Profile Image:</h6>
                 {{acc-avatar}}
-                <input id="file" type="file">
+                <div id="croppie-avatar"></div>
+                <input id="file-avatar" type="file">
                 <br>
                 <h6 class="w3-opacity">Set Cover Image:</h6>
                 {{acc-cover}}
+                <img id="preview-cover" style="width: 100%;height: 100%;display: none;" src="">
                 <input id="file-cover" type="file">
                 <br><br>
                 <input type="checkbox" id="vehicle1" value="public" {{acc-public}}> Everyone can post on this (If you waaccounnt this account to be web board)
                 <br><br>
-                <button type="button" class="w3-button w3-theme" onclick="accountRemove()"><i class="fa fa-trash"></i>  Remove</button> 
-                <button type="button" class="w3-button w3-theme w3-right" onclick="accountSubmit()"><i class="fa fa-pen"></i>  Submit</button> 
+                <button type="button" class="w3-button w3-theme" onclick="accountRemove()"><i class="fa fa-trash"></i>  Remove</button>
+                <button type="button" class="w3-button w3-theme w3-right" onclick="accountSubmit()"><i class="fa fa-pen"></i>  Submit</button>
+                <img id="example" src="">
             </div>
         </div>
     </div>
 </div>
 <br>
-
-<!--TODO: create JavaScript to handle image upload & account adding-->

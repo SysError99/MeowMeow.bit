@@ -86,7 +86,7 @@ const Acc = class {
      */
     exportPub () {
         let e = this.exportBase()
-        e[2] = this.key.exportPub()
+        e[1] = this.key.exportPub()
         return e
     }
 
@@ -96,7 +96,7 @@ const Acc = class {
      */
     export () {
         let e = this.exportBase()
-        e[2] = this.key.export()
+        e[1] = this.key.export()
         return e
     }
 
@@ -143,10 +143,10 @@ const Acc = class {
 
         if(Array.isArray(d[3])){
             if(typeof d[3][0] === 'string')
-                this.pic.cover = d[3][0]
+                this.img.cover = d[3][0]
 
             if(typeof d[3][1] === 'string')
-                this.pic.profile = d[3][1]
+                this.img.profile = d[3][1]
         }
 
         if(typeof d[4] === 'number')

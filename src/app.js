@@ -107,7 +107,7 @@ app.get('/account-list', async (req, res) => {
             let accFound = new Acc(await receiver.storage.promise.read(accList[a]))
 
             accList[a] = WebUI.avatar({
-                url: accFound.img.avatar.length > 0 ? `./data/${accFound.key.public}.avatar.png` : '',
+                url: `./data/img/${accFound.key.public}.avatar.png`,
                 link: `/account-info/${accFound.key.public}`,
                 text: `${accFound.name}`
             })
@@ -132,7 +132,7 @@ app.get('/account-list', async (req, res) => {
                 })
             : '' + 
             await WebUI.accList({
-                list: accList
+                list: accList.join('')
             })
     }))
 })
@@ -147,7 +147,9 @@ app.get('/account-create', async (req, res) => {
             avatar: WebUI.header('No profile image specified'), // LOCALE_NEEDED
             cover: WebUI.header('No cover image specified') //LOCALE_NEEDED
         }),
-        script: WebUI.script('/web/js/croppie.js')
+        script:
+            WebUI.script('/web/js/croppie.js') +
+            WebUI.script('/web/js/account-info.js')
     }))
 })
 app.get('/account-info/:pub', async (req,res) => {
@@ -164,32 +166,98 @@ app.get('/account-info/:pub', async (req,res) => {
         avatar: myAvatar,
         head: WebUI.css('/web/css/croppie.css'),
         body: await WebUI.accInfo({
-            pub: acc.key.public,
-            name: acc.name,
-            tag: acc.tag.join(','),
-            avatar: accInfo.img.avatar.length > 0 ?
-                WebUI.avatar({
-                    url: `./data/${accInfo.key.public}.avatar.png`
-                })
-                : WebUI.header('No profile image specified'),
-            cover: accInfo.img.cover.length > 0 ? 
-                WebUI.image({
-                    location: `./data/${accInfo.key.public}.cover.png` // LOCALE_NEEDED
-                })
-                : WebUI.header('No cover image specified') // LOCALE_NEEDED
-        })
-         + accInfo.key.private.length <= 0 ?
-        WebUI.header(
-            'This is not your account!' + 
-            'Editing all of these may cause unexpected behaviors in the app.'
-            ,6 // LOCALE_NEEDED
-        ) : '',
-        script: WebUI.script('/web/js/croppie.js')
+            pub: accInfo.key.public,
+            name: accInfo.name,
+            description: accInfo.description,
+            tag: accInfo.tag.join(','),
+            avatar: WebUI.image({
+                location: `/data/img/${accInfo.key.public}.avatar.png`
+            }),
+            cover: WebUI.image({
+                location: `/data/img/${accInfo.key.public}.cover.png`
+            }),
+        }),
+        script:
+            WebUI.script('/web/js/croppie.js') + 
+            WebUI.script('/web/js/account-info.js')
     }))
 })
+app.post('/account-temp-avatar', async (req,res) => {
+    req.body = Buffer.from(req.body.split(';base64,')[1], 'base64') 
+    await FileSystem.promises.writeFile(
+        `./data/temp.avatar.png`,
+        req.body,
+        {encoding: 'binary'}
+    )
+    res.send('Uploaded!')
+})
 app.post('/account-update', async (req, res) => {
-    res.send('UNIMPLEMENTED')
-    // TODO: Create or update account info.
+    if(typeof accInfo === 'undefined'){
+        res.status(401)
+        res.send('no accounts assinged')
+        return
+    }
+
+    if(Try(() => req.body = json(req.body))){
+        res.status(400)
+        res.send('arguments invaild')
+        return
+    }
+
+    if(
+        typeof req.body.name !== 'string' ||
+        typeof req.body.description !== 'string' ||
+        typeof req.body.tag !== 'string' ||
+        typeof req.body.avatar !== 'string' ||
+        typeof req.body.cover !== 'string'
+    ){
+        res.status(400)
+        res.send('arguments invalid')
+        return
+    }
+
+    let accList = await receiver.storage.promise.read('accounts')
+    let encoding = {encoding: 'binary'}
+    let a = 0
+
+    accInfo.name = req.body.name
+    accInfo.description = req.body.description
+    accInfo.tag = req.body.tag.split(',')
+
+    await FileSystem.promises.writeFile(
+        `./data/${accInfo.key.public}.avatar.png`,
+        Buffer.from(
+            req.body.avatar.split(';base64,')[1],
+            'base64'
+        ),
+        encoding
+    )
+    await FileSystem.promises.writeFile(
+        `./data/${accInfo.key.public}.cover.png`,
+        Buffer.from(
+            req.body.cover.split(';base64,')[1],
+            'base64'
+        ),
+        encoding
+    )
+
+    // TODO: sign avatar and cover image, then add to accInfo
+    accInfo.sign()
+
+    while(a < accList.length){
+        if(accList[a] === accInfo.key.public)
+            break
+
+        a++
+    }
+
+    if(a >= accList.length){
+        accList.push(accInfo.key.public)
+        receiver.storage.promise.write('accounts', accList)
+    }
+
+    receiver.storage.write(accInfo.key.public, accInfo.export())
+    res.send('success')
 })
 app.get('/timeline', (req, res) => {
     inHomePage = false
@@ -216,7 +284,7 @@ app.get('/:location/:type/:file', async (req, res) => {
     /** @type {string} */
     let fileLocation
 
-    switch(req.params.locaton){
+    switch(req.params.location){
         case 'web':
             fileLocation = WebUI.dir() + req.params.type + '/' + req.params.file
             break
@@ -225,8 +293,6 @@ app.get('/:location/:type/:file', async (req, res) => {
             fileLocation = './data/' + req.params.file
             break
     }
-
-    fileLocation = WebUI.dir() + req.params.type + '/' + req.params.file
 
     if(Try(() => FileSystem.accessSync(fileLocation)))
         return app.ev404.callback(res)

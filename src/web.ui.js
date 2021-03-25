@@ -2,7 +2,6 @@
  * Web UI template
  */
 const FileSystem = require('fs')
-const { url } = require('inspector')
 
 const Return = require('./fn.try.return')
 
@@ -118,6 +117,7 @@ module.exports = {
     accInfo: async ({
         pub,
         name,
+        description,
         tag,
         avatar,
         cover,
@@ -128,6 +128,7 @@ module.exports = {
             [
                 'acc-pub',
                 'acc-name',
+                'acc-description',
                 'acc-tag',
                 'acc-avatar',
                 'acc-cover',
@@ -137,10 +138,11 @@ module.exports = {
 
         accInfo[1] = typeof pub === 'string' ? pub : ''
         accInfo[3] = typeof name === 'string' ? name : ''
-        accInfo[5] = typeof tag === 'string' ? tag : ''
-        accInfo[7] = typeof avatar === 'string' ? avatar : ''
-        accInfo[9] = typeof cover === 'string' ? cover : ''
-        accInfo[11] = typeof public === 'string' ? public : ''
+        accInfo[5] = typeof description === 'string' ? description : ''
+        accInfo[7] = typeof tag === 'string' ? tag : ''
+        accInfo[9] = typeof avatar === 'string' ? avatar : ''
+        accInfo[11] = typeof cover === 'string' ? cover : ''
+        accInfo[13] = typeof public === 'string' ? public : ''
 
         return accInfo.join('')
     },
@@ -212,7 +214,7 @@ module.exports = {
         return `<h${size} class="w3-center w3-opacity">${text}</h${size}>`
     },
 
-    image: ({location}) => `<img src="${location}" class="" style="height:100%;width:100%;" alt="Cover image">`,
+    image: ({location}) => `<img src="${location}" class="" style="height:100%;width:100%;" alt="Image">`,
 
     login: () => `<h2 class="w3-center w3-opacity"> Please choose your account, or create a new one </h2>`,
 
