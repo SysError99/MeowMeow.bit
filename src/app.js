@@ -32,8 +32,8 @@ if(FileSystem.readdirSync('./data/').length <= FileSystem.readdirSync('./default
 }
 
 const __ = require('./const')
-//const BaseN = require('./fn.base.n')
-//const Crypt = require('./fn.crypt')
+const BaseN = require('./fn.base.n')
+const Crypt = require('./fn.crypt')
 const Receiver = require('./fn.receiver')
 const Try = require('./fn.try.catch')
 const Return = require('./fn.try.return')
@@ -217,31 +217,39 @@ app.post('/account-update', async (req, res) => {
     }
 
     let accList = await receiver.storage.promise.read('accounts')
+    let avatarFile = `./data/${accInfo.key.public}.avatar.png`
+    let coverFile = `./data/${accInfo.key.public}.cover.png`
     let encoding = {encoding: 'binary'}
     let a = 0
 
-    accInfo.name = req.body.name
-    accInfo.description = req.body.description
-    accInfo.tag = req.body.tag.split(',')
+    accInfo.name = req.body.name.slice(0,32)
+    accInfo.description = req.body.description.slice(0,144)
+    accInfo.tag = req.body.tag.slice(0,16).split(',')
 
-    await FileSystem.promises.writeFile(
-        `./data/${accInfo.key.public}.avatar.png`,
-        Buffer.from(
-            req.body.avatar.split(';base64,')[1],
-            'base64'
-        ),
-        encoding
-    )
-    await FileSystem.promises.writeFile(
-        `./data/${accInfo.key.public}.cover.png`,
-        Buffer.from(
-            req.body.cover.split(';base64,')[1],
-            'base64'
-        ),
-        encoding
-    )
+    if(req.body.avatar.length > 0){
+        await FileSystem.promises.writeFile(
+            avatarFile,
+            Buffer.from(
+                req.body.avatar.split(';base64,')[1],
+                'base64'
+            ),
+            encoding
+        )
+        accInfo.img.avatar = Crypt.hash(avatarFile)
+    }
 
-    // TODO: sign avatar and cover image, then add to accInfo
+    if(req.body.cover.length > 0){
+        await FileSystem.promises.writeFile(
+            coverFile,
+            Buffer.from(
+                req.body.cover.split(';base64,')[1],
+                'base64'
+            ),
+            encoding
+        )
+        accInfo.img.cover = Crypt.hash(coverFile)
+    }
+
     accInfo.sign()
 
     while(a < accList.length){

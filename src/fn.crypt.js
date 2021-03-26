@@ -2,6 +2,7 @@
  * Encrpytion module, separeted from Crpyto for the case of encryption method changes.
  */
 const Crypto = require('crypto')
+const FileSystem = require('fs')
 
 const BaseN = require('./fn.base.n')
 
@@ -118,6 +119,27 @@ const ecdh = {
     computeSecret: (ecdh, public) => ecdh.computeSecret(public).slice(32,64)
 
 }
+/**
+ * Perform file hashing
+ * @param {string} file File location to be hashed
+ */
+const hash = file => new Promise(resolve => {
+    let hash = Crypto.createHash('sha256')
+    let stream = FileSystem.createReadStream(file)
+
+    stream.on('error', err => {
+        console.error(new Error(err))
+        resolve(undefined)
+    })
+    stream.on('data', chunk => {
+        hash.update(chunk)
+    })
+    stream.on('end', () => {
+        stream.close()
+        resolve(BaseN.encode(hash.digest(), '92'))
+    })
+})
+
 const sect571k1 = {
 
     /**
@@ -189,6 +211,7 @@ const symmetric = {
 module.exports = {
 
     ecdh: ecdh,
+    hash: hash,
     newKey: keyCreator,
     sect571k1, sect571k1,
     sign: sign,
