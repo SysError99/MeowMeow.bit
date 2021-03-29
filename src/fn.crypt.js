@@ -122,6 +122,7 @@ const ecdh = {
 /**
  * Perform file hashing
  * @param {string} file File location to be hashed
+ * @return {Promise<string>}
  */
 const hash = file => new Promise(resolve => {
     let hash = Crypto.createHash('sha256')

@@ -235,7 +235,7 @@ app.post('/account-update', async (req, res) => {
             ),
             encoding
         )
-        accInfo.img.avatar = Crypt.hash(avatarFile)
+        accInfo.img.avatar = await Crypt.hash(avatarFile)
     }
 
     if(req.body.cover.length > 0){
@@ -247,7 +247,7 @@ app.post('/account-update', async (req, res) => {
             ),
             encoding
         )
-        accInfo.img.cover = Crypt.hash(coverFile)
+        accInfo.img.cover = await Crypt.hash(coverFile)
     }
 
     accInfo.sign()
