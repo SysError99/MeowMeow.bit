@@ -142,11 +142,11 @@ const Acc = class {
             this.name = d[2]
 
         if(Array.isArray(d[3])){
+            if(typeof d[3][1] === 'string')
+                this.img.avatar = d[3][1]
+
             if(typeof d[3][0] === 'string')
                 this.img.cover = d[3][0]
-
-            if(typeof d[3][1] === 'string')
-                this.img.profile = d[3][1]
         }
 
         if(typeof d[4] === 'number')
