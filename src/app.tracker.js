@@ -140,6 +140,7 @@ udp.on('message', (msg, remote) => {
 
                 let payload = peer.key.encrypt(str( [`sendpub`, peerToAnnounce.ip, peerToAnnounce.port, BaseN.encode(peerToAnnounce.pub, '62')] ))
                 let payload2  = peerToAnnounce.key.encrypt(str( [`sendrand`, remote.address, remote.port] ))
+
                 udp.send(payload, 0, payload.length, remote.port, remote.address, showError)
                 udp.send(payload2, 0, payload2.length, peerToAnnounce.port, peerToAnnounce.ip, showError)
                 console.log(`Announce ${remote.address}:${remote.port} -> ${peerToAnnounce.ip}:${peerToAnnounce.port}`)
@@ -147,8 +148,8 @@ udp.on('message', (msg, remote) => {
             }
             
             let unknownPeerMessage = peer.key.encrypt(str( [`unknown`, message[1]] ))
-            udp.send(unknownPeerMessage, 0, unknownPeerMessage.length, remote.port, remote.address, showError)
 
+            udp.send(unknownPeerMessage, 0, unknownPeerMessage.length, remote.port, remote.address, showError)
             console.log(`Announce Request ${remoteAddress} -> ${message[1]}`)
             return
 
