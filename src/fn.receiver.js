@@ -299,7 +299,7 @@ const Receiver = class {
      * @param {Datagram.RemoteInfo} remote Remote info
      * @param {Peer} peer Peer sent this
      */
-    handlePeerMessage (message, remote, peer) {
+    async handlePeerMessage (message, remote, peer) {
         if(message.length === 0){
             peer.lastAccess = currentTime
             return
@@ -338,18 +338,23 @@ const Receiver = class {
             if(peer.mediaStream >= 0){
                 // Streaming media
                 if(message[0] === 255 && message[1] === 255){
-                    if(!peer.closeMediaStream()){
-                        let mediaStreamCloseErrorMessage = peer.key.encrypt(str( [__.MEDIA_STREAM_PEER_ERR] ))
+                    let dataReceivedSignature = await Crypt.hash(peer.getMediaStreamTempLocation())
 
-                        this.socket.send(mediaStreamCloseErrorMessage, 0, mediaStreamCloseErrorMessage.length, peer.port, peer.ip, showError)
+                    if(dataReceivedSignature === peer.getMediaStreamHash()){
+                        let mediaAcceptMessage = peer.key.encrypt(str( [__.MEDIA_STREAM_ACCEPTED] ))
+
+                        this.socket.send(mediaAcceptMessage, 0, mediaAcceptMessage.length, peer.port, peer.ip, showError)
+                        
+                        if(!peer.closeMediaStream()){
+                            let mediaStreamCloseErrorMessage = peer.key.encrypt(str( [__.MEDIA_STREAM_PEER_ERR] ))
+    
+                            this.socket.send(mediaStreamCloseErrorMessage, 0, mediaStreamCloseErrorMessage.length, peer.port, peer.ip, showError)
+                        }
                         return
                     }
-
-                    //TODO: verify file signature
-                    let mediaAcceptMessage = peer.key.encrypt(str( [__.MEDIA_STREAM_ACCEPTED] ))
-
-                    this.socket.send(mediaAcceptMessage, 0, mediaAcceptMessage.length, peer.port, peer.ip, showError)
-                    return
+                    else
+                        //set packet bigger that accepted rate to trigger decline
+                        peer.mediaStreamPacketsReceived = peer.mediaStreamPacketsTotal + 1
                 }
     
                 if(peer.mediaStreamPacketsReceived > peer.mediaStreamPacketsTotal){
@@ -447,7 +452,7 @@ const Receiver = class {
      * @param {Datagram.RemoteInfo} remote Remote Info
      * @param {Tracker} tracker Tracker have sen message
      */
-    handleTrackerMessage (message, remote, tracker) {
+    async handleTrackerMessage (message, remote, tracker) {
         if(Try(() => message = json(tracker.key.decryptToString(message)))){
             let trackerPub = tracker.myPub
 
@@ -618,7 +623,7 @@ const Receiver = class {
      * @param {Datagram.RemoteInfo} remote 
      * @param {Peer} peer 
      */
-    handleBadPeer (message, remote, peer) {
+    async handleBadPeer (message, remote, peer) {
         if(peer.isSender){
             this.deletePeer(peer)
             this.handleSocketMessage(message, remote)

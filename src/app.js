@@ -479,6 +479,8 @@ const receiver = new Receiver((peer, result) => {
             /**
              * !! UNSTABLE, NOT TESTED !!
              * 
+             * Sending media stream request
+             * 
              * [3]:number media index
              * [4]:number media total packets that will be received
              */
@@ -492,33 +494,38 @@ const receiver = new Receiver((peer, result) => {
             if(data[4].length > __.MAX_PAYLOAD || data[4].length > 65536)
                 return receiver.send(peer, [__.MEDIA_STREAM_FILE_TOO_LARGE])
             
-            let mediaPostLocation = `${data[0]}.${data[1]}`
-            let mediaLocation = data[0] + data[1]
+            /** @type {string} */
+            let mediaHash
+            let mediaLocation = `${data[0]}.${data[1]}`
+
+            if(!receiver.storage.access(mediaLocation))
+                return
             
             switch(data[1]){
                 case 'avatar':
                 case 'cover':
+                    mediaHash = new Acc(receiver.storage.read(data[0])).img[data[1]]
+                    mediaLocation += '.png'
                     break
 
                 default:
-                    mediaLocation += `.media.${data[3]}`
+                    if(!receiver.storage.access(mediaLocation))
+                        return receiver.send(peer, [__.MEDIA_STREAM_POST_NOT_FOUND])
+
+                    let postToCheckMedia = new Post(receiver.storage.read(mediaLocation))
+
+                    mediaHash = postToCheckMedia.media[data[3]]
+                    mediaLocation += `.${data[3]}.${postToCheckMedia.mediaType[data[3]]}`
                     break
             }
-            
 
-            if(!receiver.storage.access(mediaPostLocation))
-                return receiver.send(peer, [__.MEDIA_STREAM_POST_NOT_FOUND])
-
-            let postMediaFile = receiver.storage.read(mediaPostLocation)
-            let postMedia = new Post(postMediaFile)
-
-            if(typeof postMedia.media[data[3]] === `undefined`) //no such media ever logged
+            if(!mediaHash)
                 return receiver.send(peer, [__.MEDIA_STREAM_NO_MEDIA])
 
-            if(receiver.storage.access(mediaLocation)) //media exists
+            if(receiver.storage.access(mediaLocation))
                 return receiver.send(peer, [__.MEDIA_STREAM_MEDIA_FOUND])
 
-            peer.openMediaStream(mediaLocation, data[4])
+            peer.openMediaStream(mediaLocation, mediaHash, data[4])
             receiver.send(peer, [__.MEDIA_STREAM_READY])
             return
 
