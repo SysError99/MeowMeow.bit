@@ -37,6 +37,38 @@ const promise = {
     }
 }
 
+/** Binary file mode */
+const bin = {
+    /**
+     * Check if the file exists.
+     * @param {string} location Location to be check for existing files
+     * @returns {boolean} If specified file has been found on disk
+     */
+    access: location => !Try(() => FileSystem.accessSync(P.a + location)),
+
+    /**
+     * Remove file from storage
+     * @param {string} location Location of the file to be removed
+     * @returns {boolean} Did the file been successfully removed
+     */
+    remove: location => Try(() => FileSystem.rmSync(P.a + location)),
+
+    /**
+     * Retrieve a file from storage
+     * @param {string} location File location
+     * @returns {Buffer} Result of a read JSON
+     */
+    read: location => Return(() => json(FileSystem.readFileSync(P.a + location, {encoding:'binary'}))),
+
+    /**
+     * Write an object to storage
+     * @param {string} location File location
+     * @param {Buffer} data JSON data object
+     * @returns {boolean} Result of a read JSON
+     */
+    write: (location, data) => Try(() => FileSystem.writeFileSync(P.a + location, data, {encoding:'binary'}))
+}
+
 /**
  * Check if the file exists.
  * @param {string} location Location to be check for existing files
@@ -64,13 +96,14 @@ const read = location => Return(() => json(FileSystem.readFileSync(P.a + locatio
  * @param {Object} data JSON data object
  * @returns {boolean} Result of a read JSON
  */
-const write = (location, data) => Try(() => FileSystem.writeFileSync(P.a + location + P.b,typeof data === 'object' ? str(data) : data, {encoding:'utf-8'}))
+const write = (location, data) => Try(() => FileSystem.writeFileSync(P.a + location + P.b, typeof data === 'object' ? str(data) : data, {encoding:'utf-8'}))
 
 /** Shared storage module*/
 const storage = {
     /** @type {Locale} Locale object, will be retreived from server*/
     locale: undefined,
     promise: promise,
+    bin: bin,
     access: access,
     read: read,
     remove: remove,
