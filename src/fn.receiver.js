@@ -765,8 +765,8 @@ const Receiver = class {
      * @param {Peer} peer Peer to send file to
      * @param {{
      *   owner:string,
-     *   position:string,
-     *   index:number
+     *   index:number|string,
+     *   media:number
      * }} info Media Information
      * @returns {Promise<Number>}
      */
@@ -775,14 +775,24 @@ const Receiver = class {
             return __.MEDIA_STREAM_INFO_INVALID
 
         if( typeof info.owner !== 'string' ||
-            typeof info.position !== 'string' ||
-            typeof info.position !== 'number' ||
-            typeof info.index !== 'number' )
+            typeof info.index !== 'number' ||
+            typeof info.index !== 'string' ||
+            typeof info.media !== 'number' )
             return __.MEDIA_STREAM_INFO_INVALID
 
-        let fileLocation = `./data/${info.owner}.${info.position}.media.${info.index}`
+        let fileLocation = `./data/${info.owner}.${info.index}`
         /** @type {FileSystem.Stats} */
         let fileStats
+
+        switch(info.media){
+            case 'avatar':
+            case 'cover':
+                fileLocation += '.png'
+                break
+            
+            default:
+                fileLocation += `.${info.media}`
+        }
 
         if(Try(() => FileSystem.accessSync(fileLocation)))
             return __.MEDIA_STREAM_FILE_NOT_FOUND
@@ -801,46 +811,49 @@ const Receiver = class {
         /** @type {NodeJS.Timeout} */
         let fileStreamTimeout
         let fileStreamResolver = resolve => {
-            if(typeof fileStreamStatus !== 'undefined'){
-                clearTimeout(fileStreamTimeout)
-                resolve(fileStreamStatus)
-                fileStreamTimeout = undefined
-                fileStreamStatus = undefined
-            }
+            clearTimeout(fileStreamTimeout)
+            resolve(fileStreamStatus)
+            fileStreamTimeout = undefined
         }
-        let fileStreamAwaiter = () => new Promise(fileStreamResolver)
+        let fileStreamAwaiter = time => {
+            fileStreamTimeout = setTimeout(() => {
+                fileStreamStatus = __.MEDIA_STREAM_TIME_OUT
+                fileStreamResolver()
+            }, time)
+
+            return new Promise(fileStreamResolver)
+        }
         let mediaSendMessage = peer.key.encrypt(
             str([
                 info.owner,
-                info.position,
-                'media',
                 info.index,
+                'media',
+                typeof info.media === 'number' ? info.media : 0,
                 Math.ceil(fileStats.size / 1024)
             ])
         )
-
         let fileStreamResendCount = 0
         /** @type {Buffer} */
         let fileStreamMissedPacket
-        /** @type {number} */
-        let peerResponse
 
         peer.mediaStreamCb = message => {
+            if(fileStreamStatus === __.MEDIA_STREAM_DECLINED)
+                return
+
             fileStreamStatus = message[0]
             fileStreamResolver()
         }
 
-        fileStreamTimeout = setTimeout(() => {
-            fileStreamStatus = __.MEDIA_STREAM_TIME_OUT
-            fileStreamResolver()
-        }, 8000)
         this.socket.send(mediaSendMessage, 0, mediaSendMessage.length, peer.port, peer.ip, showError)
-        peerResponse = await fileStreamAwaiter()
 
-        if(peerResponse !== __.MEDIA_STREAM_READY)
-            return peerResponse
+        if(await fileStreamAwaiter(8000) !== __.MEDIA_STREAM_READY)
+            return fileStreamStatus
 
         while(true){
+            if(fileStreamStatus === __.MEDIA_STREAM_DECLINED)
+                // peer declined the package
+                return fileStreamStatus
+
             if(fileStreamResendCount > __.MAX_TRIAL){
                 //Too many resends, cancel package
                 let mediaCancelMessage = peer.key.encrypt(Buffer.from([255,255]))
@@ -849,14 +862,10 @@ const Receiver = class {
                 return __.MEDIA_STREAM_TIME_OUT
             }
 
-            if(fileStreamStatus === __.MEDIA_STREAM_DECLINED)
-                // peer declined the package
-                return __.MEDIA_STREAM_DECLINED
-
-            // If peer missed the package, send the old one
             if(typeof fileStreamMissedPacket === 'undefined')
                 fileStreamByte = fileStream.read(__.MTU)
             else{
+                // If peer missed the package, send the old one
                 fileStreamByte = fileStreamMissedPacket
                 fileStreamMissedPacket = undefined
             }
@@ -875,28 +884,26 @@ const Receiver = class {
             )
 
             this.socket.send(mediaStream, 0, mediaStream.length, peer.port, peer.ip, showError)
-            fileStreamTimeout = setTimeout(() => {
-                fileStreamStatus = __.MEDIA_STREAM_TIME_OUT
-                fileStreamResolver()
-            }, 10000)
+            
 
-            if(await fileStreamAwaiter() === __.MEDIA_STREAM_TIME_OUT){
+            if(await fileStreamAwaiter(10000) === __.MEDIA_STREAM_TIME_OUT){
                 fileStreamMissedPacket = fileStreamByte
                 fileStreamResendCount++
                 continue
             }
-
-            fileStreamResendCount = 0
-
-            if(fileStreamIndex1 < 255)
-                fileStreamIndex1++
             else{
-                fileStreamIndex1 = 0
+                fileStreamResendCount = 0
 
-                if(fileStreamIndex0 < 255)
-                    fileStreamIndex0++
-                else
-                    break
+                if(fileStreamIndex1 < 255)
+                    fileStreamIndex1++
+                else{
+                    fileStreamIndex1 = 0
+
+                    if(fileStreamIndex0 < 255)
+                        fileStreamIndex0++
+                    else
+                        break
+                }
             }
         }
 
@@ -906,11 +913,8 @@ const Receiver = class {
             // wait for peer to accept the packet
             if(fileStreamResendCount > __.MAX_TRIAL)
                 return __.MEDIA_STREAM_TIME_OUT
-
-            fileStreamTimeout = setTimeout(() => {
-                fileStreamStatus = __.MEDIA_STREAM_TIME_OUT
-                fileStreamResolver()
-            }, 10000)
+            else
+                fileStreamResendCount++
 
             let endOfFileMessage = peer.key.encrypt(
                 Buffer.concat([
@@ -928,15 +932,13 @@ const Receiver = class {
                 showError
             )
 
-            peerResponse = await fileStreamAwaiter()
-
-            if(peerResponse === __.MEDIA_STREAM_TIME_OUT)
+            if(await fileStreamAwaiter(10000) === __.MEDIA_STREAM_TIME_OUT)
                 continue
             else
                 break
         }
 
-        return peerResponse
+        return fileStreamStatus
     }
 
     /**

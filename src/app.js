@@ -386,7 +386,7 @@ const receiver = new Receiver((peer, result) => {
         typeof data[2] !== 'string' )
         return
 
-    if(!receiver.storage.access(`${data[0]}`)) // account not exist
+    if(!receiver.storage.access(data[0])) // account not exist
         return
 
     switch(data[2]){
@@ -488,6 +488,7 @@ const receiver = new Receiver((peer, result) => {
                 return receiver.send(peer, [__.MEDIA_STREAM_NOT_READY])
 
             if( typeof data[3] !== 'number' ||
+                typeof data[3] !== 'string' ||
                 typeof data[4] !== 'number' )
                 return receiver.send(peer, [__.MEDIA_STREAM_INFO_INVALID])
 
@@ -498,9 +499,6 @@ const receiver = new Receiver((peer, result) => {
             let mediaHash
             let mediaLocation = `${data[0]}.${data[1]}`
 
-            if(!receiver.storage.access(mediaLocation))
-                return
-            
             switch(data[1]){
                 case 'avatar':
                 case 'cover':
@@ -512,17 +510,15 @@ const receiver = new Receiver((peer, result) => {
                     if(!receiver.storage.access(mediaLocation))
                         return receiver.send(peer, [__.MEDIA_STREAM_POST_NOT_FOUND])
 
-                    let postToCheckMedia = new Post(receiver.storage.read(mediaLocation))
-
-                    mediaHash = postToCheckMedia.media[data[3]]
-                    mediaLocation += `.${data[3]}.${postToCheckMedia.mediaType[data[3]]}`
+                    mediaHash = new Post(receiver.storage.read(mediaLocation)).media[data[3]]
+                    mediaLocation += `.${data[3]}`
                     break
             }
 
             if(!mediaHash)
                 return receiver.send(peer, [__.MEDIA_STREAM_NO_MEDIA])
 
-            if(receiver.storage.access(mediaLocation))
+            if(receiver.storage.bin.access(mediaLocation))
                 return receiver.send(peer, [__.MEDIA_STREAM_MEDIA_FOUND])
 
             peer.openMediaStream(mediaLocation, mediaHash, data[4])
