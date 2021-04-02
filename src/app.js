@@ -77,6 +77,8 @@ let myAvatar = Return(loadMyAvatar)
 
 /** HTTP web front-end app object*/
 const app = new Web()
+
+// --- GET ---
 app.get('/', (req,res) => {
     if(!inHomePage)
         inHomePage = true
@@ -183,6 +185,28 @@ app.get('/account-info/:pub', async (req,res) => {
             WebUI.script('/web/js/account-info.js')
     }))
 })
+app.get('/timeline', (req, res) => {
+    inHomePage = false
+
+    if(acc === undefined)
+        return res.send(WebUI.login())
+
+    let currentPostLocation = `${acc.key.public}.timeline.${currentTimelinePost}`
+
+    if(!receiver.storage.access(currentPostLocation))
+        return res.send('Storage Access Error.') //LOCALE_NEEDED
+
+    res.send('UNIMPLEMENTED')
+    // let postPointer = new PostPointer(receiver.storage.read(currentPostLocation))
+    // TODO: render timeline post
+})
+app.get('/post/:pub/:number', (req, res) => {
+    inHomePage = false
+    res.send('UNIMPLEMENTED')
+    // TODO: render specified post
+})
+
+// --- POST ---
 app.post('/account-temp-avatar', async (req,res) => {
     req.body = Buffer.from(req.body.split(';base64,')[1], 'base64') 
     await FileSystem.promises.writeFile(
@@ -271,26 +295,8 @@ app.post('/account-update', async (req, res) => {
     receiver.storage.write(accInfo.key.public, accInfo.export())
     res.send('success')
 })
-app.get('/timeline', (req, res) => {
-    inHomePage = false
 
-    if(acc === undefined)
-        return res.send(WebUI.login())
-
-    let currentPostLocation = `${acc.key.public}.timeline.${currentTimelinePost}`
-
-    if(!receiver.storage.access(currentPostLocation))
-        return res.send('Storage Access Error.') //LOCALE_NEEDED
-
-    res.send('UNIMPLEMENTED')
-    // let postPointer = new PostPointer(receiver.storage.read(currentPostLocation))
-    // TODO: render timeline post
-})
-app.get('/post/:pub/:number', (req, res) => {
-    inHomePage = false
-    res.send('UNIMPLEMENTED')
-    // TODO: render specified post
-})
+// --- File Server ---
 app.get('/:location/:type/:file', async (req, res) => {
     //File server
     /** @type {string} */
