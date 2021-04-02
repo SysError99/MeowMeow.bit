@@ -6,6 +6,7 @@ let fileAvatar = document.getElementById('file-avatar')
 let fileCover = document.getElementById('file-cover')
 /** @type {HTMLImageElement} */
 let previewCover = document.getElementById('preview-cover')
+let previewCoverOrig = previewCover.src
 /**
  * @param {Event} event 
  * @param {string} target
@@ -82,7 +83,7 @@ let fileEvent = (event, target) => {
                             }
                         )
                         croppie.bind({
-                            url: `/data/img/temp.avatar.png?cache=${Math.floor(Math.random() * 1048576)}`
+                            url: `/data/png/temp.avatar?cache=${Math.floor(Math.random() * 1048576)}`
                         })
                     }
                 }
@@ -110,10 +111,10 @@ const accountSubmit = async () => {
     req.onreadystatechange = () => {
         if(req.readyState === 4 ){
             if(req.status === 200){
-                alert('Account creation completed!')
+                alert('Account updated!')
                 window.location = '/account-list'
             }else
-                alert('Account creation failed: ' + req.status)
+                alert('Account update failed: ' + req.status)
         }
     }
     req.send(JSON.stringify(
@@ -122,7 +123,7 @@ const accountSubmit = async () => {
             description: accDescription,
             tag: accTag,
             avatar: accAvatar,
-            cover: previewCover.src
+            cover: previewCover.src === previewCoverOrig ? '' : previewCover.src
         }
     ))
 }

@@ -44,6 +44,7 @@ const {json, str} = require('./fn.json')
 const Acc = require('./data/acc')
 const Post = require('./data/post')
 const PostLike = require('./data/post.like')
+const { captureRejectionSymbol } = require('events')
 //const PostPointer = require('./data/post.pointer')
 
 /** @type {string[]} List of all notifications*/
@@ -107,7 +108,7 @@ app.get('/account-list', async (req, res) => {
             let accFound = new Acc(await receiver.storage.promise.read(accList[a]))
 
             accList[a] = WebUI.avatar({
-                url: `./data/img/${accFound.key.public}.avatar.png`,
+                url: `./data/png/${accFound.key.public}.avatar`,
                 link: `/account-info/${accFound.key.public}`,
                 text: `${accFound.name}`
             })
@@ -123,7 +124,7 @@ app.get('/account-list', async (req, res) => {
                 await WebUI.profile({
                     name: acc.name,
                     urlImgAvatar: acc.img.avatar.length > 0 ? 
-                        `./data/${acc.key.public}.profile.png`
+                        `./data/${acc.key.public}.profile`
                         : '/web/img/avatar2.png',
                     description: acc.description,
                     pub: acc.key.public,
@@ -171,10 +172,10 @@ app.get('/account-info/:pub', async (req,res) => {
             description: accInfo.description,
             tag: accInfo.tag.join(','),
             avatar: WebUI.image({
-                location: `/data/img/${accInfo.key.public}.avatar.png`
+                location: `/data/png/${accInfo.key.public}.avatar`
             }),
             cover: WebUI.image({
-                location: `/data/img/${accInfo.key.public}.cover.png`
+                location: `/data/png/${accInfo.key.public}.cover`
             }),
         }),
         script:
@@ -185,7 +186,7 @@ app.get('/account-info/:pub', async (req,res) => {
 app.post('/account-temp-avatar', async (req,res) => {
     req.body = Buffer.from(req.body.split(';base64,')[1], 'base64') 
     await FileSystem.promises.writeFile(
-        `./data/temp.avatar.png`,
+        `./data/temp.avatar`,
         req.body,
         {encoding: 'binary'}
     )
@@ -217,8 +218,8 @@ app.post('/account-update', async (req, res) => {
     }
 
     let accList = await receiver.storage.promise.read('accounts')
-    let avatarFile = `./data/${accInfo.key.public}.avatar.png`
-    let coverFile = `./data/${accInfo.key.public}.cover.png`
+    let avatarFile = `./data/${accInfo.key.public}.avatar`
+    let coverFile = `./data/${accInfo.key.public}.cover`
     let encoding = {encoding: 'binary'}
     let a = 0
 
@@ -226,11 +227,14 @@ app.post('/account-update', async (req, res) => {
     accInfo.description = req.body.description.slice(0,144)
     accInfo.tag = req.body.tag.slice(0,16).split(',')
 
-    if(req.body.avatar.length > 0){
+    req.body.avatar = req.body.avatar.split(';base64,')
+    req.body.cover = req.body.cover.split(';base64,')
+
+    if(req.body.avatar.length > 1){
         await FileSystem.promises.writeFile(
             avatarFile,
             Buffer.from(
-                req.body.avatar.split(';base64,')[1],
+                req.body.avatar[1],
                 'base64'
             ),
             encoding
@@ -238,11 +242,11 @@ app.post('/account-update', async (req, res) => {
         accInfo.img.avatar = await Crypt.hash(avatarFile)
     }
 
-    if(req.body.cover.length > 0){
+    if(req.body.cover.length > 1){
         await FileSystem.promises.writeFile(
             coverFile,
             Buffer.from(
-                req.body.cover.split(';base64,')[1],
+                req.body.cover[1],
                 'base64'
             ),
             encoding
@@ -293,12 +297,12 @@ app.get('/:location/:type/:file', async (req, res) => {
     let fileLocation
 
     switch(req.params.location){
-        case 'web':
-            fileLocation = WebUI.dir() + req.params.type + '/' + req.params.file
-            break
-        
         case 'data':
             fileLocation = './data/' + req.params.file
+            break
+
+        case 'web':
+            fileLocation = WebUI.dir() + req.params.type + '/' + req.params.file
             break
     }
 
@@ -310,8 +314,31 @@ app.get('/:location/:type/:file', async (req, res) => {
     let encoding = 'utf-8'
     /** @type {string[]} */
     let fileName = req.params.file.split('.')
+    let fType = fileName.length > 1 ? fileName[fileName.length - 1] : req.params.type
 
-    switch(req.params.type){
+    switch(fType){
+        case 'apng':
+        case 'avif':
+        case 'gif':
+        case 'png':
+        case 'webp':
+            contentType += `image/${fType}`
+            encoding = 'binary'
+            break
+
+        case 'jpg':
+        case 'jpeg':
+        case 'jfif':
+        case 'pjpeg':
+        case 'pjp':
+            contentType += 'image/jpeg'
+            encoding = 'binary'
+            break
+
+        case 'svg':
+            contentType = 'image/svg+xml'
+            break
+
         case 'html':
             contentType = 'text/html'
             break
@@ -328,29 +355,11 @@ app.get('/:location/:type/:file', async (req, res) => {
             contentType = 'text/plain'
             break
 
-        case 'img':
-            contentType = `image/${fileName[fileName.length - 1]}`
+        case 'ttf':
+        case 'woff':
+        case 'woff2':
+            contentType = `fonts/${fType}`
             encoding = 'binary'
-            break
-
-        case 'fas':
-            switch(fileName[fileName.length - 1]){
-                case 'css':
-                case 'txt':
-                    contentType = 'text/css'
-                    break
-
-                case 'svg':
-                    contentType = 'image/svg+xml'
-                    break
-                
-                case 'ttf':
-                case 'woff':
-                case 'woff2':
-                    contentType = `fonts/${fileName[fileName.length - 1]}`
-                    encoding = 'binary'
-                    break
-            }
             break
 
         default:
