@@ -44,8 +44,9 @@ const {json, str} = require('./fn.json')
 const Acc = require('./data/acc')
 const Post = require('./data/post')
 const PostLike = require('./data/post.like')
-const { captureRejectionSymbol } = require('events')
 //const PostPointer = require('./data/post.pointer')
+
+const binEncode = {encoding: 'binary'}
 
 /** @type {string[]} List of all notifications*/
 const notifications = []
@@ -212,7 +213,7 @@ app.post('/account-temp-avatar', async (req,res) => {
     await FileSystem.promises.writeFile(
         `./data/temp.avatar`,
         req.body,
-        {encoding: 'binary'}
+        binEncode
     )
     res.send('Uploaded!')
 })
@@ -244,7 +245,6 @@ app.post('/account-update', async (req, res) => {
     let accList = await receiver.storage.promise.read('accounts')
     let avatarFile = `./data/${accInfo.key.public}.avatar`
     let coverFile = `./data/${accInfo.key.public}.cover`
-    let encoding = {encoding: 'binary'}
     let a = 0
 
     accInfo.name = req.body.name.slice(0,32)
@@ -261,7 +261,7 @@ app.post('/account-update', async (req, res) => {
                 req.body.avatar[1],
                 'base64'
             ),
-            encoding
+            binEncode
         )
         accInfo.img.avatar = await Crypt.hash(avatarFile)
     }
@@ -273,7 +273,7 @@ app.post('/account-update', async (req, res) => {
                 req.body.cover[1],
                 'base64'
             ),
-            encoding
+            binEncode
         )
         accInfo.img.cover = await Crypt.hash(coverFile)
     }
