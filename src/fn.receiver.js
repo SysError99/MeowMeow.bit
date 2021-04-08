@@ -742,12 +742,8 @@ const Receiver = class {
         let dummyQueue = {}
         let queueAwait = () => new Promise(resolve => {
             setInterval(() =>{
-                if(peer.mediaStreamQueue[0] === dummyQueue){
-                    if(typeof peer.mediaStreamCb !== 'function'){
-                        peer.mediaStreamQueue.splice(0,1)
-                        resolve()
-                    }
-                }
+                if(peer.mediaStreamQueue[0] === dummyQueue)
+                    resolve()
             })
         })
 
@@ -756,7 +752,7 @@ const Receiver = class {
 
         let sendMediaResult = await this.#sendMedia(peer, info)
 
-        peer.mediaStreamCb = undefined
+        peer.mediaStreamQueue.splice(0,1)
         return sendMediaResult
     }
 
@@ -938,6 +934,7 @@ const Receiver = class {
                 break
         }
 
+        peer.mediaStreamCb = undefined
         return fileStreamStatus
     }
 
