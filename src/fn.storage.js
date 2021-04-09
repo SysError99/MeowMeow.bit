@@ -13,6 +13,19 @@ const P = {a: './data/', b: '.json'}
 /** Promisify storage functions*/
 const promise = {
     /**
+     * Check if the file exists.
+     * @param {string} location Location to be check for existing files
+     * @returns {Promise<boolean>} If specified file has been found on disk
+     */
+    access: async location => {
+        try {
+            await FileSystem.promises.access(P.a + location + P.b)
+            return true
+        } catch {
+            return false
+        }
+    },
+    /**
      * Retrieve a file from storage
      * @param {string} location File location
      * @returns {Promise<any[]>} JSON of a file.
