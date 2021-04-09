@@ -733,8 +733,8 @@ const Receiver = class {
      * @param {Peer} peer Peer to send file to
      * @param {{
      *   owner:string,
-     *   position:string,
-     *   index:number
+     *   index:number|string,
+     *   media:number
      * }} info Media Information
      * @returns {Promise<Number>}
      */
@@ -821,9 +821,9 @@ const Receiver = class {
         }
         let mediaSendMessage = peer.key.encrypt(
             str([
+                'media',
                 info.owner,
                 info.index,
-                'media',
                 typeof info.media === 'number' ? info.media : 0,
                 Math.ceil(fileStats.size / 1024)
             ])
