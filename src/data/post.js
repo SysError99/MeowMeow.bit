@@ -57,7 +57,7 @@ const Post = class {
     /**
      * Export post without signature to array
      */
-    exportPost () {
+    #exportPost () {
         return [
             this.owner,
             this.media,
@@ -73,7 +73,7 @@ const Post = class {
      * Export post with signature to array
      */
     export () {
-        let post = this.exportPost()
+        let post = this.#exportPost()
         post.push(this.signature)
         return post
     }
@@ -84,7 +84,7 @@ const Post = class {
      * @param {string} password Owner's password (passphrase)
      */
     sign (privateKey, password) {
-        this.signature = Crypt.sign.perform(str(this.exportPost()), privateKey, typeof password === 'string' ? password : '')
+        this.signature = Crypt.sign.perform(str(this.#exportPost()), privateKey, typeof password === 'string' ? password : '')
     }
 
     /**
@@ -120,7 +120,7 @@ const Post = class {
             this.signature = d[7]
 
         if(this.signature.length  > 0)
-            this.valid = Return(() => Crypt.sign.verify(str(this.exportPost()), this.owner.split('').reverse().join(''), this.signature))
+            this.valid = Return(() => Crypt.sign.verify(str(this.#exportPost()), this.owner.split('').reverse().join(''), this.signature))
     }
 }
 
