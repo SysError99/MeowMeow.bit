@@ -16,7 +16,7 @@ const SymmetricKey = class {
      * @returns {Buffer} Encrypted string
      */
     encrypt (str) {
-        if(str.length === 0)
+        if (str.length === 0)
             return Buffer.from([])
         return Return(() => Crypt.symmetric.encrypt(str, this.key), '')
     }
@@ -27,7 +27,7 @@ const SymmetricKey = class {
      * @returns {Buffer} Decrypted string
      */
     decrypt (buf) {
-        if(buf.length === 0)
+        if (buf.length === 0)
             return ''
         return Return(() => Crypt.symmetric.decrypt(buf, this.key), '')
     }
@@ -53,9 +53,9 @@ const SymmetricKey = class {
     * @param {Buffer|string} d Data to be imported
     */
     constructor (d) {
-        if(typeof d === 'string')
+        if (typeof d === 'string')
             Try(() => this.key = Buffer.from(d, 'base64'))
-        else if(Buffer.isBuffer(d))
+        else if (Buffer.isBuffer(d))
             this.key = d
         else
             this.key = Crypt.newKey.symmetric()

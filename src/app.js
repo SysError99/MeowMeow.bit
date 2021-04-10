@@ -6,7 +6,7 @@
 const FileSystem = require('fs')
 
 // Setup folder
-if(FileSystem.readdirSync('./data/').length <= FileSystem.readdirSync('./default/').length){
+if (FileSystem.readdirSync('./data/').length <= FileSystem.readdirSync('./default/').length) {
     let path = require("path")
 
     /**
@@ -81,12 +81,12 @@ const app = new Web()
 
 // --- GET ---
 app.get('/', (req,res) => {
-    if(!inHomePage)
+    if (!inHomePage)
         inHomePage = true
-    else if(acc !== undefined){
+    else if (acc !== undefined) {
         let postCountLocation = `./${acc.key.public}.posts`
 
-        if(!receiver.storage.access(postCountLocation))
+        if (!receiver.storage.access(postCountLocation))
             receiver.storage.write(postCountLocation, 0)
         
         currentTimelinePost = Return(() => receiver.storage.read(postCountLocation), 0) //move to latest post
@@ -106,8 +106,8 @@ app.get('/account-list', async (req, res) => {
     /** @type {string[]} */
     let accList = json(await FileSystem.promises.readFile(`./data/accounts.json`, {encoding: 'utf-8'}))
 
-    if(accList.length > 0){
-        for(let a=0; a < accList.length; a++){
+    if (accList.length > 0) {
+        for (let a=0; a < accList.length; a++) {
             let accFound = new Acc(await receiver.storage.promise.read(accList[a]))
 
             accList[a] = WebUI.avatar({
@@ -159,10 +159,10 @@ app.get('/account-create', async (req, res) => {
 app.get('/account-info/:pub', async (req,res) => {
     inHomePage = false
 
-    if(typeof req.params.pub === 'undefined')
+    if (typeof req.params.pub === 'undefined')
         return res.send(WebUI.nativeAlert('Please specify accnount public key.'))
 
-    if(!receiver.storage.access(req.params.pub))
+    if (!receiver.storage.access(req.params.pub))
         return res.send(WebUI.nativeAlert(`Account public key is invalid.`))
 
     accInfo = new Acc(await receiver.storage.promise.read(req.params.pub))
@@ -189,12 +189,12 @@ app.get('/account-info/:pub', async (req,res) => {
 app.get('/timeline', (req, res) => {
     inHomePage = false
 
-    if(acc === undefined)
+    if (acc === undefined)
         return res.send(WebUI.login())
 
     let currentPostLocation = `${acc.key.public}.timeline.${currentTimelinePost}`
 
-    if(!receiver.storage.access(currentPostLocation))
+    if (!receiver.storage.access(currentPostLocation))
         return res.send('Storage Access Error.') //LOCALE_NEEDED
 
     res.send('UNIMPLEMENTED')
@@ -218,25 +218,23 @@ app.post('/account-temp-avatar', async (req,res) => {
     res.send('Uploaded!')
 })
 app.post('/account-update', async (req, res) => {
-    if(typeof accInfo === 'undefined'){
+    if (typeof accInfo === 'undefined') {
         res.status(401)
         res.send('no accounts assinged')
         return
     }
 
-    if(Try(() => req.body = json(req.body))){
+    if (Try(() => req.body = json(req.body))) {
         res.status(400)
         res.send('arguments invaild')
         return
     }
 
-    if(
-        typeof req.body.name !== 'string' ||
+    if (typeof req.body.name !== 'string' ||
         typeof req.body.description !== 'string' ||
         typeof req.body.tag !== 'string' ||
         typeof req.body.avatar !== 'string' ||
-        typeof req.body.cover !== 'string'
-    ){
+        typeof req.body.cover !== 'string') {
         res.status(400)
         res.send('arguments invalid')
         return
@@ -254,7 +252,7 @@ app.post('/account-update', async (req, res) => {
     req.body.avatar = req.body.avatar.split(';base64,')
     req.body.cover = req.body.cover.split(';base64,')
 
-    if(req.body.avatar.length > 1){
+    if (req.body.avatar.length > 1) {
         await FileSystem.promises.writeFile(
             avatarFile,
             Buffer.from(
@@ -266,7 +264,7 @@ app.post('/account-update', async (req, res) => {
         accInfo.img.avatar = await Crypt.hash(avatarFile)
     }
 
-    if(req.body.cover.length > 1){
+    if (req.body.cover.length > 1) {
         await FileSystem.promises.writeFile(
             coverFile,
             Buffer.from(
@@ -280,14 +278,14 @@ app.post('/account-update', async (req, res) => {
 
     accInfo.sign()
 
-    while(a < accList.length){
-        if(accList[a] === accInfo.key.public)
+    while (a < accList.length) {
+        if (accList[a] === accInfo.key.public)
             break
 
         a++
     }
 
-    if(a >= accList.length){
+    if (a >= accList.length) {
         accList.push(accInfo.key.public)
         await receiver.storage.promise.write('accounts', accList)
     }
@@ -302,7 +300,7 @@ app.get('/:location/:type/:file', async (req, res) => {
     /** @type {string} */
     let fileLocation
 
-    switch(req.params.location){
+    switch (req.params.location) {
         case 'data':
             fileLocation = './data/' + req.params.file
             break
@@ -312,7 +310,7 @@ app.get('/:location/:type/:file', async (req, res) => {
             break
     }
 
-    if(Try(() => FileSystem.accessSync(fileLocation)))
+    if (Try(() => FileSystem.accessSync(fileLocation)))
         return app.ev404.callback(res)
 
     /** @type {string} */
@@ -322,7 +320,7 @@ app.get('/:location/:type/:file', async (req, res) => {
     let fileName = req.params.file.split('.')
     let fType = fileName.length > 1 ? fileName[fileName.length - 1] : req.params.type
 
-    switch(fType){
+    switch (fType) {
         case 'apng':
         case 'avif':
         case 'gif':
@@ -382,30 +380,29 @@ app.get('/:location/:type/:file', async (req, res) => {
 
 /** @type {Receiver} Receiver Object*/
 const receiver = new Receiver(async (peer, result) => {
-    if(!result.success)
+    if (!result.success)
         return
 
     let data = result.data
 
-    if(typeof data[0] !== 'string')
+    if (typeof data[0] !== 'string')
         return
 
-    if(data[0] === 'account'){
+    if (data[0] === 'account') {
         /**
          * Account adding section.
          */
 
-        if(!Array.isArray(data[1]))
+        if (!Array.isArray(data[1]))
             return
         
         let newAcc = new Acc(data[1])
 
         //TODO: check if this peer is actually need this account
-    }
-    else if(typeof data[2] !== 'number' || typeof data[2] !== 'string')
+    } else if (typeof data[2] !== 'number' || typeof data[2] !== 'string')
         return
     
-    if(!await receiver.storage.promise.access(data[1])) // account not exist
+    if (!await receiver.storage.promise.access(data[1])) // account not exist
         return
 
     /**
@@ -418,18 +415,18 @@ const receiver = new Receiver(async (peer, result) => {
      * :
      * [n]:any
      */
-    switch(data[0]){
+    switch (data[0]) {
         case 'request':
             /**
              * Peer make a request for specific resources.
              * [3]:string       What resource to request
              */
-            switch(data[3]){
+            switch (data[3]) {
                 case 'account':
                     /**
                      * Account Request
                      */
-                    if(!await receiver.storage.promise.access(data[1]))
+                    if (!await receiver.storage.promise.access(data[1]))
                         return receiver.send(peer, ['accountNotFound'])
 
                     receiver.send(peer, [
@@ -445,7 +442,7 @@ const receiver = new Receiver(async (peer, result) => {
                      */
                     let requestMediaLocation = `${data[1]}.${data[2]}${typeof data[4] === 'number' ? `.${data[4]}`: ''}`
 
-                    if(!await receiver.storage.promise.access(requestMediaLocation))
+                    if (!await receiver.storage.promise.access(requestMediaLocation))
                         return
 
                     receiver.sendMedia(peer, {
@@ -459,12 +456,12 @@ const receiver = new Receiver(async (peer, result) => {
                     /**
                      * Post request
                      */
-                    if(typeof data[2] !== 'number')
+                    if (typeof data[2] !== 'number')
                         return receiver.send(peer, ['invalidPostFormat'])
 
                     let requestPostLocation = `${data[1]}.${data[2]}`
 
-                    if(!await receiver.storage.promise.access(requestPostLocation))
+                    if (!await receiver.storage.promise.access(requestPostLocation))
                         return receiver.send(peer, ['postNotFound'])
 
                     let requestPost = new Post(await receiver.storage.promise.read(requestPostLocation))
@@ -494,7 +491,7 @@ const receiver = new Receiver(async (peer, result) => {
              */
             let likeFile = `${data[1]}.${data[2]}.like.${data[3]}`
 
-            if(receiver.storage.access(likeFile)) //like file exists
+            if (receiver.storage.access(likeFile)) //like file exists
                 return
 
             let like = new PostLike([
@@ -505,16 +502,16 @@ const receiver = new Receiver(async (peer, result) => {
                 d[5]
             ])
 
-            if(!like.valid)
+            if (!like.valid)
                 return
 
-            if(!receiver.storage.write(likeFile, like.export()))
+            if (!receiver.storage.write(likeFile, like.export()))
                 return
             
             let likeCount = 0
             let likeCountFileLocation = `${data[1]}.${data[2]}.likes`
 
-            if(receiver.storage.access(likeCountFileLocation))
+            if (receiver.storage.access(likeCountFileLocation))
                 likeCount = receiver.storage.read(likeCountFileLocation)
 
             likeCount++
@@ -534,7 +531,7 @@ const receiver = new Receiver(async (peer, result) => {
              * [8]:nubmer       post time
              * [9]:string       post signature
              */
-            if( !Array.isArray(data[3]) ||
+            if (!Array.isArray(data[3]) ||
                 !Array.isArray(data[4]) ||
                 !Array.isArray(data[5]) ||
                 !Array.isArray(data[5]) ||
@@ -544,7 +541,7 @@ const receiver = new Receiver(async (peer, result) => {
 
             let newPostLocation = `${data[1]}.${data[2]}`
 
-            if(receiver.storage.access(newPostLocation)) //post exists
+            if (receiver.storage.access(newPostLocation)) //post exists
                 return
 
             let newPost = new Post([
@@ -558,10 +555,10 @@ const receiver = new Receiver(async (peer, result) => {
                 data[9]
             ])
 
-            if(!newPost.valid)
+            if (!newPost.valid)
                 return
 
-            if(!receiver.storage.write(newPostLocation, postData))
+            if (!receiver.storage.write(newPostLocation, postData))
                 return
 
             receiver.broadcast(data[1], __.BROADCAST_AMOUNT, data)
@@ -575,22 +572,22 @@ const receiver = new Receiver(async (peer, result) => {
              * [3]:number media index
              * [4]:number media total packets that will be received
              */
-            if(typeof peer.mediaStream !== 'undefined')
+            if (typeof peer.mediaStream !== 'undefined')
                 return receiver.send(peer, [__.MEDIA_STREAM_NOT_READY])
 
-            if( typeof data[3] !== 'number' ||
+            if (typeof data[3] !== 'number' ||
                 typeof data[3] !== 'string' ||
                 typeof data[4] !== 'number' )
                 return receiver.send(peer, [__.MEDIA_STREAM_INFO_INVALID])
 
-            if(data[4].length > __.MAX_PAYLOAD || data[4].length > 65536)
+            if (data[4].length > __.MAX_PAYLOAD || data[4].length > 65536)
                 return receiver.send(peer, [__.MEDIA_STREAM_FILE_TOO_LARGE])
             
             /** @type {string} */
             let mediaHash
             let requestMediaLocation = `${data[1]}.${data[2]}`
 
-            switch(data[2]){
+            switch (data[2]) {
                 case 'avatar':
                 case 'cover':
                     mediaHash = new Acc(receiver.storage.read(data[1])).img[data[2]]
@@ -598,7 +595,7 @@ const receiver = new Receiver(async (peer, result) => {
                     break
 
                 default:
-                    if(!receiver.storage.access(requestMediaLocation))
+                    if (!receiver.storage.access(requestMediaLocation))
                         return receiver.send(peer, [__.MEDIA_STREAM_POST_NOT_FOUND])
 
                     mediaHash = new Post(receiver.storage.read(requestMediaLocation)).media[data[3]]
@@ -606,10 +603,10 @@ const receiver = new Receiver(async (peer, result) => {
                     break
             }
 
-            if(!mediaHash)
+            if (!mediaHash)
                 return receiver.send(peer, [__.MEDIA_STREAM_NO_MEDIA])
 
-            if(receiver.storage.bin.access(requestMediaLocation))
+            if (receiver.storage.bin.access(requestMediaLocation))
                 return receiver.send(peer, [__.MEDIA_STREAM_MEDIA_FOUND])
 
             await peer.openMediaStream(requestMediaLocation, mediaHash, data[4])

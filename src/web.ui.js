@@ -20,7 +20,7 @@ const extract = (str, extractList) => {
     /** @type {string[]} */
     let complete = []
     
-    for(let i = 0; i < extractList.length; i++){
+    for (let i = 0; i < extractList.length; i++) {
         section = str.split(`{{${extractList[i]}}}`)
         complete.push(section[0])
         complete.push('')
@@ -207,7 +207,7 @@ module.exports = {
      * @param {number} size 
      */
     header: (text, size) => {
-        if(typeof size === 'undefined')
+        if (typeof size === 'undefined')
             size = 1
 
         size = 7 - Math.min(Math.max(size, 6), 1)

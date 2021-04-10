@@ -3,7 +3,7 @@
  * @param {any} val Value to check
  */
 const isAny = val => {
-    try{
+    try {
         return typeof val === 'object' && !Array.isArray(val)
     }
     catch{

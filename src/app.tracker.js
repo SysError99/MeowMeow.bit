@@ -22,7 +22,7 @@ const myKey = Return(() => {
     let ecdhKey
     let keySaved = Storage.read('key.server')
 
-    if(typeof keySaved === 'undefined'){
+    if (typeof keySaved === 'undefined') {
         ecdhKey = new ECDHKey()
         Storage.write('key.server', ecdhKey.export())
         console.log(`Server key is now generated.`)
@@ -31,7 +31,7 @@ const myKey = Return(() => {
 
     ecdhKey = new ECDHKey(keySaved)
     
-    if(typeof ecdhKey === 'undefined')
+    if (typeof ecdhKey === 'undefined')
         throw Error(`key.server is invalid.`)
 
     return ecdhKey
@@ -75,11 +75,11 @@ udp.on('message', (msg, remote) => {
      * @param {boolean} reset Delete this peer? 
      */
     let identifyPeer = reset => {
-        if(reset)
+        if (reset)
             delete knownPeers[remoteAddress]
 
-        if(typeof knownPeers[remoteAddress] === 'undefined'){
-            if(msg.length === 0)
+        if (typeof knownPeers[remoteAddress] === 'undefined') {
+            if (msg.length === 0)
                 return true
 
             peer = new Peer([
@@ -88,7 +88,7 @@ udp.on('message', (msg, remote) => {
             ])
             peer.key = myKey.computeSecret(msg) //not using random generated key
 
-            if(typeof peer.key === 'undefined')
+            if (typeof peer.key === 'undefined')
                 return sendRandomBytes(remote)
 
             peer.lastAccess = currentTime
@@ -103,35 +103,35 @@ udp.on('message', (msg, remote) => {
         peer = knownPeers[remoteAddress]
     }
 
-    if(identifyPeer())
+    if (identifyPeer())
         return
 
-    if(msg.length === 0){
+    if (msg.length === 0) {
         udp.send('', 0, 0, remote.port, remote.address, showError)
         peer.lastAccess = currentTime
         return 
     }
 
-    if(peer.lastAccess > 0){
-        if(currentTime - peer.lastAccess > __.ACCESS_COOLDOWN)
+    if (peer.lastAccess > 0) {
+        if (currentTime - peer.lastAccess > __.ACCESS_COOLDOWN)
             return identifyPeer(true)
     }
 
     peer.lastAccess = currentTime
 
-    if(Try(() => message = json(peer.key.decryptToString(msg))))
+    if (Try(() => message = json(peer.key.decryptToString(msg))))
         return
 
     //Tracker
-    switch(message[0]){
+    switch (message[0]) {
 
         //announcer
         case 'announce':
             /** @type {Peer} */
             let peerToAnnounce = knownPeers[message[1]]
 
-            if(typeof peerToAnnounce === 'object'){
-                if(currentTime - peerToAnnounce.lastAccess > __.LAST_ACCESS_LIMIT){ //peer is too old to connect
+            if (typeof peerToAnnounce === 'object') {
+                if (currentTime - peerToAnnounce.lastAccess > __.LAST_ACCESS_LIMIT) { //peer is too old to connect
                     let msgTooOldPeerError = peer.key.encrypt(str( [`unknown`] ))
                     udp.send(msgTooOldPeerError, 0, msgTooOldPeerError.length, remote.port, remote.address, showError)
                     delete knownPeers[message[1]]
@@ -155,7 +155,7 @@ udp.on('message', (msg, remote) => {
 
         //tracker
         case 'forwardPort':
-            if(typeof message[1] !== 'number')
+            if (typeof message[1] !== 'number')
                 return
 
             peer.port = message[1]
@@ -163,13 +163,13 @@ udp.on('message', (msg, remote) => {
             return
 
         case 'setPub':
-            if(typeof message[1] !== 'string')
+            if (typeof message[1] !== 'string')
                 return
 
             /** @type {Buffer} */
             let peerPub
 
-            if(Try(() => peerPub = BaseN.decode(message[1], '62')))
+            if (Try(() => peerPub = BaseN.decode(message[1], '62')))
                 return
 
             peer.pub = peerPub

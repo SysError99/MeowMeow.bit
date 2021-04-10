@@ -44,7 +44,7 @@ const Locale = class {
      * @param {function} f Function of locale changer.
      */
     constructor (f) {
-        if(typeof f === 'function')
+        if (typeof f === 'function')
             this.change(f)
         else
             this.change(require('./en'))

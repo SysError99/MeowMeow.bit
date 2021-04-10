@@ -17,11 +17,11 @@ const MAP_ALPHABET_62 = {};
 const MAP_ALPHABET_92 = {};
 
 let i = 0;
-while(i < ALPHABET_92.length){
-    if(i < ALPHABET.length)
+while (i < ALPHABET_92.length) {
+    if (i < ALPHABET.length)
         MAP_ALPHABET[ALPHABET.charAt(i)] = i;
     
-    if(i < ALPHABET_62.length)
+    if (i < ALPHABET_62.length)
         MAP_ALPHABET_62[ALPHABET_62.charAt(i)] = i;
     
     MAP_ALPHABET_92[ALPHABET_92.charAt(i)] = i;
@@ -58,7 +58,7 @@ module.exports = {
         let carry, digits, j;
         /** @type {number} */
         let d
-        switch(type){
+        switch (type) {
             case "62":
                 d = ALPHABET_62_LEN;
                 break;
@@ -69,44 +69,44 @@ module.exports = {
                 d = ALPHABET_LEN;
                 break;
         }
-        if(typeof buffer === "string"){
+        if (typeof buffer === "string") {
             buffer = Buffer.from(buffer);
         }
-        if(buffer.length === 0) {
+        if (buffer.length === 0) {
             return "";
         }
         i = void 0;
         j = void 0;
         digits = [0];
         i = 0;
-        while(i < buffer.length){
+        while (i < buffer.length) {
             j = 0;
-            while(j < digits.length){
+            while (j < digits.length) {
                 digits[j] <<= 8;
                 j++;
             }
             digits[0] += buffer[i];
             carry = 0;
             j = 0;
-            while(j < digits.length){
+            while (j < digits.length) {
                 digits[j] += carry;
                 carry = (digits[j] / d) | 0;
                 digits[j] %= d;
                 ++j;
             }
-            while(carry){
+            while (carry) {
                 digits.push(carry % d);
                 carry = (carry / d) | 0;
             }
             i++;
         }
         i = 0;
-        while(buffer[i] === 0 && i < buffer.length - 1){
+        while (buffer[i] === 0 && i < buffer.length - 1) {
             digits.push(0);
             i++;
         }
         digits = digits.reverse()
-        switch(type){
+        switch (type) {
             case "62":
                 digits = digits.map(convertToText62);
                 break;
@@ -127,10 +127,10 @@ module.exports = {
      */
     decode: (string, type) => {
         let bytes, c, cc, d, carry, j;
-        if(string.length === 0){
+        if (string.length === 0) {
             return "";
         }
-        switch(type){
+        switch (type) {
             case "62":
                 cc = MAP_ALPHABET_62;
                 d = ALPHABET_62_LEN;
@@ -148,33 +148,33 @@ module.exports = {
         j = void 0;
         bytes = [0];
         i = 0;
-        while(i < string.length){
+        while (i < string.length) {
             c = string[i];
-            if(!(c in cc)){
+            if (!(c in cc)) {
                 throw Error("BaseN.decode received unacceptable input. Character '" + c + "' is not in the BaseN alphabet.");
             }
             j = 0;
-            while(j < bytes.length){
+            while (j < bytes.length) {
                 bytes[j] *= d;
                 j++;
             }
             bytes[0] += cc[c];
             carry = 0;
             j = 0;
-            while(j < bytes.length){
+            while (j < bytes.length) {
                 bytes[j] += carry;
                 carry = bytes[j] >> 8;
                 bytes[j] &= 0xff;
                 ++j;
             }
-            while(carry){
+            while (carry) {
                 bytes.push(carry & 0xff);
                 carry >>= 8;
             }
             i++;
         }
         i = 0;
-        while(string[i] === "0" && i < string.length - 1){
+        while (string[i] === "0" && i < string.length - 1) {
             bytes.push(0);
             i++;
         }

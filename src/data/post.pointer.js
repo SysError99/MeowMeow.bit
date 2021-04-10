@@ -25,13 +25,13 @@ const PostPointer = class {
      * @param {Array} d Data to be imported
      */
     constructor (d) {
-        if(!Array.isArray(d))
+        if (!Array.isArray(d))
             return
 
-        if(typeof d[0] === 'string')
+        if (typeof d[0] === 'string')
             this.owner = d[0]
 
-        if(typeof d[1] === 'number')
+        if (typeof d[1] === 'number')
             this.pos = d[1]
     }
 }

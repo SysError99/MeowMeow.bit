@@ -16,7 +16,7 @@ let fileEvent = (event, target) => {
     let fileLocation = event.target.files[0]
     let reader = new FileReader()
 
-    if(allowFileTypes.indexOf(fileLocation.name.split('.')[1].toLowerCase()) < 0)
+    if (allowFileTypes.indexOf(fileLocation.name.split('.')[1].toLowerCase()) < 0)
         return alert('This file type is not supported')
 
     let croppieSize = 300
@@ -30,12 +30,11 @@ let fileEvent = (event, target) => {
             let drawHeight = img.height
 
             //covnert to base64
-            if(target === 'cover'){
+            if (target === 'cover') {
                 canvas.width = 512
                 canvas.height = 512
                 drawHeight = img.height * 512 / img.width
-            }
-            else{
+            } else {
                 canvas.width = img.width
                 canvas.height = img.height
             }
@@ -56,16 +55,15 @@ let fileEvent = (event, target) => {
 
             let dataURL = canvas.toDataURL()
 
-            if(target === 'cover'){
+            if (target === 'cover') {
                 previewCover.src = dataURL
                 previewCover.style.display = 'block'
-            }
-            else {
+            } else {
                 //upload to temp storage
                 req.open('POST', `/account-temp-avatar`)
                 req.onreadystatechange = () => {
-                    if(req.readyState === 4 && req.status === 200) {
-                        if(typeof croppie !== 'undefined'){
+                    if (req.readyState === 4 && req.status === 200) {
+                        if (typeof croppie !== 'undefined') {
                             croppie.destroy()
                             croppie = undefined
                         }
@@ -109,11 +107,12 @@ const accountSubmit = async () => {
     let req = new XMLHttpRequest()
     req.open('POST', `/account-update`)
     req.onreadystatechange = () => {
-        if(req.readyState === 4 ){
-            if(req.status === 200){
+        if (req.readyState === 4 ) {
+            if (req.status === 200) {
                 alert('Account updated!')
                 window.location = '/account-list'
-            }else
+            }
+            else
                 alert('Account update failed: ' + req.status)
         }
     }

@@ -14,7 +14,7 @@ const receiver = new Receiver((peer, data) => {
 
 let funcAsync = async () => {
     let i = 0
-    while(i<1024){
+    while (i<1024) {
         await receiver.send(peer, [i])
         i++
     }

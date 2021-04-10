@@ -28,16 +28,16 @@ const Result = class {
      * @param {{success: boolean, message: string, data:any}} d Data to be set
      */
     constructor (d) {
-        if(typeof d !== 'object')
+        if (typeof d !== 'object')
             return
 
-        if(typeof d.data !== 'undefined')
+        if (typeof d.data !== 'undefined')
             this.data = d.data
 
-        if(typeof d.message === 'string')
+        if (typeof d.message === 'string')
             this.message = d.message
 
-        if(typeof d.success === 'boolean')
+        if (typeof d.success === 'boolean')
             this.success = d.success
     }
 }

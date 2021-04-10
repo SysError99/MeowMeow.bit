@@ -58,14 +58,14 @@ const PostLike = class {
      * @param {Array} d Array to be verified
      */
     constructor (d) {
-        if(!Array.isArray(d))
+        if (!Array.isArray(d))
             return
 
-        if(typeof d[0] === 'string') this.owner = d[0]
-        if(typeof d[1] === 'number') this.time = d[1]
-        if(typeof d[2] === 'number') this.acc = d[2]
-        if(typeof d[3] === 'number') this.pos = d[3]
-        if(typeof d[4] === 'string') this.signature = d[4]
+        if (typeof d[0] === 'string') this.owner = d[0]
+        if (typeof d[1] === 'number') this.time = d[1]
+        if (typeof d[2] === 'number') this.acc = d[2]
+        if (typeof d[3] === 'number') this.pos = d[3]
+        if (typeof d[4] === 'string') this.signature = d[4]
 
         this.valid = Return(() => Crypt.sign.verify(str(this.exportPostLike()), this.owner, this.signature), false)
     }

@@ -87,7 +87,7 @@ const Peer = class {
             this.mediaStreamPacketsTotal = 0
             this.mediaStreamPacketsReceived = 0
 
-            if(typeof this.mediaStream !== 'undefined'){
+            if (typeof this.mediaStream !== 'undefined') {
                 await this.mediaStream.close()
                 this.mediaStream = undefined
             }
@@ -144,12 +144,12 @@ const Peer = class {
      * @param {Buffer|string} pub Public key (Buffer or base64)
      */
     setPeerPub (pub) {
-        if(typeof pub === 'string'){
-            if(Try(() => pub = Buffer.from(pub, 'base64'), this.pub))
+        if (typeof pub === 'string') {
+            if (Try(() => pub = Buffer.from(pub, 'base64'), this.pub))
                 return
         }
 
-        if(!Buffer.isBuffer(pub))
+        if (!Buffer.isBuffer(pub))
             return
 
         let newECDH = new ECDHKey()
@@ -164,21 +164,21 @@ const Peer = class {
      * @param {Array} d Array to be imported
      */
     constructor (d) {
-        if(!Array.isArray(d))
+        if (!Array.isArray(d))
             return
 
-        if(typeof d[0] === 'string')
+        if (typeof d[0] === 'string')
             this.ip = d[0]
 
-        if(typeof d[1] === 'number')
+        if (typeof d[1] === 'number')
             this.port = d[1]
 
         this.setPeerPub(d[2])
 
-        if(typeof d[3] === 'boolean')
+        if (typeof d[3] === 'boolean')
             this.public = d[3]
 
-        if(typeof d[4] === 'number')
+        if (typeof d[4] === 'number')
             this.lastAccess = d[4]
 
     }

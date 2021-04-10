@@ -100,7 +100,7 @@ const Receiver = class {
     addPeer (peer) {
         let remoteAddress = `${peer.ip}:${peer.port}`
 
-        if(typeof this.peers[remoteAddress] === 'undefined'){
+        if (typeof this.peers[remoteAddress] === 'undefined') {
             this.peers[remoteAddress] = peer
             return true
         }
@@ -115,34 +115,34 @@ const Receiver = class {
      * @param {Array|string} data Data to be sent
      */
     broadcast (account, n, data) {
-        if(n <= 0)
+        if (n <= 0)
             return false
 
         /** @type {string[]} */
         let peers = seeders[account]
         let y = 0
 
-        if(!Array.isArray(peers))
+        if (!Array.isArray(peers))
             return false
 
-        if(Array.isArray(data))
+        if (Array.isArray(data))
             data = str(data)
-        else if(typeof data !== 'string')
+        else if (typeof data !== 'string')
             return false
 
-        if(data.length > __.MTU)
+        if (data.length > __.MTU)
             return false
 
-        if(!seedersSorted[account]){
+        if (!seedersSorted[account]) {
             let x = 0
 
             peers.sort()
 
             //find self position
-            while(y < peers.length){
+            while (y < peers.length) {
                 let arr = peers[y]
 
-                if(arr[0] === account[0])
+                if (arr[0] === account[0])
                     break
 
                 y++
@@ -150,11 +150,11 @@ const Receiver = class {
 
             x = 1
 
-            while(y < peers.length){
+            while (y < peers.length) {
                 let arr = peers[y]
 
-                if(arr[x] === account[x]){
-                    if(x < account.length)
+                if (arr[x] === account[x]) {
+                    if (x < account.length)
                         x++
                     else
                         break
@@ -163,9 +163,9 @@ const Receiver = class {
                     y++
             }
 
-            if(y < peers.length)
+            if (y < peers.length)
                 seedersMyPos[account] = y
-            else{
+            else {
                 peers.push(this.myAddress)
                 return this.broadcast(account, n, data)
             }
@@ -180,21 +180,21 @@ const Receiver = class {
 
         y = seedersMyPos[account]
 
-        while(n > 0){
-            if(p > 0)
+        while (n > 0) {
+            if (p > 0)
                 pos = - Math.abs(pos)
             else
                 pos =  Math.abs(pos) + 1
 
             peerToAdd = peers[y + pos]
 
-            if(typeof peerToAdd === 'string')
+            if (typeof peerToAdd === 'string')
                 peersSelected.push(peerToAdd)
 
             n--
         }
 
-        while(peersSelected.length > 0){
+        while (peersSelected.length > 0) {
             this.send(peersSelected[0], data)
             peersSelected.splice(0,1)
         }
@@ -210,10 +210,10 @@ const Receiver = class {
     async deletePeer (peer) {
         let remoteAddress = `${peer.ip}:${peer.port}`
 
-        if(typeof peer.mediaStream !== 'undefined')
+        if (typeof peer.mediaStream !== 'undefined')
             await peer.closeMediaStream()
 
-        if(typeof this.peers[remoteAddress] === 'object')
+        if (typeof this.peers[remoteAddress] === 'object')
             delete this.peers[remoteAddress]
     }
 
@@ -223,7 +223,7 @@ const Receiver = class {
      */
     forwardPort (p) {
         this.socket.bind(p)
-        for(let t in this.trackerList){
+        for (let t in this.trackerList) {
             /** @type {Tracker} */
             let tracker = this.peers[this.trackerList[t]]
 
@@ -240,7 +240,7 @@ const Receiver = class {
         let trialCount = __.MAX_TRIAL
 
         let tryToConnect = setInterval(() => {
-            if(tracker.connected || trialCount < 0)
+            if (tracker.connected || trialCount < 0)
                 return clearInterval(tryToConnect)
 
             trialCount--
@@ -265,14 +265,14 @@ const Receiver = class {
         /** @type {Peer|Tracker} */
         let peer = this.peers[`${remote.address}:${remote.port}`]
 
-        if(typeof peer === 'undefined'){
+        if (typeof peer === 'undefined') {
             //Add peer to active list
-            if(message.length !== Crypt.ecdh.length)
+            if (message.length !== Crypt.ecdh.length)
                 return 
 
             let computeKey = this.key.computeSecret(message)
 
-            if(typeof computeKey !== 'undefined'){
+            if (typeof computeKey !== 'undefined') {
                 peer = new Peer([
                     remote.address,
                     remote.port
@@ -296,10 +296,10 @@ const Receiver = class {
             return 
         }
 
-        if(peer.isPeer)
+        if (peer.isPeer)
             return this.handlePeerMessage(message, remote, peer)
 
-        if(peer.isTracker)
+        if (peer.isTracker)
             return this.handleTrackerMessage(message, remote, peer)
     }
 
@@ -310,17 +310,17 @@ const Receiver = class {
      * @param {Peer} peer Peer sent this
      */
     async handlePeerMessage (message, remote, peer) {
-        if(message.length === 0){
+        if (message.length === 0) {
             peer.lastAccess = currentTime
             return
         }
 
-        if(!peer.connected()){
-            if(typeof Return(() => json(peer.key.decryptToString(message))) === 'undefined')
+        if (!peer.connected()) {
+            if (typeof Return(() => json(peer.key.decryptToString(message))) === 'undefined')
                 return
 
             // NAT transversal successful
-            if(typeof peer.callback === 'function'){
+            if (typeof peer.callback === 'function') {
                 peer.callback(__.MAX_TRIAL - peer.quality)
                 peer.callback = undefined
             }
@@ -329,33 +329,33 @@ const Receiver = class {
             return
         }
 
-        if(peer.lastAccess !== 0){
+        if (peer.lastAccess !== 0) {
             //check last access time from peer
             let lastAccess = currentTime - peer.lastAccess
 
-            if(lastAccess <= __.ACCESS_COOLDOWN && typeof peer.mediaStream === 'undefined')
+            if (lastAccess <= __.ACCESS_COOLDOWN && typeof peer.mediaStream === 'undefined')
                 return
-            else if(lastAccess >= __.LAST_ACCESS_LIMIT)
+            else if (lastAccess >= __.LAST_ACCESS_LIMIT)
                 return this.handleBadPeer(message, remote, peer)
         }
 
         peer.lastAccess = currentTime
 
-        if(message.length === 1 && typeof peer.mediaStreamCb === 'function')
+        if (message.length === 1 && typeof peer.mediaStreamCb === 'function')
             return peer.mediaStreamCb(__.MEDIA_STREAM_ACK)
 
-        if(Try(() => message = peer.key.decrypt(message)))
+        if (Try(() => message = peer.key.decrypt(message)))
             return this.handleBadPeer(message, remote, peer)
 
-        if(Try(() => message = json(message))){
-            if(typeof peer.mediaStream !== 'undefined')
+        if (Try(() => message = json(message))) {
+            if (typeof peer.mediaStream !== 'undefined')
                 return this.#handleMediaStream(message, peer)
             else
                 return this.handleBadPeer(message, remote, peer)
         }
 
-        if(typeof peer.mediaStreamCb === 'function'){
-            switch(message[0]){
+        if (typeof peer.mediaStreamCb === 'function') {
+            switch (message[0]) {
                 /**
                  * Peer low-level commands
                  */
@@ -421,12 +421,12 @@ const Receiver = class {
      */
     async #handleMediaStream (message, peer) {
         // Streaming media
-        if(message[0] === 255 && message[1] === 255){
+        if (message[0] === 255 && message[1] === 255) {
             //Verifying signature
             let dataReceivedSignature = await Crypt.hash(peer.getMediaStreamTempLocation())
 
-            if(dataReceivedSignature === peer.getMediaStreamHash()){
-                if(await peer.closeMediaStream()){ // If can't close properly
+            if (dataReceivedSignature === peer.getMediaStreamHash()) {
+                if (await peer.closeMediaStream()) { // If can't close properly
                     this.#sendEncrypted(peer, str( [__.MEDIA_STREAM_PEER_ERR] ))
                     peer.mediaStream = undefined
                 }
@@ -439,18 +439,18 @@ const Receiver = class {
                 peer.mediaStreamPacketsReceived = peer.mediaStreamPacketsTotal + 1
         }
 
-        if(peer.mediaStreamPacketsReceived > peer.mediaStreamPacketsTotal){
+        if (peer.mediaStreamPacketsReceived > peer.mediaStreamPacketsTotal) {
             // Decline file
             this.#sendEncrypted(peer, str( [__.MEDIA_STREAM_DECLINED] ))
             await peer.closeMediaStream()
             return
         }
 
-        if(packetNumber !== peer.mediaStreamPreviousPacket){
+        if (packetNumber !== peer.mediaStreamPreviousPacket) {
             //write packet
             let packetNumber = message[0] * message[1]
 
-            if(message.length <= 2 || TryAsync(async () => await FileSystemPromises.write(peer.mediaStream, message, 2, message.length - 2, packetNumber * __.MTU)))
+            if (message.length <= 2 || TryAsync(async () => await FileSystemPromises.write(peer.mediaStream, message, 2, message.length - 2, packetNumber * __.MTU)))
                 return this.#sendEncrypted(peer, str( [__.MEDIA_STREAM_PEER_ERR] ))
         }
 
@@ -476,7 +476,7 @@ const Receiver = class {
      * @param {Tracker} tracker Tracker have sen message
      */
     async handleTrackerMessage (message, remote, tracker) {
-        if(Try(() => message = json(tracker.key.decryptToString(message))))
+        if (Try(() => message = json(tracker.key.decryptToString(message))))
             return this.socket.send(
                 tracker.myPub,
                 0,
@@ -491,7 +491,7 @@ const Receiver = class {
          * 
          * [0]:string tracker command
          */
-        switch(message[0]){
+        switch (message[0]) {
 
             //announcer
             case 'unknown':
@@ -512,7 +512,7 @@ const Receiver = class {
                  * [2]number: peer port
                  * [3]string: peer pub
                  */
-                if( typeof message[1] !== 'string' ||
+                if (typeof message[1] !== 'string' ||
                     typeof message[2] !== 'number' )
                     return
 
@@ -520,10 +520,10 @@ const Receiver = class {
                 /** @type {Peer} Requested peer */
                 let peer = this.peers[`${message[1]}:${peerPort}`]
 
-                if(typeof message[3] === 'string') 
+                if (typeof message[3] === 'string') 
                     peer.pub = Return(() => BaseN.decode(message[3], '62'), Buffer.alloc(0))
 
-                if( typeof peer === 'undefined' ||
+                if (typeof peer === 'undefined' ||
                     !IpRegex.test(message[1]) ||
                     peerPort <= 1024 ||
                     peerPort > 65535 ||
@@ -536,11 +536,11 @@ const Receiver = class {
                 peer.port = peerPort
 
                 let tryToConnect = setInterval(() => {
-                    if(peer.connected())
+                    if (peer.connected())
                         return clearInterval(tryToConnect)
 
-                    if(peer.quality < 0){
-                        if(typeof peer.callback === 'function'){
+                    if (peer.quality < 0) {
+                        if (typeof peer.callback === 'function') {
                             peer.callback(__.MAX_TRIAL + 1)
                             peer.callback = undefined
                         }
@@ -569,17 +569,17 @@ const Receiver = class {
                  * [1]:string   peer IP
                  * [2]:number   peer port
                  */
-                if(typeof message[1] !== 'string' || typeof message[2] !== 'number')
+                if (typeof message[1] !== 'string' || typeof message[2] !== 'number')
                     return
 
-                if(!IpRegex.test(message[1]))
+                if (!IpRegex.test(message[1]))
                     return
 
                 let tryToResponseCount = 0
                 let tryToResponse = setInterval(() => {
                     let randomResponse = Crypt.rand(Crypt.ecdh.length)
 
-                    if(typeof this.peers[`${message[1]}:${message[2]}`] !== 'undefined')
+                    if (typeof this.peers[`${message[1]}:${message[2]}`] !== 'undefined')
                         return clearInterval(tryToResponse)
 
                     this.socket.send(
@@ -592,7 +592,7 @@ const Receiver = class {
                     )
                     tryToResponseCount++
 
-                    if(__.MAX_TRIAL < tryToResponseCount)
+                    if (__.MAX_TRIAL < tryToResponseCount)
                         return clearInterval(tryToResponse)
                 }, 1000)
 
@@ -603,10 +603,10 @@ const Receiver = class {
                 /**
                  * Tracker says welcome!
                  */
-                if(typeof message[1] === 'string' && typeof message[2] === 'number'){
+                if (typeof message[1] === 'string' && typeof message[2] === 'number') {
                     let myAddress = `${message[1]}:${message[2]}`
 
-                    if(this.myAddress.length <= 0)
+                    if (this.myAddress.length <= 0)
                         console.log(`Your public address: ${myAddress}`)
 
                     this.myAddress = myAddress
@@ -635,26 +635,25 @@ const Receiver = class {
                  * [1]:string       account public key
                  * [2]:string[]     list of following peers
                  */
-                if( typeof message[1] !== 'string' ||
+                if (typeof message[1] !== 'string' ||
                     !Array.isArray(message[2]) )
                     return
 
                 /** @type {string[]} */
                 let followerPeers = message[2]
 
-                for(let p = 0; p < followerPeers.length; p++){
+                for (let p = 0; p < followerPeers.length; p++) {
                     let followerPeer = new Peer(followerPeers[p])
 
                     this.addPeer(followerPeer)
                     followerPeers[p] = BaseN.encode(peer.public, '62')
                 }
 
-                if(typeof seeders[message[1]] === 'undefined'){
+                if (typeof seeders[message[1]] === 'undefined') {
                     seeders[message[1]] = followerPeers
                     seedersMyPos [message[1]] = 0
                     seedersSorted[message[1]] = false
-                }
-                else{
+                } else {
                     /** @type {string[]} */
                     let oldSeeders = seeders[message[1]]
 
@@ -672,11 +671,10 @@ const Receiver = class {
      * @param {Peer} peer 
      */
     async handleBadPeer (message, remote, peer) {
-        if(peer.isSender){
+        if (peer.isSender) {
             this.deletePeer(peer)
             this.handleSocketMessage(message, remote)
-        }
-        else{
+        } else {
             this.stopPolling(peer)
             this.socket.send(
                 peer.myPub,
@@ -696,10 +694,10 @@ const Receiver = class {
      */
     initializeConnection (peer) {
         return new Promise(resolve => {
-            if(peer.connected())
+            if (peer.connected())
                 return resolve(1)
 
-            if(peer.public){
+            if (peer.public) {
                 this.socket.send(
                     peer.myPub,
                     0,
@@ -727,30 +725,30 @@ const Receiver = class {
      * @returns {Promise<number>} How many tries used to connect to peer? (0 means parameters invalid, __.MAX_TRIAL means unsuccessful)
      */
     async send (peer, data) {
-        if(Array.isArray(data))
-            if(Try(() => data = str(data)))
+        if (Array.isArray(data))
+            if (Try(() => data = str(data)))
                 return 0
         
-        if(typeof data !== 'string')
+        if (typeof data !== 'string')
             return 0
 
-        if(data.length > __.MTU){
+        if (data.length > __.MTU) {
             console.log(`Receiver.send() should only be used with small streams (< ${__.MTU} bytes) `) //LOCALE_NEEDED
             return 0
         }
 
-        if(typeof peer === 'string'){
+        if (typeof peer === 'string') {
             /** @type {string} */
             let peerStr = peer
             peer = this.peers[peerStr]
 
-            if(typeof peer === 'undefined'){
+            if (typeof peer === 'undefined') {
                 let ipAndPort = peerStr.split(':')
 
-                if(ipAndPort.length !== 2)
+                if (ipAndPort.length !== 2)
                     return 0
 
-                if(!IpRegex.test(ipAndPort[0]))
+                if (!IpRegex.test(ipAndPort[0]))
                     return 0
 
                 peer = new Peer([
@@ -758,23 +756,22 @@ const Receiver = class {
                     Return(() => parseInt(ipAndPort[1]), 1)
                 ])
             }
-        }
-        else if(typeof peer !== 'object')
+        } else if (typeof peer !== 'object')
             return 0
 
         let connectionTrialCounter = 1
 
         this.addPeer(peer)
 
-        if(!peer.connected()){
+        if (!peer.connected()) {
             peer.quality = __.MAX_TRIAL
             connectionTrialCounter = await this.initializeConnection(peer)
 
-            if(__.MAX_TRIAL < connectionTrialCounter)
+            if (__.MAX_TRIAL < connectionTrialCounter)
                 return connectionTrialCounter
         }
 
-        if(Try(() => this.#sendEncrypted(peer, data)))
+        if (Try(() => this.#sendEncrypted(peer, data)))
             return 0
 
         return connectionTrialCounter
@@ -811,7 +808,7 @@ const Receiver = class {
         let dummyQueue = {}
         let queueAwait = () => new Promise(resolve => {
             setInterval(() =>{
-                if(peer.mediaStreamQueue[0] === dummyQueue)
+                if (peer.mediaStreamQueue[0] === dummyQueue)
                     resolve()
             })
         })
@@ -836,10 +833,10 @@ const Receiver = class {
      * @returns {Promise<Number>}
      */
     async #sendMedia (peer, info) {
-        if(typeof info !== 'object')
+        if (typeof info !== 'object')
             return __.MEDIA_STREAM_INFO_INVALID
 
-        if( typeof info.owner !== 'string' ||
+        if (typeof info.owner !== 'string' ||
             typeof info.index !== 'number' ||
             typeof info.index !== 'string' ||
             typeof info.media !== 'number' )
@@ -849,7 +846,7 @@ const Receiver = class {
         /** @type {FileSystem.Stats} */
         let fileStats
 
-        switch(info.media){
+        switch (info.media) {
             case 'avatar':
             case 'cover':
                 fileLocation += '.png'
@@ -859,13 +856,13 @@ const Receiver = class {
                 fileLocation += `.${info.media}`
         }
 
-        if(await TryAsync(async () => FileSystemPromises.access(fileLocation)))
+        if (await TryAsync(async () => FileSystemPromises.access(fileLocation)))
             return __.MEDIA_STREAM_FILE_NOT_FOUND
 
-        if(await TryAsync(async () => fileStats = FileSystemPromises.stat(fileLocation)))
+        if (await TryAsync(async () => fileStats = FileSystemPromises.stat(fileLocation)))
             return __.MEDIA_STREAM_FILE_NOT_READY
 
-        if(fileStats.size > __.MAX_PAYLOAD || fileStats.size > 65536)
+        if (fileStats.size > __.MAX_PAYLOAD || fileStats.size > 65536)
             return __.MEDIA_STREAM_FILE_TOO_LARGE
 
         let fileStream = FileSystem.createReadStream(fileLocation)
@@ -893,7 +890,7 @@ const Receiver = class {
         let fileStreamMissedPacket
 
         peer.mediaStreamCb = message => {
-            if(fileStreamStatus === __.MEDIA_STREAM_DECLINED)
+            if (fileStreamStatus === __.MEDIA_STREAM_DECLINED)
                 return
 
             fileStreamStatus = message
@@ -908,28 +905,28 @@ const Receiver = class {
             Math.ceil(fileStats.size / 1024)
         ]))
 
-        if(await fileStreamAwaiter(8000) !== __.MEDIA_STREAM_READY)
+        if (await fileStreamAwaiter(8000) !== __.MEDIA_STREAM_READY)
             return fileStreamStatus
 
-        while(true){
-            if(fileStreamStatus === __.MEDIA_STREAM_DECLINED)
+        while (true) {
+            if (fileStreamStatus === __.MEDIA_STREAM_DECLINED)
                 // peer declined the package
                 return fileStreamStatus
 
-            if(fileStreamResendCount > __.MAX_TRIAL){
+            if (fileStreamResendCount > __.MAX_TRIAL) {
                 this.#sendEncrypted(peer, Buffer.from([255,255]))
                 return __.MEDIA_STREAM_TIME_OUT
             }
 
-            if(typeof fileStreamMissedPacket === 'undefined')
+            if (typeof fileStreamMissedPacket === 'undefined')
                 fileStreamByte = fileStream.read(__.MTU)
-            else{
+            else {
                 // If peer missed the package, send the old one
                 fileStreamByte = fileStreamMissedPacket
                 fileStreamMissedPacket = undefined
             }
             
-            if(!fileStreamByte) // FALSY
+            if (!fileStreamByte) // FALSY
                 break
 
             this.#sendEncrypted(peer, Buffer.concat([
@@ -942,21 +939,20 @@ const Receiver = class {
 
             let waitForAck = await fileStreamAwaiter(10000)
 
-            if(waitForAck === __.MEDIA_STREAM_ACK){
+            if (waitForAck === __.MEDIA_STREAM_ACK) {
                 fileStreamResendCount = 0
 
-                if(fileStreamIndex1 < 255)
+                if (fileStreamIndex1 < 255)
                     fileStreamIndex1++
-                else{
+                else {
                     fileStreamIndex1 = 0
 
-                    if(fileStreamIndex0 < 255)
+                    if (fileStreamIndex0 < 255)
                         fileStreamIndex0++
                     else
                         break
                 }
-            }
-            else if(waitForAck === __.MEDIA_STREAM_TIME_OUT){
+            } else if (waitForAck === __.MEDIA_STREAM_TIME_OUT) {
                 fileStreamMissedPacket = fileStreamByte
                 fileStreamResendCount++
                 continue
@@ -965,9 +961,9 @@ const Receiver = class {
 
         fileStream.close()
         
-        while(true){
+        while (true) {
             // wait for peer to accept the packet
-            if(fileStreamResendCount > __.MAX_TRIAL)
+            if (fileStreamResendCount > __.MAX_TRIAL)
                 return __.MEDIA_STREAM_TIME_OUT
             else
                 fileStreamResendCount++
@@ -980,7 +976,7 @@ const Receiver = class {
                 ])
             )
 
-            if(await fileStreamAwaiter(1000) === __.MEDIA_STREAM_TIME_OUT)
+            if (await fileStreamAwaiter(1000) === __.MEDIA_STREAM_TIME_OUT)
                 continue
             else
                 break
@@ -995,7 +991,7 @@ const Receiver = class {
      * @param {Peer} peer Peer to start polling
      */
     startPolling (peer) {
-        if(peer.connected())
+        if (peer.connected())
             return false
 
         this.pollingList.push(peer)
@@ -1008,12 +1004,12 @@ const Receiver = class {
      * @param {Peer} peer Peer to stop polling
      */
     stopPolling (peer) {
-        if(typeof peer === 'number'){
+        if (typeof peer === 'number') {
             /** @type {Peer} */
             let peerToDelete = this.pollingList[peer]
 
-            if(typeof peerToDelete === 'object'){
-                if(peerToDelete.connected()){
+            if (typeof peerToDelete === 'object') {
+                if (peerToDelete.connected()) {
                     this.pollingList.splice(peer, 1)
                     return true
                 }
@@ -1022,11 +1018,11 @@ const Receiver = class {
             return false
         }
 
-        if(peer.connected()){
+        if (peer.connected()) {
             peer.keepAlive = false
 
-            for(let i = 0; i < this.pollingList.length; i++){
-                if(this.pollingList[i] === peer){
+            for (let i = 0; i < this.pollingList.length; i++) {
+                if (this.pollingList[i] === peer) {
                     this.pollingList.splice(i, 1)
                     return true
                 }
@@ -1041,7 +1037,7 @@ const Receiver = class {
      * @param {RequestFunction} callback Callback to be used
      */
     constructor (callback) {
-        if(typeof callback !== 'function')
+        if (typeof callback !== 'function')
             throw Error(`Callback for receiver must be a function!`)
 
         this.callback = callback
@@ -1049,7 +1045,7 @@ const Receiver = class {
         this.socket.on('message', (msg, remote) => this.handleSocketMessage(msg, remote, 0))
 
         // handshake to trackers
-        if(Try(() => {
+        if (Try(() => {
             /** @type {Array} */
             let trackersLoaded = this.storage.read('trackers')
 
@@ -1062,7 +1058,7 @@ const Receiver = class {
 
                 delete trackersLoaded [ind]
 
-                if(typeof newTracker.key === 'undefined')
+                if (typeof newTracker.key === 'undefined')
                     return
 
                 let trackerAddress = `${el.ip}:${el.port}`
@@ -1072,10 +1068,10 @@ const Receiver = class {
         }))
             return
 
-        if(this.trackerList.length === 0)
+        if (this.trackerList.length === 0)
             throw Error('No trackers has been set')
 
-        for(let t in this.trackerList){
+        for (let t in this.trackerList) {
             /** @type {Tracker} */
             let tracker = this.peers[this.trackerList[t]]
 
@@ -1090,13 +1086,13 @@ const Receiver = class {
             /** @type {Peer} */
             let peer
 
-            while(i < this.pollingList.length){
+            while (i < this.pollingList.length) {
                 peer = this.pollingList[i]
 
-                if(currentTime - peer.lastAccess > __.LAST_ACCESS_LIMIT){
+                if (currentTime - peer.lastAccess > __.LAST_ACCESS_LIMIT) {
                     this.stopPolling(peer)
 
-                    if(peer.isSender)
+                    if (peer.isSender)
                         this.deletePeer(peer)
                     continue
                 }

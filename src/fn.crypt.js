@@ -33,7 +33,7 @@ const long = (str,prefix) => {
     let strArr = Array(strRows + 2)
     let strOffset = 0
     strArr[0] = prefix[0]
-    for(s=1; s <= strRows; s++){
+    for (s=1; s <= strRows; s++) {
         strArr[s] = str.substr(strOffset, len)
         strOffset += len
     }
@@ -48,7 +48,7 @@ const long = (str,prefix) => {
  */
 const short = str => {
     str = str.split('\n')
-    if(str.length < 3)
+    if (str.length < 3)
         return str.join('\n')
     str.splice(str.length - 2, 2)
     str.splice(0,1)
@@ -65,12 +65,14 @@ const keyCreator = {
      */
     ecdh: key => {
         let ecdh =  Crypto.createECDH(curve)
-        if(typeof key === 'string')
+
+        if (typeof key === 'string')
             ecdh.setPrivateKey(Buffer.from(key, 'base64'))
-        else if(Buffer.isBuffer(key))
+        else if (Buffer.isBuffer(key))
             ecdh.setPrivateKey(key)
         else
             ecdh.generateKeys()
+
         return ecdh
     },
 
@@ -224,7 +226,7 @@ module.exports = {
      * @returns {Buffer} Randomized buffer
      */
     rand: size => {
-        if(typeof size !== 'number')
+        if (typeof size !== 'number')
             return Crypto.randomBytes(3)
         return Crypto.randomBytes(Math.floor(size))
     }

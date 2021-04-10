@@ -92,34 +92,34 @@ const Post = class {
      * @param {Array} d Array to be imported
      */
     constructor (d) {
-        if(!Array.isArray(d))
+        if (!Array.isArray(d))
             return
 
-        if(typeof d[0] === 'string')
+        if (typeof d[0] === 'string')
             this.owner = d[0]
 
-        if(Array.isArray(d[1]))
+        if (Array.isArray(d[1]))
             this.media = d[1]
 
-        if(Array.isArray(d[2]))
+        if (Array.isArray(d[2]))
             this.mediaType = d[2]
 
-        if(Array.isArray(d[3]))
+        if (Array.isArray(d[3]))
             this.mention = new PostPointer(d[3])
 
-        if(Array.isArray(d[4]))
+        if (Array.isArray(d[4]))
             this.tag = d[4]
 
-        if(typeof d[5] === 'string')
+        if (typeof d[5] === 'string')
             this.text = d[5]
 
-        if(typeof d[6] === 'number')
+        if (typeof d[6] === 'number')
             this.time = d[6]
 
-        if(typeof d[7] === 'string')
+        if (typeof d[7] === 'string')
             this.signature = d[7]
 
-        if(this.signature.length  > 0)
+        if (this.signature.length  > 0)
             this.valid = Return(() => Crypt.sign.verify(str(this.#exportPost()), this.owner.split('').reverse().join(''), this.signature))
     }
 }

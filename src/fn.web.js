@@ -43,17 +43,19 @@ const WebRequest = class {
     constructor (req, d) {
         this.HTTP = req
 
-        if(!isAny(d))
+        if (!isAny(d))
             return
 
         this.header = req.headers
         this.url = req.url
 
-        if(typeof d.body === 'string')
+        if (typeof d.body === 'string')
             this.body = d.body
-        if(isAny(d.params))
+
+        if (isAny(d.params))
             this.params = d.params
-        if(isAny(d.query)) 
+
+        if (isAny(d.query)) 
             this.query = d.query
     }
 }
@@ -83,14 +85,16 @@ const WebResponse = class {
      * @returns {WebResponse} 
      */
     send (data, encoding) {
-        switch(typeof data){
+        switch (typeof data) {
             case 'object':
                 data = Return(() => str(data), '')
                 break
+
             default:
                 data = Return(() => `${data}`, '')
                 break
         }
+
         this.HTTP.end(data, typeof encoding === 'string' ? encoding : 'utf-8')
         return this
     }
@@ -111,7 +115,7 @@ const WebResponse = class {
      * @param {HTTP.ServerResponse} res Outgoing response
      */
     constructor (res) {
-        if(typeof res !== 'undefined')
+        if (typeof res !== 'undefined')
             this.HTTP = res
     }
 }
@@ -135,14 +139,16 @@ const WebEvent = class {
      * @param {{method:string,params:string,callback:RequestCallback}} d Data to be imported
      */
     constructor (d) {
-        if(typeof d !== 'object')
+        if (typeof d !== 'object')
             return
 
-        if(typeof d.callback === 'function')
+        if (typeof d.callback === 'function')
             this.callback = d.callback
-        if(typeof d.method === 'string')
+
+        if (typeof d.method === 'string')
             this.method = d.method.toLowerCase()
-        if(typeof d.params === 'string')
+
+        if (typeof d.params === 'string')
             this.params = d.params.split('/')
     }
 }
@@ -234,6 +240,7 @@ const Web = class {
         let buildServer = () => {
             HTTP.createServer((req,res) => {
                 let body = ''
+
                 req.setEncoding('utf-8')
                 req.on('data', chunk => {
                     body += chunk
@@ -253,42 +260,44 @@ const Web = class {
                     let webQuery = {}
                     let url = req.url.split('?')
                     let params = url[0].split('/')
-                    if(url.length === 2) {
+
+                    if (url.length === 2) {
                         let query = url[1].split('&')
-                        for(let q=0; q<query.length; q++){
+                        for (let q=0; q<query.length; q++) {
                             let elQuery = query[q].split('=')
     
-                            if(elQuery.length === 1)
+                            if (elQuery.length === 1)
                                 webQuery[elQuery[0]] = true
                             else
                                 webQuery[elQuery[0]] = elQuery[1]
                         }
-                    }
-                    else if(url.length > 2){
-                        res.writeHead(400).end('Bad request.')
-                        return
-                    }
-                    for(ev=0; ev < this.events.length; ev++){
+                    } else if (url.length > 2)
+                        return res.writeHead(400).end('Bad request.')
+
+                    for (ev=0; ev < this.events.length; ev++) {
                         thisEvent = true
                         webEvent = this.events[ev]
                         webEventParam = webEvent.params
                         webParams = {}
     
-                        if(webEvent.method !== req.method.toLowerCase())
+                        if (webEvent.method !== req.method.toLowerCase())
                             continue
-                        if(webEventParam.length !== params.length)
+
+                        if (webEventParam.length !== params.length)
                             continue
     
-                        for(p=0; p<params.length; p++){
-                            if(webEventParam[p][0] === ':' && webEventParam[p].length > 1)
+                        for (p=0; p<params.length; p++) {
+                            if (webEventParam[p][0] === ':' && webEventParam[p].length > 1)
                                 webParams[webEventParam[p].slice(1,webEventParam[p].length)] = params[p]
-                            else if(webEventParam[p] !== params[p]){
+                            else if (webEventParam[p] !== params[p]) {
                                 thisEvent = false
                                 break
                             }
                         }
-                        if(!thisEvent)
+
+                        if (!thisEvent)
                             continue
+
                         webEvent.callback(new WebRequest(req,{
                             params: webParams,
                             query: webQuery,
@@ -296,6 +305,7 @@ const Web = class {
                         }), new WebResponse(res))
                         return
                     }
+
                     this.ev404.callback(new WebResponse(res))
                     return
                 })
@@ -305,8 +315,8 @@ const Web = class {
             }).listen(this.port)
         }
 
-        if(typeof d === 'object'){
-            if(typeof d.port === 'number')
+        if (typeof d === 'object') {
+            if (typeof d.port === 'number')
                 this.port = d.port
         }
         

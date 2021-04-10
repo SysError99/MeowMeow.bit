@@ -21,7 +21,8 @@ const promise = {
         try {
             await FileSystem.promises.access(P.a + location + P.b)
             return true
-        } catch {
+        }
+        catch {
             return false
         }
     },
@@ -128,12 +129,12 @@ const storage = {
  * @param {Locale} locale Locale object from a server
  */
 module.exports = locale => {
-    if(isAny(locale)){
-        if(locale.isLocale)
+    if (isAny(locale)) {
+        if (locale.isLocale)
             storage.locale = locale
     }
 
-    if(typeof storage.locale === 'undefined')
+    if (typeof storage.locale === 'undefined')
         storage.locale = new Locale()
 
     return storage

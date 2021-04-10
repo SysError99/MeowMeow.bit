@@ -22,7 +22,7 @@ const SignKey = class {
      * @returns {string} Base64-based signature
      */
     sign (str) {
-        if(this.private.length === 0 || str.length === 0)
+        if (this.private.length === 0 || str.length === 0)
             return ''
         return Return(() => Crypt.sign.perform(str, this.private, this.password), '')
     }
@@ -34,7 +34,7 @@ const SignKey = class {
      * @returns {boolean} Is this legit?
      */
     verify (str, signature) {
-        if(this.public.length === 0 || str.length === 0)
+        if (this.public.length === 0 || str.length === 0)
             return false
         return Return(() => Crypt.sign.verify(str, this.public.split('').reverse().join(''), signature), '')
     }
@@ -60,17 +60,16 @@ const SignKey = class {
      * @param {Array|string} d Use string to create a new key with password, use array to load saved key
      */
     constructor (d) {
-        if(Array.isArray(d)){
-            if(typeof d[0] === 'string')
+        if (Array.isArray(d)) {
+            if (typeof d[0] === 'string')
                 this.password = d[0]
 
-            if(typeof d[1] === 'string')
+            if (typeof d[1] === 'string')
                 this.exportprivate = d[1]
 
-            if(typeof d[2] === 'string')
+            if (typeof d[2] === 'string')
                 this.public = d[2]
-        }
-        else{
+        } else {
             let password = typeof d === 'string' ? d : ''
             let newKey = Crypt.newKey.sign(password)
 

@@ -13,8 +13,8 @@ const timelineRetrieve = () => {
     let request = new XMLHttpRequest()
 
     request.onreadystatechange = e => {
-        if(request.readyState === request.DONE && request.status === 200) {
-            if(request.responseText.length > 0)
+        if (request.readyState === request.DONE && request.status === 200) {
+            if (request.responseText.length > 0)
                 document.getElementById('body').innerHTML += request.responseText
         }
     }

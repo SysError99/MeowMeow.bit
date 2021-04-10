@@ -6,14 +6,15 @@ const ignore = require('./const').TRY_CATCH_IGNORE
  * @param {any} errreturn What to return when error has occured
  */
 const tryCatch = (fn, errreturn) => {
-    if(typeof fn === 'function'){
-        try{
+    if (typeof fn === 'function') {
+        try {
             return fn()
-        }catch(e){
+        }
+        catch(e) {
             let err = new Error(e)
 
-            for(let i = 0; i < ignore.length; i++){
-                if(err.stack.indexOf(ignore[i]) >= 0)
+            for (let i = 0; i < ignore.length; i++) {
+                if (err.stack.indexOf(ignore[i]) >= 0)
                     return errreturn
             }
 
@@ -36,7 +37,8 @@ const tryCatch = (fn, errreturn) => {
 
             return errreturn
         }
-    }else
+    }
+    else
         throw Error('tryCatch() expects function!')
 }
 module.exports = tryCatch

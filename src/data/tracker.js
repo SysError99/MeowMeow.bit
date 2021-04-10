@@ -35,18 +35,18 @@ const Tracker = class {
      * @param {Array} d Tracker public key
      */
     constructor (d) {
-        if(!Array.isArray(d))
+        if (!Array.isArray(d))
             return
 
-        if(typeof d[0] === 'string')
+        if (typeof d[0] === 'string')
             this.ip = d[0]
 
-        if(typeof d[1] === 'number')
+        if (typeof d[1] === 'number')
             this.port = d[1]
 
-        if(typeof d[2] === 'string')
+        if (typeof d[2] === 'string')
             d[2] = Return(() => Buffer.from(d[2], 'base64'), this.pub)
-        else if(!Buffer.isBuffer(d[2]))
+        else if (!Buffer.isBuffer(d[2]))
             return
 
         let ecdh = new ECDHKey()

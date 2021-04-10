@@ -5,20 +5,21 @@ const ignore = require('./const').TRY_CATCH_IGNORE
  * @param {Promise<boolean>} kick Throws an error if there is an error
  */
 const tryCatch = async (fn, kick) => {
-    if(typeof fn === 'function'){
-        if(kick){
+    if (typeof fn === 'function') {
+        if (kick) {
             fn()
             return
         }
 
-        try{
+        try {
             fn()
             return false
-        }catch(e){
+        }
+        catch(e) {
             let err = new Error(e)
 
-            for(let i = 0; i < ignore.length; i++){
-                if(err.stack.indexOf(ignore[i]) >= 0)
+            for (let i = 0; i < ignore.length; i++) {
+                if (err.stack.indexOf(ignore[i]) >= 0)
                     return true
             }
 
@@ -41,7 +42,8 @@ const tryCatch = async (fn, kick) => {
 
             return true
         }
-    }else
+    }
+    else
         throw Error('tryCatch() expects function!')
 }
 module.exports = tryCatch
