@@ -1,10 +1,12 @@
 const Datagram = require('dgram')
 const FileSystem = require('fs')
+const FileSystemPromises = FileSystem.promises
 
 const __ = require('./const')
 const BaseN = require('./fn.base.n')
 const Crypt = require('./fn.crypt')
 const Try = require('./fn.try.catch')
+const TryAsync = require('./fn.try.catch.async')
 const Return = require('./fn.try.return')
 const Locale = require('./locale/locale')
 const {json, str} = require('./fn.json')
@@ -203,12 +205,13 @@ const Receiver = class {
     /**
      * Delete a peer from known list
      * @param {Peer} peer Peer to delete
+     * @returns {Promise<void>}
      */
-    deletePeer (peer) {
+    async deletePeer (peer) {
         let remoteAddress = `${peer.ip}:${peer.port}`
 
-        if(peer.mediaStream >= 0)
-            peer.closeMediaStream()
+        if(typeof peer.mediaStream !== 'undefined')
+            await peer.closeMediaStream()
 
         if(typeof this.peers[remoteAddress] === 'object')
             delete this.peers[remoteAddress]
@@ -223,9 +226,8 @@ const Receiver = class {
         for(let t in this.trackerList){
             /** @type {Tracker} */
             let tracker = this.peers[this.trackerList[t]]
-            let tellPortStr = tracker.key.encrypt(str( [`forwardPort`, p] ))
 
-            this.socket.send(tellPortStr, 0, tellPortStr.length, tracker.port, tracker.ip, showError)
+            this.#sendEncrypted(tracker, str( [`forwardPort`, p] ))
         }
     }
 
@@ -243,7 +245,9 @@ const Receiver = class {
 
             trialCount--
             this.socket.send(
-                myPub, 0, myPub.length,
+                myPub,
+                0,
+                myPub.length,
                 tracker.port,
                 tracker.ip,
                 showError
@@ -262,14 +266,13 @@ const Receiver = class {
         let peer = this.peers[`${remote.address}:${remote.port}`]
 
         if(typeof peer === 'undefined'){
+            //Add peer to active list
             if(message.length !== Crypt.ecdh.length)
                 return 
 
             let computeKey = this.key.computeSecret(message)
 
             if(typeof computeKey !== 'undefined'){
-                let helloMessage = computeKey.encrypt(str( ['nice2meetu'] ))
-
                 peer = new Peer([
                     remote.address,
                     remote.port
@@ -278,17 +281,24 @@ const Receiver = class {
                 peer.key = computeKey
                 this.addPeer(peer)
                 this.startPolling(peer)
-                this.socket.send(helloMessage, 0, helloMessage.length, remote.port, remote.address, showError)
+                this.#sendEncrypted(peer, str( ['nice2meetu'] ))
             }
             else
-                this.socket.send(Crypt.rand(22), 0, 22, remote.port, remote.address, showError)
+                this.socket.send(
+                    Crypt.rand(22),
+                    0,
+                    22,
+                    remote.port,
+                    remote.address,
+                    showError
+                )
 
             return 
         }
 
         if(peer.isPeer)
             return this.handlePeerMessage(message, remote, peer)
-            
+
         if(peer.isTracker)
             return this.handleTrackerMessage(message, remote, peer)
     }
@@ -319,11 +329,11 @@ const Receiver = class {
             return
         }
 
-        //check last access time from peer
         if(peer.lastAccess !== 0){
+            //check last access time from peer
             let lastAccess = currentTime - peer.lastAccess
 
-            if(lastAccess <= __.ACCESS_COOLDOWN && peer.mediaStream < 0)
+            if(lastAccess <= __.ACCESS_COOLDOWN && typeof peer.mediaStream === 'undefined')
                 return
             else if(lastAccess >= __.LAST_ACCESS_LIMIT)
                 return this.handleBadPeer(message, remote, peer)
@@ -331,58 +341,16 @@ const Receiver = class {
 
         peer.lastAccess = currentTime
 
+        if(message.length === 1 && typeof peer.mediaStreamCb === 'function')
+            return peer.mediaStreamCb(__.MEDIA_STREAM_ACK)
+
         if(Try(() => message = peer.key.decrypt(message)))
             return this.handleBadPeer(message, remote, peer)
 
         if(Try(() => message = json(message))){
-            if(peer.mediaStream >= 0){
-                // Streaming media
-                if(message[0] === 255 && message[1] === 255){
-                    let dataReceivedSignature = await Crypt.hash(peer.getMediaStreamTempLocation())
-
-                    if(dataReceivedSignature === peer.getMediaStreamHash()){
-                        let mediaAcceptMessage = peer.key.encrypt(str( [__.MEDIA_STREAM_ACCEPTED] ))
-
-                        this.socket.send(mediaAcceptMessage, 0, mediaAcceptMessage.length, peer.port, peer.ip, showError)
-                        
-                        if(!peer.closeMediaStream()){
-                            let mediaStreamCloseErrorMessage = peer.key.encrypt(str( [__.MEDIA_STREAM_PEER_ERR] ))
-    
-                            this.socket.send(mediaStreamCloseErrorMessage, 0, mediaStreamCloseErrorMessage.length, peer.port, peer.ip, showError)
-                        }
-                        return
-                    }
-                    else
-                        //set packet bigger that accepted rate to trigger decline
-                        peer.mediaStreamPacketsReceived = peer.mediaStreamPacketsTotal + 1
-                }
-    
-                if(peer.mediaStreamPacketsReceived > peer.mediaStreamPacketsTotal){
-                    // Packet number exceeds the limited amount
-                    let mediaDeclineMessage = peer.key.encrypt(str( [__.MEDIA_STREAM_DECLINED] ))
-
-                    this.socket.send(mediaDeclineMessage, 0, mediaDeclineMessage.length, peer.port, peer.ip, showError)
-                    peer.closeMediaStream()
-                    return
-                }
-    
-                //write packet
-                let packetNumber = message[0] * message[1]
-
-                if(message.length <= 2 || Try(() => FileSystem.writeSync(peer.mediaStream, message, 2, message.length - 2, packetNumber * __.MTU))){
-                    let mediaStreamErrorMessage = peer.key.encrypt(str( [__.MEDIA_STREAM_PEER_ERR] ))
-
-                    this.socket.send(mediaStreamErrorMessage, 0, mediaStreamErrorMessage.length, peer.port, peer.ip, showError)
-                    return
-                }
-
-                let ackMessage = peer.key.encrypt(str [__.MEDIA_STREAM_ACK])
-
-                peer.mediaStreamPacketsReceived++
-                this.socket.send(ackMessage, 0, ackMessage.length, peer.port, peer.ip, showError)
-                return
-            }
-            else if(!Array.isArray(message))
+            if(typeof peer.mediaStream !== 'undefined')
+                return this.#handleMediaStream(message, peer)
+            else
                 return this.handleBadPeer(message, remote, peer)
         }
 
@@ -435,7 +403,7 @@ const Receiver = class {
                     /**
                      * Peer responds with ACK
                      */
-                    peer.mediaStreamCb(message)
+                    peer.mediaStreamCb(message[0])
                     return
             }
         }
@@ -447,18 +415,76 @@ const Receiver = class {
     }
 
     /**
+     * Handle Message have sent from peers
+     * @param {Buffer|string} message Encrypted message received
+     * @param {Peer} peer Peer sent this
+     */
+    async #handleMediaStream (message, peer) {
+        // Streaming media
+        if(message[0] === 255 && message[1] === 255){
+            //Verifying signature
+            let dataReceivedSignature = await Crypt.hash(peer.getMediaStreamTempLocation())
+
+            if(dataReceivedSignature === peer.getMediaStreamHash()){
+                if(await peer.closeMediaStream()){ // If can't close properly
+                    this.#sendEncrypted(peer, str( [__.MEDIA_STREAM_PEER_ERR] ))
+                    peer.mediaStream = undefined
+                }
+
+                this.#sendEncrypted(peer, str( [__.MEDIA_STREAM_ACCEPTED] ))
+                return
+            }
+            else
+                //Set it to be bigger that accepted rate to trigger 'media decline'
+                peer.mediaStreamPacketsReceived = peer.mediaStreamPacketsTotal + 1
+        }
+
+        if(peer.mediaStreamPacketsReceived > peer.mediaStreamPacketsTotal){
+            // Decline file
+            this.#sendEncrypted(peer, str( [__.MEDIA_STREAM_DECLINED] ))
+            await peer.closeMediaStream()
+            return
+        }
+
+        if(packetNumber !== peer.mediaStreamPreviousPacket){
+            //write packet
+            let packetNumber = message[0] * message[1]
+
+            if(message.length <= 2 || TryAsync(async () => await FileSystemPromises.write(peer.mediaStream, message, 2, message.length - 2, packetNumber * __.MTU)))
+                return this.#sendEncrypted(peer, str( [__.MEDIA_STREAM_PEER_ERR] ))
+        }
+
+        //Return ACK signal
+        peer.mediaStreamPacketsReceived++
+        peer.mediaStreamPreviousPacket = packetNumber
+        this.socket.send(
+            Buffer.from([
+                Math.floor(Math.random() * 255)
+            ]),
+            0,
+            1,
+            peer.port,
+            peer.ip,
+            showError
+        )
+    }
+
+    /**
      * Handle messages from tracker
      * @param {string} message Message received
      * @param {Datagram.RemoteInfo} remote Remote Info
      * @param {Tracker} tracker Tracker have sen message
      */
     async handleTrackerMessage (message, remote, tracker) {
-        if(Try(() => message = json(tracker.key.decryptToString(message)))){
-            let trackerPub = tracker.myPub
-
-            this.socket.send(trackerPub, 0, trackerPub.length, remote.port, remote.address, showError)
-            return
-        }
+        if(Try(() => message = json(tracker.key.decryptToString(message))))
+            return this.socket.send(
+                tracker.myPub,
+                0,
+                tracker.myPub.length,
+                remote.port, 
+                remote.address,
+                showError
+            )
 
         /**
          * Tracker section
@@ -525,7 +551,14 @@ const Receiver = class {
 
                     peer.quality--
                     peer.setPeerPub(peer.pub)
-                    this.socket.send(peer.myPub, 0, peer.myPub.length, peer.port, peer.ip, showError)
+                    this.socket.send(
+                        peer.myPub,
+                        0,
+                        peer.myPub.length,
+                        peer.port,
+                        peer.ip,
+                        showError
+                    )
                 }, 1000)
                 return
 
@@ -549,7 +582,14 @@ const Receiver = class {
                     if(typeof this.peers[`${message[1]}:${message[2]}`] !== 'undefined')
                         return clearInterval(tryToResponse)
 
-                    this.socket.send(randomResponse, 0, randomResponse.length, message[2], message[1], showError)
+                    this.socket.send(
+                        randomResponse,
+                        0,
+                        randomResponse.length,
+                        message[2],
+                        message[1],
+                        showError
+                    )
                     tryToResponseCount++
 
                     if(__.MAX_TRIAL < tryToResponseCount)
@@ -563,8 +603,6 @@ const Receiver = class {
                 /**
                  * Tracker says welcome!
                  */
-                let setPubMessage = tracker.key.encrypt(str( ['setPub', this.myPub] ))
-
                 if(typeof message[1] === 'string' && typeof message[2] === 'number'){
                     let myAddress = `${message[1]}:${message[2]}`
 
@@ -576,8 +614,18 @@ const Receiver = class {
 
                 this.ready = true
                 tracker.connected = true
-                this.socket.send(setPubMessage, 0, setPubMessage.length, remote.port, remote.address, showError)
-                tracker.keepAlive = setInterval(() => this.socket.send('', 0, 0, remote.port, remote.address, showError), 6000)
+                this.#sendEncrypted(tracker, str( ['setPub', this.myPub] ))
+                tracker.keepAlive = setInterval(
+                    () =>
+                        this.socket.send(
+                            '',
+                            0,
+                            0,
+                            remote.port,
+                            remote.address,
+                            showError
+                        ),
+                    6000)
                 return
 
             case 'follower':
@@ -630,7 +678,14 @@ const Receiver = class {
         }
         else{
             this.stopPolling(peer)
-            this.socket.send(peer.myPub, 0, peer.myPub.length, remote.port, remote.address, showError)
+            this.socket.send(
+                peer.myPub,
+                0,
+                peer.myPub.length,
+                remote.port,
+                remote.address,
+                showError
+            )
         }
     }
 
@@ -646,7 +701,9 @@ const Receiver = class {
 
             if(peer.public){
                 this.socket.send(
-                    peer.myPub, 0, peer.myPub.length,
+                    peer.myPub,
+                    0,
+                    peer.myPub.length,
                     peer.port,
                     peer.ip,
                     showError
@@ -656,11 +713,9 @@ const Receiver = class {
             }
 
             let tracker = randTracker(this)
-            let announceMessage = tracker.key.encrypt(str( [`announce`, `${peer.ip}:${peer.port}`] ))
 
             peer.callback = trial => resolve(trial)
-            this.socket.send(announceMessage, 0, announceMessage.length, tracker.port, tracker.ip, showError)
-
+            this.#sendEncrypted(tracker, str( [`announce`, `${peer.ip}:${peer.port}`] ))
             // Have a look at this.handleTrackerMessage() -> 'sendpub' to find more clues.
         })
     }
@@ -719,13 +774,27 @@ const Receiver = class {
                 return connectionTrialCounter
         }
 
-        if(Try(() => {
-            data = peer.key.encrypt(data)
-            this.socket.send(data, 0, data.length, peer.port, peer.ip, showError)
-        }))
+        if(Try(() => this.#sendEncrypted(peer, data)))
             return 0
 
         return connectionTrialCounter
+    }
+
+        /**
+     * Encrypt a string and send to specific peer
+     * @param {Peer} peer Peer to send the message
+     * @param {Buffer|string} message message to send
+     */
+    #sendEncrypted (peer, message) {
+        message = peer.key.encrypt(message)
+        this.socket.send(
+            message,
+            0,
+            message.length,
+            peer.port, 
+            peer.ip,
+            showError
+        )
     }
 
     /**
@@ -790,10 +859,10 @@ const Receiver = class {
                 fileLocation += `.${info.media}`
         }
 
-        if(Try(() => FileSystem.accessSync(fileLocation)))
+        if(await TryAsync(async () => FileSystemPromises.access(fileLocation)))
             return __.MEDIA_STREAM_FILE_NOT_FOUND
 
-        if(Try(() => fileStats = FileSystem.statSync(fileLocation)))
+        if(await TryAsync(async () => fileStats = FileSystemPromises.stat(fileLocation)))
             return __.MEDIA_STREAM_FILE_NOT_READY
 
         if(fileStats.size > __.MAX_PAYLOAD || fileStats.size > 65536)
@@ -808,8 +877,8 @@ const Receiver = class {
         let fileStreamTimeout
         let fileStreamResolver = resolve => {
             clearTimeout(fileStreamTimeout)
-            resolve(fileStreamStatus)
             fileStreamTimeout = undefined
+            resolve(fileStreamStatus)
         }
         let fileStreamAwaiter = time => {
             fileStreamTimeout = setTimeout(() => {
@@ -819,15 +888,6 @@ const Receiver = class {
 
             return new Promise(fileStreamResolver)
         }
-        let mediaSendMessage = peer.key.encrypt(
-            str([
-                'media',
-                info.owner,
-                info.index,
-                typeof info.media === 'number' ? info.media : 0,
-                Math.ceil(fileStats.size / 1024)
-            ])
-        )
         let fileStreamResendCount = 0
         /** @type {Buffer} */
         let fileStreamMissedPacket
@@ -836,11 +896,17 @@ const Receiver = class {
             if(fileStreamStatus === __.MEDIA_STREAM_DECLINED)
                 return
 
-            fileStreamStatus = message[0]
+            fileStreamStatus = message
             fileStreamResolver()
         }
 
-        this.socket.send(mediaSendMessage, 0, mediaSendMessage.length, peer.port, peer.ip, showError)
+        this.#sendEncrypted(peer, str([
+            'media',
+            info.owner,
+            info.index,
+            typeof info.media === 'number' ? info.media : 0,
+            Math.ceil(fileStats.size / 1024)
+        ]))
 
         if(await fileStreamAwaiter(8000) !== __.MEDIA_STREAM_READY)
             return fileStreamStatus
@@ -851,10 +917,7 @@ const Receiver = class {
                 return fileStreamStatus
 
             if(fileStreamResendCount > __.MAX_TRIAL){
-                //Too many resends, cancel package
-                let mediaCancelMessage = peer.key.encrypt(Buffer.from([255,255]))
-
-                this.socket.send(mediaCancelMessage, 0, mediaCancelMessage.length, peer.port, peer.ip, showError)
+                this.#sendEncrypted(peer, Buffer.from([255,255]))
                 return __.MEDIA_STREAM_TIME_OUT
             }
 
@@ -869,25 +932,17 @@ const Receiver = class {
             if(!fileStreamByte) // FALSY
                 break
 
-            let mediaStream = peer.key.encrypt(
-                Buffer.concat([
+            this.#sendEncrypted(peer, Buffer.concat([
                     Buffer.from([
                         fileStreamIndex0,
                         fileStreamIndex1
                     ]),
                     fileStreamByte
-                ])
-            )
+                ]))
 
-            this.socket.send(mediaStream, 0, mediaStream.length, peer.port, peer.ip, showError)
-            
+            let waitForAck = await fileStreamAwaiter(10000)
 
-            if(await fileStreamAwaiter(10000) === __.MEDIA_STREAM_TIME_OUT){
-                fileStreamMissedPacket = fileStreamByte
-                fileStreamResendCount++
-                continue
-            }
-            else{
+            if(waitForAck === __.MEDIA_STREAM_ACK){
                 fileStreamResendCount = 0
 
                 if(fileStreamIndex1 < 255)
@@ -901,6 +956,11 @@ const Receiver = class {
                         break
                 }
             }
+            else if(waitForAck === __.MEDIA_STREAM_TIME_OUT){
+                fileStreamMissedPacket = fileStreamByte
+                fileStreamResendCount++
+                continue
+            }
         }
 
         fileStream.close()
@@ -912,23 +972,15 @@ const Receiver = class {
             else
                 fileStreamResendCount++
 
-            let endOfFileMessage = peer.key.encrypt(
+            this.#sendEncrypted(
+                peer,
                 Buffer.concat([
                     Buffer.from([255, 255]),
                     Crypt.rand(128 + Math.floor(Math.random() * 128))
                 ])
             )
 
-            this.socket.send(
-                endOfFileMessage,
-                0,
-                endOfFileMessage.length,
-                peer.port,
-                peer.ip,
-                showError
-            )
-
-            if(await fileStreamAwaiter(10000) === __.MEDIA_STREAM_TIME_OUT)
+            if(await fileStreamAwaiter(1000) === __.MEDIA_STREAM_TIME_OUT)
                 continue
             else
                 break
@@ -1049,7 +1101,14 @@ const Receiver = class {
                     continue
                 }
 
-                this.socket.send('', 0, 0, peer.port, peer.ip, showError)
+                this.socket.send(
+                    '',
+                    0,
+                    0,
+                    peer.port,
+                    peer.ip,
+                    showError
+                )
                 i++
             }
         },10000)
