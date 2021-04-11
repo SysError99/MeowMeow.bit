@@ -12,7 +12,7 @@ const Locale = require('./locale/locale')
 const {json, str} = require('./fn.json')
 
 const ECDHKey = require('./data/key.ecdh')
-const Peer = require('./data/peer')
+const Peer = require('./data/peer.extended')
 const Result = require('./data/result')
 const Tracker = require('./data/tracker')
 
