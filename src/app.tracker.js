@@ -213,6 +213,107 @@ udp.on('message', (msg, remote) => {
 
             peer.pub = peerPub
             return
+
+        case 'leech':
+            /**
+             * Search for seeders for the account
+             * [1]:string   account public key
+             */
+            {
+                if (typeof message[1] !== 'string')
+                    return
+
+                /** @type {Peer[]} */
+                let seeders = accountSeeders[message[1]]
+
+                if (!Array.isArray(seeders))
+                    return sendEncrypted(peer, str( ['accountNotFound'] ))
+
+                /** @type {string[]} */
+                let seedersList = []
+
+                for (let s = 0; s < seeders.length; s++) {
+                    if (s > 7)
+                        break
+
+                    let pick = true
+                    let seeder = seeders[Math.floor(Math.random() * seeders.length)]
+                    let seederAddress = `${seeder.ip}:${seeder.port}`
+
+                    if (seederAddress === remoteAddress || seeder.lastAccess > __.ACCESS_COOLDOWN)
+                        pick = false
+                    else {
+                        for (let r = 0; r < seedersList.length; r++) {
+                            if (seedersList[r] === seederAddress) {
+                                pick = false
+                                break
+                            }
+                        }
+                    }
+
+                    if (pick)
+                        seedersList.push(seederAddress)
+                }
+
+                sendEncrypted(peer, str( ['seeder', message[1], seedersList] ))
+                return
+            }
+
+        case 'seed':
+            /**
+             * Tell tracker that I'm seeding this account
+             */
+            {
+                if (typeof message[1] !== 'string')
+                    return
+
+                if (typeof peer.seeds[message[1]] !== 'undefined')
+                    return
+
+                /** @type {Peer[]} */
+                let seeders = accountSeeders[message[1]]
+
+                if (typeof seeders === 'undefined'){
+                    seeders = []
+                    accountSeeders[message[1]] = seeders
+                }
+
+                seeders.push(peer)
+                peer.seeds[message[1]] = true
+                sendEncrypted(peer, str( ['seeding', message[1]] ))
+                return
+            }
+
+        case 'unseed':
+            /**
+             * Tell tracker that I'm no longer seed this account
+             * [1]:string   account to stop seeding
+             */
+            {
+                if (typeof message[1] !== 'string')
+                    return
+
+                if (typeof peer.seeds[message[1]] === 'undefined')
+                    return
+    
+                delete peer.seeds[message[1]]
+
+                /** @type {Peer[]} */
+                let seeders = accountSeeders[message[1]]
+
+                if(typeof seeders === 'undefined')
+                    return
+
+                for (let s = 0; s < seeders.length; s++) {
+                    if (seeders[s] === peer) {
+                        seeders.splice(s, 1)
+                        break
+                    }
+                }
+
+                sendEncrypted(peer, str( ['unseeding', message[1]] ))
+                return
+            }
     }
 })
 

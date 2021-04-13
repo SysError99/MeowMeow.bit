@@ -120,7 +120,7 @@ const Receiver = class {
 
         /** @type {string[]} */
         let peers = seeders[account]
-        let y = 0
+        let y
 
         if (!Array.isArray(peers))
             return false
@@ -134,33 +134,14 @@ const Receiver = class {
             return false
 
         if (!seedersSorted[account]) {
-            let x = 0
-
             peers.sort()
 
             //find self position
             while (y < peers.length) {
-                let arr = peers[y]
-
-                if (arr[0] === account[0])
+                if (peers[y] === this.myAddress)
                     break
 
                 y++
-            }
-
-            x = 1
-
-            while (y < peers.length) {
-                let arr = peers[y]
-
-                if (arr[x] === account[x]) {
-                    if (x < account.length)
-                        x++
-                    else
-                        break
-                }
-                else
-                    y++
             }
 
             if (y < peers.length)
@@ -628,38 +609,53 @@ const Receiver = class {
                     6000)
                 return
 
-            case 'follower':
+            case 'seeder':
                 /**
-                 * Set list of followers
+                 * Set list of seeders
                  * 
                  * [1]:string       account public key
-                 * [2]:string[]     list of following peers
+                 * [2]:string[]     list of seeding peers
                  */
                 if (typeof message[1] !== 'string' ||
                     !Array.isArray(message[2]) )
                     return
 
                 /** @type {string[]} */
-                let followerPeers = message[2]
-
-                for (let p = 0; p < followerPeers.length; p++) {
-                    let followerPeer = new Peer(followerPeers[p])
-
-                    this.addPeer(followerPeer)
-                    followerPeers[p] = BaseN.encode(peer.public, '62')
-                }
+                let seederPeers = message[2]
 
                 if (typeof seeders[message[1]] === 'undefined') {
-                    seeders[message[1]] = followerPeers
+                    seeders[message[1]] = seederPeers
                     seedersMyPos [message[1]] = 0
-                    seedersSorted[message[1]] = false
                 } else {
                     /** @type {string[]} */
                     let oldSeeders = seeders[message[1]]
 
-                    oldSeeders.concat(followerPeers)
-                    seedersSorted[message[1]] = false
+                    oldSeeders.concat(seederPeers)
                 }
+
+                seedersSorted[message[1]] = false
+                return
+
+            case 'seeding':
+                /**
+                 * Tracker told that you are seeding this account
+                 * [1]:string   seeding account
+                 */
+                if (typeof message[1] !== 'string')
+                    return
+
+                console.log(`Seeding ${message[1]}`)
+                return
+
+            case 'unseeding':
+                /**
+                 * Tracker told that you are unseeding this account
+                 * [1]:string   unseeding account
+                 */
+                if (typeof message[1] !== 'string')
+                    return
+
+                console.log(`Unseeding ${message[1]}`)
                 return
         }
     }
