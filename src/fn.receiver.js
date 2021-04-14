@@ -715,6 +715,34 @@ const Receiver = class {
     }
 
     /**
+     * Tell trackers that I'm seeding this account
+     * @param {string} account Account public key
+     */
+    async seed (account) {
+        if (this.trackerList.length === 0)
+            return console.error(new Error('No active trackers'))
+
+        account = `${account}`
+
+        for (let t = 0; t < this.trackerList.length; t++)
+            this.sendEncrypted(this.peers[this.trackerList[t]], str( ['seed', account] ))
+    }
+
+    /**
+     * Tell trackers that I'm seeding this account
+     * @param {string} account Account public key
+     */
+    async unseed (account) {
+        if (this.trackerList.length === 0)
+            return console.error(new Error('No active trackers'))
+
+        account = `${account}`
+
+        for (let t = 0; t < this.trackerList.length; t++)
+            this.sendEncrypted(this.peers[this.trackerList[t]], str( ['unseed', account] ))
+    }
+
+    /**
      * Send message to specific peer
      * @param {Peer} peer Peer to send data to
      * @param {string|Array|Buffer} data Data to be sent
