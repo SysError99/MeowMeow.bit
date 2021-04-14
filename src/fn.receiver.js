@@ -204,12 +204,8 @@ const Receiver = class {
      */
     forwardPort (p) {
         this.socket.bind(p)
-        for (let t in this.trackerList) {
-            /** @type {Tracker} */
-            let tracker = this.peers[this.trackerList[t]]
-
-            this.#sendEncrypted(tracker, str( [`forwardPort`, p] ))
-        }
+        for (let tracker of this.trackerList)
+            this.#sendEncrypted(this.peers[tracker], str( [`forwardPort`, p] ))
     }
 
     /**
@@ -724,8 +720,8 @@ const Receiver = class {
 
         account = `${account}`
 
-        for (let t = 0; t < this.trackerList.length; t++)
-            this.sendEncrypted(this.peers[this.trackerList[t]], str( ['seed', account] ))
+        for (let tracker of this.trackerList)
+            this.sendEncrypted(this.peers[tracker], str( ['seed', account] ))
     }
 
     /**
@@ -738,8 +734,8 @@ const Receiver = class {
 
         account = `${account}`
 
-        for (let t = 0; t < this.trackerList.length; t++)
-            this.sendEncrypted(this.peers[this.trackerList[t]], str( ['unseed', account] ))
+        for (let tracker of this.trackerList)
+            this.sendEncrypted(this.peers[tracker], str( ['unseed', account] ))
     }
 
     /**
@@ -1045,7 +1041,7 @@ const Receiver = class {
         if (peer.connected()) {
             peer.keepAlive = false
 
-            for (let i = 0; i < this.pollingList.length; i++) {
+            for (let i in this.pollingList) {
                 if (this.pollingList[i] === peer) {
                     this.pollingList.splice(i, 1)
                     return true
@@ -1095,12 +1091,8 @@ const Receiver = class {
         if (this.trackerList.length === 0)
             throw Error('No trackers has been set')
 
-        for (let t in this.trackerList) {
-            /** @type {Tracker} */
-            let tracker = this.peers[this.trackerList[t]]
-
-            this.helloTracker(tracker)
-        }
+        for (let tracker of this.trackerList)
+            this.helloTracker(this.peers[tracker])
 
         console.log(`Receiver will be known as '${this.myPub}'.`)
 

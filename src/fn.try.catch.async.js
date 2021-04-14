@@ -1,4 +1,4 @@
-const ignore = require('./const').TRY_CATCH_IGNORE
+const ignores = require('./const').TRY_CATCH_IGNORE
 /**
  * Try to execute this function, and handle error automatically
  * @param {function} fn A function
@@ -18,8 +18,8 @@ const tryCatch = async (fn, kick) => {
         catch(e) {
             let err = new Error(e)
 
-            for (let i = 0; i < ignore.length; i++) {
-                if (err.stack.indexOf(ignore[i]) >= 0)
+            for (let ignore of ignores) {
+                if (err.stack.indexOf(ignore) >= 0)
                     return true
             }
 

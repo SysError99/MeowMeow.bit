@@ -246,25 +246,15 @@ const Web = class {
                     body += chunk
                 })
                 req.on('end', () => {
-                    /** @type {number} */
-                    let ev
-                    /** @type {number} */
-                    let p
-                    /** @type {boolean} */
-                    let thisEvent
-                    /** @type {WebEvent} */
-                    let webEvent
-                    /** @type {string[]} */
-                    let webEventParam
-                    let webParams
                     let webQuery = {}
                     let url = req.url.split('?')
                     let params = url[0].split('/')
 
                     if (url.length === 2) {
-                        let query = url[1].split('&')
-                        for (let q=0; q<query.length; q++) {
-                            let elQuery = query[q].split('=')
+                        let queries = url[1].split('&')
+
+                        for (let query of queries) {
+                            let elQuery = query.split('=')
     
                             if (elQuery.length === 1)
                                 webQuery[elQuery[0]] = true
@@ -274,22 +264,21 @@ const Web = class {
                     } else if (url.length > 2)
                         return res.writeHead(400).end('Bad request.')
 
-                    for (ev=0; ev < this.events.length; ev++) {
-                        thisEvent = true
-                        webEvent = this.events[ev]
-                        webEventParam = webEvent.params
-                        webParams = {}
+                    for (let event of this.events) {
+                        let eventParams = event.params
+                        let thisEvent = true
+                        let webParams = {}
     
-                        if (webEvent.method !== req.method.toLowerCase())
+                        if (event.method !== req.method.toLowerCase())
                             continue
 
-                        if (webEventParam.length !== params.length)
+                        if (eventParams.length !== params.length)
                             continue
     
-                        for (p=0; p<params.length; p++) {
-                            if (webEventParam[p][0] === ':' && webEventParam[p].length > 1)
-                                webParams[webEventParam[p].slice(1,webEventParam[p].length)] = params[p]
-                            else if (webEventParam[p] !== params[p]) {
+                        for (let p in params) {
+                            if (eventParams[p][0] === ':' && eventParams[p].length > 1)
+                                webParams[eventParams[p].slice(1,eventParams[p].length)] = params[p]
+                            else if (eventParams[p] !== params[p]) {
                                 thisEvent = false
                                 break
                             }
@@ -298,7 +287,7 @@ const Web = class {
                         if (!thisEvent)
                             continue
 
-                        webEvent.callback(new WebRequest(req,{
+                        event.callback(new WebRequest(req,{
                             params: webParams,
                             query: webQuery,
                             body: body

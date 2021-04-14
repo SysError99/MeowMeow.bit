@@ -107,7 +107,7 @@ app.get('/account-list', async (req, res) => {
     let accList = json(await FileSystem.promises.readFile(`./data/accounts.json`, {encoding: 'utf-8'}))
 
     if (accList.length > 0) {
-        for (let a=0; a < accList.length; a++) {
+        for (let a in accList) {
             let accFound = new Acc(await receiver.storage.promise.read(accList[a]))
 
             accList[a] = WebUI.avatar({

@@ -1,4 +1,4 @@
-const ignore = require('./const').TRY_CATCH_IGNORE
+const ignores = require('./const').TRY_CATCH_IGNORE
 
 /**
  * Try to execute this function and return value back if success, return undefined or specified value if fail.
@@ -13,8 +13,8 @@ const tryCatch = (fn, errreturn) => {
         catch(e) {
             let err = new Error(e)
 
-            for (let i = 0; i < ignore.length; i++) {
-                if (err.stack.indexOf(ignore[i]) >= 0)
+            for (let ignore of ignores) {
+                if (err.stack.indexOf(ignore) >= 0)
                     return errreturn
             }
 

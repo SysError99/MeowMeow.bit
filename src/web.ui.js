@@ -20,8 +20,8 @@ const extract = (str, extractList) => {
     /** @type {string[]} */
     let complete = []
     
-    for (let i = 0; i < extractList.length; i++) {
-        section = str.split(`{{${extractList[i]}}}`)
+    for (let extract of extractList) {
+        section = str.split(`{{${extract}}}`)
         complete.push(section[0])
         complete.push('')
         str = section[1]

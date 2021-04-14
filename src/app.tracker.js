@@ -47,14 +47,14 @@ const myKey = Return(() => {
 const deletePeer = peer => {
     let addr = `${peer.ip}:${peer.port}`
 
-    for (let seed in peer.seeds) {
+    for (let s in peer.seeds) {
         /** @type {Peer[]} */
-        let seeders = accountSeeders[seed]
+        let seeders = accountSeeders[s]
 
         if (!Array.isArray(seeders))
             continue
 
-        for (let p = 0; p < seeders.length; p++) {
+        for (let p in seeders) {
             let seeder = seeders[p]
 
             if (`${seeder.ip}:${seeder.port}` === addr) {
@@ -232,7 +232,7 @@ udp.on('message', (msg, remote) => {
                 /** @type {string[]} */
                 let seedersList = []
 
-                for (let s = 0; s < seeders.length; s++) {
+                for (let s in seeders) {
                     if (s > 7)
                         break
 
@@ -243,8 +243,8 @@ udp.on('message', (msg, remote) => {
                     if (seederAddress === remoteAddress || seeder.lastAccess > __.ACCESS_COOLDOWN)
                         pick = false
                     else {
-                        for (let r = 0; r < seedersList.length; r++) {
-                            if (seedersList[r] === seederAddress) {
+                        for (let seed of seedersList) {
+                            if (seed === seederAddress) {
                                 pick = false
                                 break
                             }
@@ -304,7 +304,7 @@ udp.on('message', (msg, remote) => {
                 if(typeof seeders === 'undefined')
                     return
 
-                for (let s = 0; s < seeders.length; s++) {
+                for (let s in seeders) {
                     if (seeders[s] === peer) {
                         seeders.splice(s, 1)
                         break
