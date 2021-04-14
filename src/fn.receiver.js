@@ -440,7 +440,7 @@ const Receiver = class {
         peer.mediaStreamPreviousPacket = packetNumber
         this.socket.send(
             Buffer.from([
-                Math.floor(Math.random() * 255)
+                Math.floor(Math.random() * 256)
             ]),
             0,
             1,
