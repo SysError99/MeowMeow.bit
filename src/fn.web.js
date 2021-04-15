@@ -286,7 +286,9 @@ const Web = class {
                         if (!thisEvent)
                             continue
 
-                        event.callback(new WebRequest(req,{
+                        let callback = event.callback
+
+                        callback(new WebRequest(req,{
                             params: webParams,
                             query: webQuery,
                             body: body
