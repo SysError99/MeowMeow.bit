@@ -122,7 +122,6 @@ const WebResponse = class {
 
 /**
  * WebEvent object, holding web events
- * @param {{method:string,params:string,callback,function}} d Array
  */
 const WebEvent = class {
     /** @type {boolean} This is 'WebEvent' object*/
@@ -313,4 +312,9 @@ const Web = class {
     }
 }
 
-module.exports = Web
+module.exports = {
+    Web: Web,
+    WebEvent: WebEvent,
+    WebRequest: WebRequest,
+    WebResponse: WebResponse
+}

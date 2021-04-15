@@ -32,12 +32,12 @@ if (FileSystem.readdirSync('./data/').length <= FileSystem.readdirSync('./defaul
 }
 
 const __ = require('./const')
-const BaseN = require('./fn.base.n')
+//const BaseN = require('./fn.base.n')
 const Crypt = require('./fn.crypt')
 const Receiver = require('./fn.receiver')
 const Try = require('./fn.try.catch')
 const Return = require('./fn.try.return')
-const Web = require('./fn.web')
+const Web = require('./fn.web').Web
 const WebUI = require('./web.ui')
 const {json, str} = require('./fn.json')
 
