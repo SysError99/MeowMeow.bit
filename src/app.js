@@ -76,307 +76,6 @@ let loadMyAvatar = () => {
 /** @type {string} Current 'acc' avatar element for top right corner */
 let myAvatar = Return(loadMyAvatar)
 
-/** HTTP web front-end app object*/
-const app = new Web()
-
-// --- GET ---
-app.get('/', (req,res) => {
-    if (!inHomePage)
-        inHomePage = true
-    else if (acc !== undefined) {
-        let postCountLocation = `./${acc.key.public}.posts`
-
-        if (!receiver.storage.access(postCountLocation))
-            receiver.storage.write(postCountLocation, 0)
-        
-        currentTimelinePost = Return(() => receiver.storage.read(postCountLocation), 0) //move to latest post
-    }
-
-    res.send(WebUI.body({
-        avatar: myAvatar,
-        body: WebUI.postSubmit(),
-        script: WebUI.script('/web/js/post-fetch.js')
-    }))
-})
-app.get('/me', (req, res) => {
-    res.status(302, {Location: '/account-list'})
-    res.send('')
-})
-app.get('/account-list', async (req, res) => {
-    /** @type {string[]} */
-    let accList = json(await FileSystem.promises.readFile(`./data/accounts.json`, {encoding: 'utf-8'}))
-
-    if (accList.length > 0) {
-        for (let a in accList) {
-            let accFound = new Acc(await receiver.storage.promise.read(accList[a]))
-
-            accList[a] = WebUI.avatar({
-                url: `./data/png/${accFound.key.public}.avatar`,
-                link: `/account-info/${accFound.key.public}`,
-                text: `${accFound.name}`
-            })
-        }
-    }
-    else
-        accList = WebUI.header('Empty', 1)
-
-    res.send(WebUI.body({
-        avatar: myAvatar,
-        body:
-            typeof acc === 'object' ?
-                await WebUI.profile({
-                    name: acc.name,
-                    urlImgAvatar: acc.img.avatar.length > 0 ? 
-                        `./data/${acc.key.public}.profile`
-                        : '/web/img/avatar2.png',
-                    description: acc.description,
-                    pub: acc.key.public,
-                    dateJoin: new Date().toUTCString(),
-                    followers: '0'
-                })
-            : '' + 
-            await WebUI.accList({
-                list: accList.join('')
-            })
-    }))
-})
-app.get('/account-create', async (req, res) => {
-    inHomePage = false
-    accInfo = new Acc()
-    res.send(WebUI.body({
-        head: WebUI.css('/web/css/croppie.css'),
-        avatar: myAvatar,
-        body: await WebUI.accInfo({
-            pub: accInfo.key.public,
-            avatar: WebUI.header('No profile image specified'), // LOCALE_NEEDED
-            cover: WebUI.header('No cover image specified') //LOCALE_NEEDED
-        }),
-        script:
-            WebUI.script('/web/js/croppie.js') +
-            WebUI.script('/web/js/account-info.js')
-    }))
-})
-app.get('/account-info/:pub', async (req,res) => {
-    inHomePage = false
-
-    if (typeof req.params.pub === 'undefined')
-        return res.send(WebUI.nativeAlert('Please specify accnount public key.'))
-
-    if (!receiver.storage.access(req.params.pub))
-        return res.send(WebUI.nativeAlert(`Account public key is invalid.`))
-
-    accInfo = new Acc(await receiver.storage.promise.read(req.params.pub))
-    res.send(WebUI.body({
-        avatar: myAvatar,
-        head: WebUI.css('/web/css/croppie.css'),
-        body: await WebUI.accInfo({
-            pub: accInfo.key.public,
-            name: accInfo.name,
-            description: accInfo.description,
-            tag: accInfo.tag.join(','),
-            avatar: WebUI.image({
-                location: `/data/png/${accInfo.key.public}.avatar`
-            }),
-            cover: WebUI.image({
-                location: `/data/png/${accInfo.key.public}.cover`
-            }),
-        }),
-        script:
-            WebUI.script('/web/js/croppie.js') + 
-            WebUI.script('/web/js/account-info.js')
-    }))
-})
-app.get('/timeline', (req, res) => {
-    inHomePage = false
-
-    if (acc === undefined)
-        return res.send(WebUI.login())
-
-    let currentPostLocation = `${acc.key.public}.timeline.${currentTimelinePost}`
-
-    if (!receiver.storage.access(currentPostLocation))
-        return res.send('Storage Access Error.') //LOCALE_NEEDED
-
-    res.send('UNIMPLEMENTED')
-    // let postPointer = new PostPointer(receiver.storage.read(currentPostLocation))
-    // TODO: render timeline post
-})
-app.get('/post/:pub/:number', (req, res) => {
-    inHomePage = false
-    res.send('UNIMPLEMENTED')
-    // TODO: render specified post
-})
-
-// --- POST ---
-app.post('/account-temp-avatar', async (req,res) => {
-    req.body = Buffer.from(req.body.split(';base64,')[1], 'base64') 
-    await FileSystem.promises.writeFile(
-        `./data/temp.avatar`,
-        req.body,
-        binEncode
-    )
-    res.send('Uploaded!')
-})
-app.post('/account-update', async (req, res) => {
-    if (typeof accInfo === 'undefined') {
-        res.status(401)
-        res.send('no accounts assinged')
-        return
-    }
-
-    if (Try(() => req.body = json(req.body))) {
-        res.status(400)
-        res.send('arguments invaild')
-        return
-    }
-
-    if (typeof req.body.name !== 'string' ||
-        typeof req.body.description !== 'string' ||
-        typeof req.body.tag !== 'string' ||
-        typeof req.body.avatar !== 'string' ||
-        typeof req.body.cover !== 'string') {
-        res.status(400)
-        res.send('arguments invalid')
-        return
-    }
-
-    let accList = await receiver.storage.promise.read('accounts')
-    let avatarFile = `./data/${accInfo.key.public}.avatar`
-    let coverFile = `./data/${accInfo.key.public}.cover`
-    let a = 0
-
-    accInfo.name = req.body.name.slice(0,32)
-    accInfo.description = req.body.description.slice(0,144)
-    accInfo.tag = req.body.tag.slice(0,16).split(',')
-
-    req.body.avatar = req.body.avatar.split(';base64,')
-    req.body.cover = req.body.cover.split(';base64,')
-
-    if (req.body.avatar.length > 1) {
-        await FileSystem.promises.writeFile(
-            avatarFile,
-            Buffer.from(
-                req.body.avatar[1],
-                'base64'
-            ),
-            binEncode
-        )
-        accInfo.img.avatar = await Crypt.hash(avatarFile)
-    }
-
-    if (req.body.cover.length > 1) {
-        await FileSystem.promises.writeFile(
-            coverFile,
-            Buffer.from(
-                req.body.cover[1],
-                'base64'
-            ),
-            binEncode
-        )
-        accInfo.img.cover = await Crypt.hash(coverFile)
-    }
-
-    accInfo.sign()
-
-    while (a < accList.length) {
-        if (accList[a] === accInfo.key.public)
-            break
-
-        a++
-    }
-
-    if (a >= accList.length) {
-        accList.push(accInfo.key.public)
-        await receiver.storage.promise.write('accounts', accList)
-    }
-
-    receiver.storage.write(accInfo.key.public, accInfo.export())
-    res.send('success')
-})
-
-// --- File Server ---
-app.get('/:location/:type/:file', async (req, res) => {
-    //File server
-    /** @type {string} */
-    let fileLocation
-
-    switch (req.params.location) {
-        case 'data':
-            fileLocation = './data/' + req.params.file
-            break
-
-        case 'web':
-            fileLocation = WebUI.dir() + req.params.type + '/' + req.params.file
-            break
-    }
-
-    if (Try(() => FileSystem.accessSync(fileLocation)))
-        return app.ev404.callback(res)
-
-    /** @type {string} */
-    let contentType
-    let encoding = 'utf-8'
-    /** @type {string[]} */
-    let fileName = req.params.file.split('.')
-    let fType = fileName.length > 1 ? fileName[fileName.length - 1] : req.params.type
-
-    switch (fType) {
-        case 'apng':
-        case 'avif':
-        case 'gif':
-        case 'png':
-        case 'webp':
-            contentType += `image/${fType}`
-            encoding = 'binary'
-            break
-
-        case 'jpg':
-        case 'jpeg':
-        case 'jfif':
-        case 'pjpeg':
-        case 'pjp':
-            contentType += 'image/jpeg'
-            encoding = 'binary'
-            break
-
-        case 'svg':
-            contentType = 'image/svg+xml'
-            break
-
-        case 'html':
-            contentType = 'text/html'
-            break
-
-        case 'css':
-            contentType = 'text/css'
-            break
-
-        case 'js':
-            contentType = 'text/javascript'
-            break
-
-        case 'text':
-            contentType = 'text/plain'
-            break
-
-        case 'ttf':
-        case 'woff':
-        case 'woff2':
-            contentType = `fonts/${fType}`
-            encoding = 'binary'
-            break
-
-        default:
-            contentType = 'appliaction/octet-stream'
-            encoding = 'binary'
-            break
-    }
-
-    let file = FileSystem.readFileSync(fileLocation, {encoding: encoding})
-
-    res.contentType(contentType)
-    res.send(file, encoding)
-})
 
 /** @type {Receiver} Receiver Object*/
 const receiver = new Receiver(async (peer, result) => {
@@ -621,4 +320,306 @@ const receiver = new Receiver(async (peer, result) => {
             receiver.send(peer, [`what`])
             return
     }
+})
+
+/** HTTP web front-end app object*/
+const web = new Web()
+
+// --- GET ---
+web.get('/', (req,res) => {
+    if (!inHomePage)
+        inHomePage = true
+    else if (acc !== undefined) {
+        let postCountLocation = `./${acc.key.public}.posts`
+
+        if (!receiver.storage.access(postCountLocation))
+            receiver.storage.write(postCountLocation, 0)
+        
+        currentTimelinePost = Return(() => receiver.storage.read(postCountLocation), 0) //move to latest post
+    }
+
+    res.send(WebUI.body({
+        avatar: myAvatar,
+        body: WebUI.postSubmit(),
+        script: WebUI.script('/web/js/post-fetch.js')
+    }))
+})
+web.get('/me', (req, res) => {
+    res.status(302, {Location: '/account-list'})
+    res.send('')
+})
+web.get('/account-list', async (req, res) => {
+    /** @type {string[]} */
+    let accList = json(await FileSystem.promises.readFile(`./data/accounts.json`, {encoding: 'utf-8'}))
+
+    if (accList.length > 0) {
+        for (let a in accList) {
+            let accFound = new Acc(await receiver.storage.promise.read(accList[a]))
+
+            accList[a] = WebUI.avatar({
+                url: `./data/png/${accFound.key.public}.avatar`,
+                link: `/account-info/${accFound.key.public}`,
+                text: `${accFound.name}`
+            })
+        }
+    }
+    else
+        accList = WebUI.header('Empty', 1)
+
+    res.send(WebUI.body({
+        avatar: myAvatar,
+        body:
+            typeof acc === 'object' ?
+                await WebUI.profile({
+                    name: acc.name,
+                    urlImgAvatar: acc.img.avatar.length > 0 ? 
+                        `./data/${acc.key.public}.profile`
+                        : '/web/img/avatar2.png',
+                    description: acc.description,
+                    pub: acc.key.public,
+                    dateJoin: new Date().toUTCString(),
+                    followers: '0'
+                })
+            : '' + 
+            await WebUI.accList({
+                list: accList.join('')
+            })
+    }))
+})
+web.get('/account-create', async (req, res) => {
+    inHomePage = false
+    accInfo = new Acc()
+    res.send(WebUI.body({
+        head: WebUI.css('/web/css/croppie.css'),
+        avatar: myAvatar,
+        body: await WebUI.accInfo({
+            pub: accInfo.key.public,
+            avatar: WebUI.header('No profile image specified'), // LOCALE_NEEDED
+            cover: WebUI.header('No cover image specified') //LOCALE_NEEDED
+        }),
+        script:
+            WebUI.script('/web/js/croppie.js') +
+            WebUI.script('/web/js/account-info.js')
+    }))
+})
+web.get('/account-info/:pub', async (req,res) => {
+    inHomePage = false
+
+    if (typeof req.params.pub === 'undefined')
+        return res.send(WebUI.nativeAlert('Please specify accnount public key.'))
+
+    if (!receiver.storage.access(req.params.pub))
+        return res.send(WebUI.nativeAlert(`Account public key is invalid.`))
+
+    accInfo = new Acc(await receiver.storage.promise.read(req.params.pub))
+    res.send(WebUI.body({
+        avatar: myAvatar,
+        head: WebUI.css('/web/css/croppie.css'),
+        body: await WebUI.accInfo({
+            pub: accInfo.key.public,
+            name: accInfo.name,
+            description: accInfo.description,
+            tag: accInfo.tag.join(','),
+            avatar: WebUI.image({
+                location: `/data/png/${accInfo.key.public}.avatar`
+            }),
+            cover: WebUI.image({
+                location: `/data/png/${accInfo.key.public}.cover`
+            }),
+        }),
+        script:
+            WebUI.script('/web/js/croppie.js') + 
+            WebUI.script('/web/js/account-info.js')
+    }))
+})
+web.get('/timeline', (req, res) => {
+    inHomePage = false
+
+    if (acc === undefined)
+        return res.send(WebUI.login())
+
+    let currentPostLocation = `${acc.key.public}.timeline.${currentTimelinePost}`
+
+    if (!receiver.storage.access(currentPostLocation))
+        return res.send('Storage Access Error.') //LOCALE_NEEDED
+
+    res.send('UNIMPLEMENTED')
+    // let postPointer = new PostPointer(receiver.storage.read(currentPostLocation))
+    // TODO: render timeline post
+})
+web.get('/post/:pub/:number', (req, res) => {
+    inHomePage = false
+    res.send('UNIMPLEMENTED')
+    // TODO: render specified post
+})
+
+// --- POST ---
+web.post('/account-temp-avatar', async (req,res) => {
+    req.body = Buffer.from(req.body.split(';base64,')[1], 'base64') 
+    await FileSystem.promises.writeFile(
+        `./data/temp.avatar`,
+        req.body,
+        binEncode
+    )
+    res.send('Uploaded!')
+})
+web.post('/account-update', async (req, res) => {
+    if (typeof accInfo === 'undefined') {
+        res.status(401)
+        res.send('no accounts assinged')
+        return
+    }
+
+    if (Try(() => req.body = json(req.body))) {
+        res.status(400)
+        res.send('arguments invaild')
+        return
+    }
+
+    if (typeof req.body.name !== 'string' ||
+        typeof req.body.description !== 'string' ||
+        typeof req.body.tag !== 'string' ||
+        typeof req.body.avatar !== 'string' ||
+        typeof req.body.cover !== 'string') {
+        res.status(400)
+        res.send('arguments invalid')
+        return
+    }
+
+    let accList = await receiver.storage.promise.read('accounts')
+    let avatarFile = `./data/${accInfo.key.public}.avatar`
+    let coverFile = `./data/${accInfo.key.public}.cover`
+    let a = 0
+
+    accInfo.name = req.body.name.slice(0,32)
+    accInfo.description = req.body.description.slice(0,144)
+    accInfo.tag = req.body.tag.slice(0,16).split(',')
+
+    req.body.avatar = req.body.avatar.split(';base64,')
+    req.body.cover = req.body.cover.split(';base64,')
+
+    if (req.body.avatar.length > 1) {
+        await FileSystem.promises.writeFile(
+            avatarFile,
+            Buffer.from(
+                req.body.avatar[1],
+                'base64'
+            ),
+            binEncode
+        )
+        accInfo.img.avatar = await Crypt.hash(avatarFile)
+    }
+
+    if (req.body.cover.length > 1) {
+        await FileSystem.promises.writeFile(
+            coverFile,
+            Buffer.from(
+                req.body.cover[1],
+                'base64'
+            ),
+            binEncode
+        )
+        accInfo.img.cover = await Crypt.hash(coverFile)
+    }
+
+    accInfo.sign()
+
+    while (a < accList.length) {
+        if (accList[a] === accInfo.key.public)
+            break
+
+        a++
+    }
+
+    if (a >= accList.length) {
+        accList.push(accInfo.key.public)
+        await receiver.storage.promise.write('accounts', accList)
+    }
+
+    receiver.storage.write(accInfo.key.public, accInfo.export())
+    res.send('success')
+})
+
+// --- File Server ---
+web.get('/:location/:type/:file', async (req, res) => {
+    //File server
+    /** @type {string} */
+    let fileLocation
+
+    switch (req.params.location) {
+        case 'data':
+            fileLocation = './data/' + req.params.file
+            break
+
+        case 'web':
+            fileLocation = WebUI.dir() + req.params.type + '/' + req.params.file
+            break
+    }
+
+    if (Try(() => FileSystem.accessSync(fileLocation)))
+        return web.ev404.callback(res)
+
+    /** @type {string} */
+    let contentType
+    let encoding = 'utf-8'
+    /** @type {string[]} */
+    let fileName = req.params.file.split('.')
+    let fType = fileName.length > 1 ? fileName[fileName.length - 1] : req.params.type
+
+    switch (fType) {
+        case 'apng':
+        case 'avif':
+        case 'gif':
+        case 'png':
+        case 'webp':
+            contentType += `image/${fType}`
+            encoding = 'binary'
+            break
+
+        case 'jpg':
+        case 'jpeg':
+        case 'jfif':
+        case 'pjpeg':
+        case 'pjp':
+            contentType += 'image/jpeg'
+            encoding = 'binary'
+            break
+
+        case 'svg':
+            contentType = 'image/svg+xml'
+            break
+
+        case 'html':
+            contentType = 'text/html'
+            break
+
+        case 'css':
+            contentType = 'text/css'
+            break
+
+        case 'js':
+            contentType = 'text/javascript'
+            break
+
+        case 'text':
+            contentType = 'text/plain'
+            break
+
+        case 'ttf':
+        case 'woff':
+        case 'woff2':
+            contentType = `fonts/${fType}`
+            encoding = 'binary'
+            break
+
+        default:
+            contentType = 'appliaction/octet-stream'
+            encoding = 'binary'
+            break
+    }
+
+    let file = FileSystem.readFileSync(fileLocation, {encoding: encoding})
+
+    res.contentType(contentType)
+    res.send(file, encoding)
 })
