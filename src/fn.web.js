@@ -21,8 +21,10 @@ const WebRequest = class {
 
     /** @type {string} Request body */
     body = ''
+    /** @type {string} */
+    cookie
     /** @type {HTTP.IncomingHttpHeaders} Request headers*/
-    header
+    headers
     /** @type {HTTP.IncomingMessage} Unimplemented features live here*/
     HTTP = {}
     /** @type {Object} Request URL parameters*/
@@ -46,7 +48,8 @@ const WebRequest = class {
         if (!isAny(d))
             return
 
-        this.header = req.headers
+        this.cookie = req.headers['cookie']
+        this.headers = req.headers
         this.url = req.url
 
         if (typeof d.body === 'string')
@@ -67,6 +70,28 @@ const WebResponse = class {
 
     /** @type {HTTP.ServerResponse} Unimplemented features live here*/
     HTTP = {}
+
+    /**
+     * Set cookie
+     * @param {{
+     * cookie:string[],
+     * expiry:string,
+     * httpOnly:boolean
+     * }} param0 
+     * @returns 
+     */
+    cookie ({cookie, expiry, httpOnly}) {
+        if (!Array.isArray(cookie)) 
+            return console.error('Cookie is not an array!')
+
+        if (typeof expiry === 'string')
+            cookie.concat([`Expires=${expiry}`])
+
+        if (httpOnly)
+            cookie.concat(['Secure', 'HttpOnly'])
+
+        this.HTTP.setHeader('Set-Cookie', cookie)
+    }
 
     /**
      * Set response content type
