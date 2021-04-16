@@ -7,7 +7,7 @@ const FileSystem = require('fs')
 
 const __ = require('./const')
 const Receiver = require('./fn.receiver')
-const Try = require('./fn.try.catch')
+const TryAsync = require('./fn.try.catch.async')
 const Return = require('./fn.try.return')
 const Web = require('./fn.web').Web
 const WebUI = require('./web.ui')
@@ -320,7 +320,7 @@ web.get('/:location/:type/:file', async (req, res) => {
             break
     }
 
-    if (Try(() => FileSystem.accessSync(fileLocation)))
+    if (await TryAsync(async () => await FileSystem.promises.access(fileLocation)))
         return web.ev404.callback(res)
 
     /** @type {string} */
@@ -382,7 +382,7 @@ web.get('/:location/:type/:file', async (req, res) => {
             break
     }
 
-    let file = FileSystem.readFileSync(fileLocation, {encoding: encoding})
+    let file = await FileSystem.promises.readFile(fileLocation, {encoding: encoding})
 
     res.contentType(contentType)
     res.send(file, encoding)
