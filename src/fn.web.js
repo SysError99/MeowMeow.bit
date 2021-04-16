@@ -258,10 +258,11 @@ const Web = class {
      * Create micro web server
      * @param {{
      * port:string
-     * }} d JSON properties
+     * }} param0 JSON properties
      */
-    constructor (d) {
-        let buildServer = () => {
+    constructor ({port}) {
+        if (typeof port === 'number') {
+            this.port = port
             HTTP.createServer((req,res) => {
                 let body = ''
 
@@ -329,19 +330,18 @@ const Web = class {
                 })
             }).listen(this.port)
         }
-
-        if (typeof d === 'object') {
-            if (typeof d.port === 'number')
-                this.port = d.port
-        }
-        
-        buildServer()
     }
 }
 
 module.exports = {
-    Web: Web,
-    WebEvent: WebEvent,
-    WebRequest: WebRequest,
-    WebResponse: WebResponse
+    web: Web,
+    webEvent: WebEvent,
+    webRequest: WebRequest,
+    webResponse: WebResponse,
+    
+    //Prototype
+    Web: Web.prototype,
+    WebEvent: WebEvent.prototype,
+    WebRequest: WebRequest.prototype,
+    WebResponse: WebResponse.prototype
 }

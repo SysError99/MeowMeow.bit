@@ -9,7 +9,7 @@ const __ = require('./const')
 const Receiver = require('./fn.receiver')
 const TryAsync = require('./fn.try.catch.async')
 const Return = require('./fn.try.return')
-const Web = require('./fn.web').Web
+const Web = require('./fn.web').web
 const WebUI = require('./web.ui')
 const WebAccount = require('./web.account')
 
