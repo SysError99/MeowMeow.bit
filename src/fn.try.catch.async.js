@@ -7,12 +7,12 @@ const ignores = require('./const').TRY_CATCH_IGNORE
 const tryCatch = async (fn, kick) => {
     if (typeof fn === 'function') {
         if (kick) {
-            fn()
+            await fn()
             return
         }
 
         try {
-            fn()
+            await fn()
             return false
         }
         catch(e) {
