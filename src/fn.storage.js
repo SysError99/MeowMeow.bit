@@ -7,6 +7,24 @@ const {json, str} = require('./fn.json')
 
 const Locale = require('./locale/locale')
 
+/**
+ * Convert data to supported format
+ * @param {any} d 
+ * @returns {any}
+ */
+const convert = d => {
+    if (typeof d === 'object') {
+        if (
+            d instanceof Array ||
+            d instanceof Buffer ||
+            d instanceof DataView
+        )
+            return d
+    }
+
+    return str(d)
+}
+
 /** File path structure*/
 const P = {a: './data/', b: '.json'}
 
@@ -45,7 +63,7 @@ const promise = {
     write: (location, data) => {
         return new Promise(resolve => {
             resolve(Try(async () => 
-                await FileSystem.promises.writeFile(P.a + location + P.b, typeof data === 'object' ? str(data) : data, {encoding:'utf-8'})
+                await FileSystem.promises.writeFile(P.a + location + P.b, convert(data), {encoding:'utf-8'})
             ))
         })
     }
@@ -110,7 +128,7 @@ const read = location => Return(() => json(FileSystem.readFileSync(P.a + locatio
  * @param {Object} data JSON data object
  * @returns {boolean} Result of a read JSON
  */
-const write = (location, data) => Try(() => FileSystem.writeFileSync(P.a + location + P.b, typeof data === 'object' ? str(data) : data, {encoding:'utf-8'}))
+const write = (location, data) => Try(() => FileSystem.writeFileSync(P.a + location + P.b, convert(data), {encoding:'utf-8'}))
 
 /** Shared storage module*/
 const storage = {
