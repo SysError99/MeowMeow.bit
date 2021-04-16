@@ -33,7 +33,6 @@ const extract = (str, extractList) => {
 
 /** @type {string[]} Template of the avatar icon*/
 const wAvatar = Return(() => extract(FileSystem.readFileSync(`${wDir}html/avatar.html`, enc), ['link', 'right', 'url', 'text']))
-const wAvatar2Default = wAvatar[2]
 
 /** @type {string[]} Template of the body*/
 const wBody = Return(() => {
