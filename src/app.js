@@ -7,11 +7,11 @@ const FileSystem = require('fs')
 
 const __ = require('./const')
 const Receiver = require('./fn.receiver')
-const TryAsync = require('./fn.try.catch.async')
 const Return = require('./fn.try.return')
 const Web = require('./fn.web').web
 const WebUI = require('./web.ui')
 const WebAccount = require('./web.account')
+const WebFileServer = require('./web.file.server')
 
 const Acc = require('./data/acc')
 const Post = require('./data/post')
@@ -269,10 +269,13 @@ const receiver = new Receiver(async (peer, result) => {
 })
 
 /** HTTP web front-end app object*/
-const web = new Web()
+const web = new Web({port:1024})
 
 /** Web account manager module */
 const webAccount = new WebAccount(receiver)
+
+/** Web file server, for serving static files */
+const webFileServer = new WebFileServer(receiver, web)
 
 web.get('/', (req,res) => {
     currentTimelinePost = Return(() => receiver.storage.read('posts'), 0) //move to latest post
@@ -287,6 +290,18 @@ web.get('/me', (req, res) => {
     res.status(302, {Location: '/account-list'})
     res.send('')
 })
+
+// Account
+web.get('/account-create', async (req, res) => await webAccount.create(res))
+web.get('/account-info/:pub', async (req,res) => await webAccount.info(req, res))
+web.get('/account-list', async (req, res) => await webAccount.list(res))
+web.post('/account-temp-avatar', async (req,res) => await webAccount.tempAvatar(req, res))
+web.post('/account-update', async (req, res) => await WebRequest.update(req, res))
+
+// File Server
+web.get('/:location/:type/:file', async (req, res) => await webFileServer.serve(req, res))
+
+// Post
 web.get('/timeline', (req, res) => {
     if (webAccount.active === undefined)
         return res.send(WebUI.login())
@@ -304,96 +319,6 @@ web.get('/post/:pub/:number', (req, res) => {
     res.send('UNIMPLEMENTED')
     // TODO: render specified post
 })
-// --- File Server ---
-web.get('/:location/:type/:file', async (req, res) => {
-    //File server
-    /** @type {string} */
-    let fileLocation
-
-    switch (req.params.location) {
-        case 'data':
-            fileLocation = './data/' + req.params.file
-            break
-
-        case 'web':
-            fileLocation = WebUI.dir() + req.params.type + '/' + req.params.file
-            break
-    }
-
-    if (await TryAsync(async () => await FileSystem.promises.access(fileLocation)))
-        return web.ev404.callback(res)
-
-    /** @type {string} */
-    let contentType
-    let encoding = 'utf-8'
-    /** @type {string[]} */
-    let fileName = req.params.file.split('.')
-    let fType = fileName.length > 1 ? fileName[fileName.length - 1] : req.params.type
-
-    switch (fType) {
-        case 'apng':
-        case 'avif':
-        case 'gif':
-        case 'png':
-        case 'webp':
-            contentType += `image/${fType}`
-            encoding = 'binary'
-            break
-
-        case 'jpg':
-        case 'jpeg':
-        case 'jfif':
-        case 'pjpeg':
-        case 'pjp':
-            contentType += 'image/jpeg'
-            encoding = 'binary'
-            break
-
-        case 'svg':
-            contentType = 'image/svg+xml'
-            break
-
-        case 'html':
-            contentType = 'text/html'
-            break
-
-        case 'css':
-            contentType = 'text/css'
-            break
-
-        case 'js':
-            contentType = 'text/javascript'
-            break
-
-        case 'text':
-            contentType = 'text/plain'
-            break
-
-        case 'ttf':
-        case 'woff':
-        case 'woff2':
-            contentType = `fonts/${fType}`
-            encoding = 'binary'
-            break
-
-        default:
-            contentType = 'appliaction/octet-stream'
-            encoding = 'binary'
-            break
-    }
-
-    let file = await FileSystem.promises.readFile(fileLocation, {encoding: encoding})
-
-    res.contentType(contentType)
-    res.send(file, encoding)
-})
-
-// Account
-web.get('/account-create', async (req, res) => await webAccount.create(res))
-web.get('/account-info/:pub', async (req,res) => await webAccount.info(req, res))
-web.get('/account-list', async (req, res) => await webAccount.list(res))
-web.post('/account-temp-avatar', async (req,res) => await webAccount.tempAvatar(req, res))
-web.post('/account-update', async (req, res) => await WebRequest.update(req, res))
 
 // Inititialization
 if (FileSystem.readdirSync('./data/').length <= FileSystem.readdirSync('./default/').length) {
