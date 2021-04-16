@@ -301,7 +301,7 @@ udp.on('message', (msg, remote) => {
                 /** @type {Peer[]} */
                 let seeders = accountSeeders[message[1]]
 
-                if(typeof seeders === 'undefined')
+                if (typeof seeders === 'undefined')
                     return
 
                 for (let s in seeders) {
