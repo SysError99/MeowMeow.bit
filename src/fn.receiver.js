@@ -427,7 +427,7 @@ const Receiver = class {
             //write packet
             let packetNumber = message[0] * message[1]
 
-            if (message.length <= 2 || TryAsync(async () => await FileSystemPromises.write(peer.mediaStream, message, 2, message.length - 2, packetNumber * __.MTU)))
+            if (message.length <= 2 || await TryAsync(async () => FileSystemPromises.write(peer.mediaStream, message, 2, message.length - 2, packetNumber * __.MTU)))
                 return this.#sendEncrypted(peer, str( [__.MEDIA_STREAM_PEER_ERR] ))
         }
 
