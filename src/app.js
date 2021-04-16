@@ -11,7 +11,7 @@ const TryAsync = require('./fn.try.catch.async')
 const Return = require('./fn.try.return')
 const Web = require('./fn.web').Web
 const WebUI = require('./web.ui')
-const WebAccount = require('./web.ui.account')
+const WebAccount = require('./web.account')
 
 const Acc = require('./data/acc')
 const Post = require('./data/post')
