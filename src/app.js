@@ -5,47 +5,17 @@
  */
 const FileSystem = require('fs')
 
-// Setup folder
-if (FileSystem.readdirSync('./data/').length <= FileSystem.readdirSync('./default/').length) {
-    let path = require("path")
-
-    /**
-     * @param {string} src 
-     * @param {string} dest 
-     */
-    let copyDirSync = (src, dest) => {
-        FileSystem.mkdirSync(dest, { recursive: true })
-
-        let entries = FileSystem.readdirSync(src, { withFileTypes: true })
-
-        for (let entry of entries) {
-            let srcPath = path.join(src, entry.name)
-            let destPath = path.join(dest, entry.name)
-
-            entry.isDirectory() ?
-                copyDirSync(srcPath, destPath) :
-                FileSystem.copyFileSync(srcPath, destPath)
-        }
-    }
-
-    copyDirSync('./default', './data')
-}
-
 const __ = require('./const')
-//const BaseN = require('./fn.base.n')
-//const Crypt = require('./fn.crypt')
 const Receiver = require('./fn.receiver')
 const Try = require('./fn.try.catch')
 const Return = require('./fn.try.return')
 const Web = require('./fn.web').Web
 const WebUI = require('./web.ui')
 const WebAccount = require('./web.ui.account')
-//const {json, str} = require('./fn.json')
 
 const Acc = require('./data/acc')
 const Post = require('./data/post')
 const PostLike = require('./data/post.like')
-//const PostPointer = require('./data/post.pointer')
 
 /** @type {string[]} List of all notifications*/
 const notifications = []
@@ -305,14 +275,7 @@ const web = new Web()
 const webAccount = new WebAccount(receiver)
 
 web.get('/', (req,res) => {
-    if (webAccount.active !== undefined) {
-        let postCountLocation = `./posts`
-
-        if (!receiver.storage.access(postCountLocation))
-            receiver.storage.write(postCountLocation, 0)
-        
-        currentTimelinePost = Return(() => receiver.storage.read(postCountLocation), 0) //move to latest post
-    }
+    currentTimelinePost = Return(() => receiver.storage.read('posts'), 0) //move to latest post
 
     res.send(WebUI.body({
         avatar: webAccount.avatar,
@@ -431,3 +394,32 @@ web.get('/account-info/:pub', async (req,res) => await webAccount.info(req, res)
 web.get('/account-list', async (req, res) => await webAccount.list(res))
 web.post('/account-temp-avatar', async (req,res) => await webAccount.tempAvatar(req, res))
 web.post('/account-update', async (req, res) => await WebRequest.update(req, res))
+
+// Inititialization
+if (FileSystem.readdirSync('./data/').length <= FileSystem.readdirSync('./default/').length) {
+    let path = require("path")
+
+    /**
+     * @param {string} src 
+     * @param {string} dest 
+     */
+    let copyDirSync = (src, dest) => {
+        FileSystem.mkdirSync(dest, { recursive: true })
+
+        let entries = FileSystem.readdirSync(src, { withFileTypes: true })
+
+        for (let entry of entries) {
+            let srcPath = path.join(src, entry.name)
+            let destPath = path.join(dest, entry.name)
+
+            entry.isDirectory() ?
+                copyDirSync(srcPath, destPath) :
+                FileSystem.copyFileSync(srcPath, destPath)
+        }
+    }
+
+    copyDirSync('./default', './data')
+}
+
+if (!receiver.storage.access('posts'))
+    receiver.storage.write('posts', 0)
