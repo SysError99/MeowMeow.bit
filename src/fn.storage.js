@@ -15,7 +15,6 @@ const Locale = require('./locale/locale')
 const convert = d => {
     if (typeof d === 'object') {
         if (
-            d instanceof Array ||
             d instanceof Buffer ||
             d instanceof DataView
         )
