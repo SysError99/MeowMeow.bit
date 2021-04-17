@@ -64,7 +64,7 @@ const webFileServer = new WebFileServer(receiver, web)
 const webPost = new WebPost(webAccount, receiver)
 
 web.get('/', (req,res) => {
-    webPost.currentTimeline = Return(() => receiver.storage.read('posts'), 0) //move to latest post
+    webPost.currentTimeline = Return(() => receiver.storage.read('posts'), 0) - 1 //move to latest post
 
     res.send(WebUI.body({
         avatar: webAccount.avatar,
@@ -84,12 +84,12 @@ web.get('/account-list', async (req, res) => await webAccount.list(res))
 web.post('/account-temp-avatar', async (req,res) => await webAccount.tempAvatar(req, res))
 web.post('/account-update', async (req, res) => await webAccount.update(req, res))
 
-// File Server
-web.get('/:location/:type/:file', async (req, res) => await webFileServer.serve(req, res))
-
 // Posting
 web.get('/timeline', async (req, res) => await webPost.timeline(res))
 web.get('/post/:pub/:number', async (req, res) => await webPost.post(req, res))
 web.get('/like/:pub/:number', async (req, res) => {})
 web.get('/mention/:pub/:number', async (req, res) => {})
 web.post('/post', async (req, res) => await webPost.postSubmit(req, res))
+
+// Static File Server
+web.get('/:location/:type/:file', async (req, res) => await webFileServer.serve(req, res))
