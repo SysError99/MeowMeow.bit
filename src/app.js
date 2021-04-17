@@ -43,7 +43,7 @@ web.get('/', (req,res) => {
     res.send(WebUI.body({
         avatar: webAccount.avatar,
         body: webPost.templatePostSubmit,
-        script: WebUI.script('/web/js/post-fetch.js')
+        script: WebUI.script('/web/post.js')
     }))
 })
 web.get('/me', (req, res) => {
