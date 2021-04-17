@@ -25,6 +25,7 @@ const Handler = class {
             return
     
         let data = result.data
+        let storage = receiver.storage.promise
     
         if (typeof data[0] !== 'string')
             return
@@ -43,7 +44,7 @@ const Handler = class {
         } else if (typeof data[2] !== 'number' || typeof data[2] !== 'string')
             return
         
-        if (!await receiver.storage.promise.access(data[1])) // account not exist
+        if (!await storage.access(data[1])) // account not exist
             return
     
         /**
@@ -67,12 +68,12 @@ const Handler = class {
                         /**
                          * Account Request
                          */
-                        if (!await receiver.storage.promise.access(data[1]))
+                        if (!await storage.access(data[1]))
                             return receiver.send(peer, ['accountNotFound'])
     
                         receiver.send(peer, [
                             'account',
-                            new Acc(await receiver.storage.promise.read(data[1])).exportPub()
+                            new Acc(await storage.read(data[1])).exportPub()
                         ])
                         return
     
@@ -83,7 +84,7 @@ const Handler = class {
                          */
                         let requestMediaLocation = `${data[1]}.${data[2]}${typeof data[4] === 'number' ? `.${data[4]}`: ''}`
     
-                        if (!await receiver.storage.promise.access(requestMediaLocation))
+                        if (!await storage.access(requestMediaLocation))
                             return
     
                         receiver.sendMedia(peer, {
@@ -102,10 +103,10 @@ const Handler = class {
     
                         let requestPostLocation = `${data[1]}.${data[2]}`
     
-                        if (!await receiver.storage.promise.access(requestPostLocation))
+                        if (!await storage.access(requestPostLocation))
                             return receiver.send(peer, ['postNotFound'])
     
-                        let requestPost = new Post(await receiver.storage.promise.read(requestPostLocation))
+                        let requestPost = new Post(await storage.read(requestPostLocation))
     
                         receiver.send(peer, [
                             'post',
@@ -132,7 +133,7 @@ const Handler = class {
                  */
                 let likeFile = `${data[1]}.${data[2]}.like.${data[3]}`
     
-                if (receiver.storage.access(likeFile)) //like file exists
+                if (await storage.access(likeFile)) //like file exists
                     return
     
                 let like = new PostLike([
@@ -146,18 +147,18 @@ const Handler = class {
                 if (!like.valid)
                     return
     
-                if (!receiver.storage.write(likeFile, like.export()))
+                if (!await storage.write(likeFile, like.export()))
                     return
                 
                 let likeCount = 0
                 let likeCountFileLocation = `${data[1]}.${data[2]}.likes`
     
-                if (receiver.storage.access(likeCountFileLocation))
-                    likeCount = receiver.storage.read(likeCountFileLocation)
+                if (await storage.access(likeCountFileLocation))
+                    likeCount = await storage.read(likeCountFileLocation)
     
                 likeCount++
     
-                receiver.storage.write(likeCountFileLocation, likeCount)
+                await storage.write(likeCountFileLocation, likeCount)
                 receiver.broadcast(data[1], __.BROADCAST_AMOUNT, data)
                 return
     
@@ -183,7 +184,7 @@ const Handler = class {
     
                 let newPostLocation = `${data[1]}.${data[2]}`
     
-                if (receiver.storage.access(newPostLocation)) //post exists
+                if (await storage.access(newPostLocation)) //post exists
                     return
     
                 let newPost = new Post([
@@ -200,7 +201,7 @@ const Handler = class {
                 if (!newPost.valid)
                     return
     
-                if (!receiver.storage.write(newPostLocation, postData))
+                if (!await storage.write(newPostLocation, postData))
                     return
     
                 receiver.broadcast(data[1], __.BROADCAST_AMOUNT, data)
@@ -232,15 +233,15 @@ const Handler = class {
                 switch (data[2]) {
                     case 'avatar':
                     case 'cover':
-                        mediaHash = new Acc(receiver.storage.read(data[1])).img[data[2]]
+                        mediaHash = new Acc(await storage.read(data[1])).img[data[2]]
                         requestMediaLocation += '.png'
                         break
     
                     default:
-                        if (!receiver.storage.access(requestMediaLocation))
+                        if (!await storage.access(requestMediaLocation))
                             return receiver.send(peer, [__.MEDIA_STREAM_POST_NOT_FOUND])
     
-                        mediaHash = new Post(receiver.storage.read(requestMediaLocation)).media[data[3]]
+                        mediaHash = new Post(await storage.read(requestMediaLocation)).media[data[3]]
                         requestMediaLocation += `.${data[3]}`
                         break
                 }
@@ -248,7 +249,7 @@ const Handler = class {
                 if (!mediaHash)
                     return receiver.send(peer, [__.MEDIA_STREAM_NO_MEDIA])
     
-                if (receiver.storage.bin.access(requestMediaLocation))
+                if (await storage.bin.access(requestMediaLocation))
                     return receiver.send(peer, [__.MEDIA_STREAM_MEDIA_FOUND])
     
                 await peer.openMediaStream(requestMediaLocation, mediaHash, data[4])
