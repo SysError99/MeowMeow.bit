@@ -16,6 +16,32 @@ const WebAccount = require('./web.account')
 const WebFileServer = require('./web.file.server')
 const WebPost = require('./web.post')
 
+// Data Inititialization
+if (FileSystem.readdirSync('./data/').length <= FileSystem.readdirSync('./default/').length) {
+    let path = require("path")
+
+    /**
+     * @param {string} src 
+     * @param {string} dest 
+     */
+    let copyDirSync = (src, dest) => {
+        FileSystem.mkdirSync(dest, { recursive: true })
+
+        let entries = FileSystem.readdirSync(src, { withFileTypes: true })
+
+        for (let entry of entries) {
+            let srcPath = path.join(src, entry.name)
+            let destPath = path.join(dest, entry.name)
+
+            entry.isDirectory() ?
+                copyDirSync(srcPath, destPath) :
+                FileSystem.copyFileSync(srcPath, destPath)
+        }
+    }
+
+    copyDirSync('./default', './data')
+}
+
 /** Peer command handler */
 const handler = new Handler()
 
@@ -67,32 +93,3 @@ web.get('/post/:pub/:number', async (req, res) => await webPost.post(req, res))
 web.get('/like/:pub/:number', async (req, res) => {})
 web.get('/mention/:pub/:number', async (req, res) => {})
 web.post('/post', async (req, res) => await webPost.postSubmit(req, res))
-
-// Inititialization
-if (FileSystem.readdirSync('./data/').length <= FileSystem.readdirSync('./default/').length) {
-    let path = require("path")
-
-    /**
-     * @param {string} src 
-     * @param {string} dest 
-     */
-    let copyDirSync = (src, dest) => {
-        FileSystem.mkdirSync(dest, { recursive: true })
-
-        let entries = FileSystem.readdirSync(src, { withFileTypes: true })
-
-        for (let entry of entries) {
-            let srcPath = path.join(src, entry.name)
-            let destPath = path.join(dest, entry.name)
-
-            entry.isDirectory() ?
-                copyDirSync(srcPath, destPath) :
-                FileSystem.copyFileSync(srcPath, destPath)
-        }
-    }
-
-    copyDirSync('./default', './data')
-}
-
-if (!receiver.storage.access('posts'))
-    receiver.storage.write('posts', 0)
