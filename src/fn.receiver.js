@@ -176,7 +176,9 @@ const Receiver = class {
         }
 
         while (peersSelected.length > 0) {
-            this.send(peersSelected[0], data)
+            if (peersSelected[0] !== this.myAddress)
+                this.send(peersSelected[0], data)
+
             peersSelected.splice(0,1)
         }
 
