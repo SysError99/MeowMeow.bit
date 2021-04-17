@@ -72,6 +72,10 @@ const WebPost = class {
         wPost[13] = typeof like === 'number' ? `${like}` : '0'
         wPost[15] = typeof linkMention === 'string' ? linkMention : '#'
         wPost[17] = typeof mention === 'number' ? `${mention}` : '0'
+
+        if (wPost[7].length < 16)
+            wPost[7] = `<h1>${wPost[7]}</h1>`
+
         return wPost.join('')
     }
 
@@ -92,7 +96,7 @@ const WebPost = class {
         res.send(
             WebUI.body({
                 avatar: this.webAccount.avatar,
-                body: await this.renderPost(req.params.pub, req.params.number),
+                body: await this.renderPost(req.params.pub, req.params.number, true),
                 title: 'Posts - '
             })
         )
@@ -125,9 +129,10 @@ const WebPost = class {
      * Render specified post 
      * @param {string} pub Public key
      * @param {number} num Post number
+     * @param {boolean} showMention Show mentions?
      * @returns {Promise<string>}
      */
-    async renderPost (pub, num) {
+    async renderPost (pub, num, showMention) {
         let postLocation = `${pub}.${num}`
         let likeCountLocation = `${postLocation}.likes`
         let mentionCountLocation = `${postLocation}.mentions`
@@ -148,6 +153,24 @@ const WebPost = class {
         let mentionCount = await storage.read(mentionCountLocation)
         let owner = new Acc(await storage.read(pub))
         let post = new Post(await storage.read(postLocation))
+        let mentions = ''
+
+        if (showMention) {
+            mentions = WebUI.header('Mentions', 3) + '<hr>'
+
+            if (mentionCount > 0) {
+                for (let m = 0; m < mentionCount; m++) {
+                    let mentionPointerLocation = `${postLocation}.mention.${m}`
+
+                    if (!await storage.access(mentionPointerLocation))
+                        continue
+
+                    let mentionPointer = new PostPointer(await storage.read(mentionPointerLocation))
+
+                    mentions += await this.renderPost(mentionPointer.owner, mentionPointer.pos)
+                }
+            }
+        }
 
         return this.templatePost({
             avatar: `/data/png/${pub}.avatar`,
@@ -160,6 +183,7 @@ const WebPost = class {
             linkMention:`/mention/${pub}/${num}`,
             mention: mentionCount
         })
+        + mentions
     }
 
     /**
