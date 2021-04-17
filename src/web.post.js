@@ -3,7 +3,6 @@ const FileSystem = require('fs')
 const __ = require('./const')
 const Receiver = require('./fn.receiver')
 const Try = require('./fn.try.catch')
-const TryAsync = require('./fn.try.catch.async')
 const Return = require('./fn.try.return')
 const WebAccount = require('./web.account')
 const Web = require('./fn.web')
@@ -12,6 +11,7 @@ const WebRequest = Web.WebRequest
 const WebResponse = Web.WebResponse
 const { json } = require('./fn.json')
 
+const Acc = require('./data/acc')
 const Post = require('./data/post')
 const PostPointer = require('./data/post.pointer')
 
@@ -21,7 +21,9 @@ const utf8Encoding = {encoding: 'utf-8'}
 const wPost =  Return(() => WebUI.extract(
     FileSystem.readFileSync(`${WebUI.wDir}html/post.html`, utf8Encoding),
     [
+        'avatar',
         'time',
+        'name',
         'text',
         'content',
         'link-like',
@@ -51,7 +53,9 @@ const WebPost = class {
      * @returns {string}
      */
     templatePost ({
+        avatar,
         time,
+        name,
         text,
         content,
         linkLike,
@@ -59,13 +63,15 @@ const WebPost = class {
         linkMention,
         mention,
     }) {
-        wPost[1] = typeof time === 'number' ? new Date(time).toUTCString() : '',
-        wPost[3] = typeof text === 'string' ? text.replace(/</g, "&lt;").replace(/>/g, "&gt;") : ''
-        wPost[5] = typeof content === 'string' ? content : ''
-        wPost[7] = typeof linkLike === 'string' ? linkLike : '#'
-        wPost[9] = typeof like === 'number' ? `${like}` : '0'
-        wPost[11] = typeof linkMention === 'string' ? linkMention : '#'
-        wPost[13] = typeof mention === 'string' ? mention : ''
+        wPost[1] = typeof avatar === 'string' ? avatar : '/web/img/avatar5.png'
+        wPost[3] = typeof time === 'number' ? new Date(time).toUTCString() : '',
+        wPost[5] = typeof name === 'string' ? name.replace(/</g, "&lt;").replace(/>/g, "&gt;") : ''
+        wPost[7] = typeof text === 'string' ? text.replace(/</g, "&lt;").replace(/>/g, "&gt;") : ''
+        wPost[9] = typeof content === 'string' ? content : ''
+        wPost[11] = typeof linkLike === 'string' ? linkLike : '#'
+        wPost[13] = typeof like === 'number' ? `${like}` : '0'
+        wPost[15] = typeof linkMention === 'string' ? linkMention : '#'
+        wPost[17] = typeof mention === 'number' ? `${mention}` : '0'
         return wPost.join('')
     }
 
@@ -83,39 +89,13 @@ const WebPost = class {
      * @param {WebResponse} res 
      */
     async post (req, res) {
-        let postLocation = `${req.params.pub}.${req.params.number}`
-        let likeCountLocation = `${postLocation}.likes`
-        let mentionCountLocation = `${postLocation}.mentions`
-        let storage = this.receiver.storage.promise
-
-        if(await TryAsync(async () => storage.access(postLocation)))
-            return res.send(WebUI.body({
-                title: 'Not Found - ',
-                body: WebUI.header({
-                    text: 'Post requested is not found.'
-                })
-            }))
-
-        if (await TryAsync(async () => storage.access(likeCountLocation)))
-            await storage.write(likeCountLocation, 0)
-
-        if (await TryAsync(async () => storage.access(mentionCountLocation)))
-            await storage.write(mentionCountLocation)
-
-        /** @type {number} */
-        let likeCount = await storage.read(likeCountLocation)
-        let mentionCount = await storage.read(mentionCountLocation)
-        let post = new Post(await storage.read(postLocation))
-
-        res.send(this.templatePost({
-            time: post.time,
-            text: post.text,
-            // TODO: implement content (media, mention, tag)
-            linkLike: `/like/${req.params.pub}/${req.params.number}`,
-            like: likeCount,
-            linkMention:`/mention/${req.params.pub}/${req.params.number}`,
-            mention: mentionCount
-        }))
+        res.send(
+            WebUI.body({
+                avatar: this.webAccount.avatar,
+                body: await this.renderPost(req.params.pub, req.params.number),
+                title: 'Posts - '
+            })
+        )
     }
 
     /**
@@ -137,22 +117,49 @@ const WebPost = class {
             return res.send('')
 
         let postPointer = new PostPointer(await storage.read(pointerLocation))
-        let postLocation = `${postPointer.owner}.${postPointer.pos}`
         
-        if (await storage.access(postLocation))
-            return res.send('')
+        res.send(await this.renderPost(postPointer.owner, postPointer.pos))
+    }
+ 
+    /**
+     * Render specified post 
+     * @param {string} pub Public key
+     * @param {number} num Post number
+     * @returns {Promise<string>}
+     */
+    async renderPost (pub, num) {
+        let postLocation = `${pub}.${num}`
+        let likeCountLocation = `${postLocation}.likes`
+        let mentionCountLocation = `${postLocation}.mentions`
+        let storage = this.receiver.storage.promise
 
+        if (!await storage.access(postLocation))
+            return WebUI.header('-')
+
+        if (!await storage.access(likeCountLocation))
+            await storage.write(likeCountLocation, 0)
+
+        if (!await storage.access(mentionCountLocation))
+            await storage.write(mentionCountLocation, 0)
+
+        /** @type {number} */
+        let likeCount = await storage.read(likeCountLocation)
+        /** @type {number} */
+        let mentionCount = await storage.read(mentionCountLocation)
+        let owner = new Acc(await storage.read(pub))
         let post = new Post(await storage.read(postLocation))
 
-        res.send(this.templatePost({
+        return this.templatePost({
+            avatar: `/data/png/${pub}.avatar`,
+            name: owner.name,
             time: post.time,
             text: post.text,
             // TODO: implement content (media, mention, tag)
-            linkLike: `/like/${postPointer.owner}/${postPointer.pos}`,
+            linkLike: `/like/${pub}/${num}`,
             like: likeCount,
-            linkMention:`/mention/${postPointer.owner}/${postPointer.pos}`,
+            linkMention:`/mention/${pub}/${num}`,
             mention: mentionCount
-        }))
+        })
     }
 
     /**
@@ -178,7 +185,6 @@ const WebPost = class {
 
         post.owner = ownerPub
         post.text = req.body.text
-        console.log(this.webAccount.active.key)
         post.sign(this.webAccount.active.key.private, this.webAccount.active.key.password)
 
         if (!await storage.access(postCountLocation))
@@ -216,6 +222,8 @@ const WebPost = class {
         timelineCount++
         await storage.write(postCountLocation, postCount)
         await storage.write('posts', timelineCount)  
+    
+        res.send('Post submission is successful!')
     }
 
     /**
