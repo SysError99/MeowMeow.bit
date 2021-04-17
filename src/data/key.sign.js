@@ -65,7 +65,7 @@ const SignKey = class {
                 this.password = d[0]
 
             if (typeof d[1] === 'string')
-                this.exportprivate = d[1]
+                this.private = d[1]
 
             if (typeof d[2] === 'string')
                 this.public = d[2]
