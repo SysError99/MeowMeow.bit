@@ -81,6 +81,7 @@ const WebAccount = class {
                 cover: WebUI.image({
                     location: `/data/png/${this.active.key.public}.cover`
                 }),
+                publicAccount: this.active.public ? 'checked' : ''
             }),
             script:
                 WebUI.script('/web/js/croppie.js') + 
@@ -241,7 +242,7 @@ const WebAccount = class {
         tag,
         avatar,
         cover,
-        public
+        publicAccount
     }) {
         let accInfo = WebUI.extract(
             await FileSystem.promises.readFile(`${WebUI.wDir}html/account-info.html`, utf8Encode),
@@ -262,7 +263,7 @@ const WebAccount = class {
         accInfo[7] = typeof tag === 'string' ? tag : ''
         accInfo[9] = typeof avatar === 'string' ? avatar : ''
         accInfo[11] = typeof cover === 'string' ? cover : ''
-        accInfo[13] = typeof public === 'string' ? public : ''
+        accInfo[13] = typeof publicAccount === 'string' ? publicAccount : ''
     
         return accInfo.join('')
     }
