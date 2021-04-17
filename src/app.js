@@ -14,6 +14,7 @@ const Web = require('./fn.web').web
 const WebUI = require('./web.ui')
 const WebAccount = require('./web.account')
 const WebFileServer = require('./web.file.server')
+const WebPost = require('./web.post')
 
 /** Peer command handler */
 const handler = new Handler()
@@ -33,6 +34,9 @@ const webAccount = new WebAccount(receiver)
 /** Web file server, for serving static files */
 const webFileServer = new WebFileServer(receiver, web)
 
+/** Web posting handler module */
+const webPost = new WebPost(webAccount, receiver)
+
 /** @type {number} Currently read head of timeline post*/
 let currentTimelinePost = 0
 
@@ -41,7 +45,7 @@ web.get('/', (req,res) => {
 
     res.send(WebUI.body({
         avatar: webAccount.avatar,
-        body: WebUI.postSubmit(),
+        body: webPost.templatePostSubmit,
         script: WebUI.script('/web/js/post-fetch.js')
     }))
 })

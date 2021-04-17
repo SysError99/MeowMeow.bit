@@ -104,9 +104,6 @@ const wBodyLeft = Return(() => {
     return accordion.join('')
 })
 
-/** @type {string} */
-const wPostSubmit = FileSystem.readFileSync(`${wDir}html/post-submit.html`, enc)
-
 /** @type {string[]} */
 const wScript = Return(() => extract(FileSystem.readFileSync(`${wDir}html/script-src.html`, enc), [`url`]))
 
@@ -212,8 +209,6 @@ module.exports = {
 
         return profile.join('')
     },
-
-    postSubmit: () => wPostSubmit,
 
     script: url => {
         wScript[1] = url
