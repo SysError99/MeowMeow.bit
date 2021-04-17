@@ -113,26 +113,24 @@ const WebAccount = class {
         else
             accList = [WebUI.header('Empty', 1)]
 
-        console.log(accList)
-
         res.send(WebUI.body({
             avatar: this.avatar,
             body:
-                typeof this.active === 'object' ?
+                (typeof this.active === 'object' ?
                     await WebUI.profile({
                         name: this.active.name,
                         urlImgAvatar: this.active.img.avatar.length > 0 ? 
-                            `./data/${this.active.key.public}.avatar`
+                            `./data/png/${this.active.key.public}.avatar`
                             : undefined,
                         urlImgCover: this.active.img.cover.length > 0 ?
-                            `./data/${this.active.key.public}.cover`
+                            `./data/png/${this.active.key.public}.cover`
                             : undefined,
                         description: this.active.description,
                         pub: this.active.key.public,
                         dateJoin: new Date().toUTCString(),
                         followers: '0'
                     })
-                : '' + 
+                : '') + '<br>' +
                 await this.templateAccList({
                     list: accList.join('')
                 })
