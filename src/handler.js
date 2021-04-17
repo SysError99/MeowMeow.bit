@@ -11,6 +11,7 @@ const Peer = require('./data/peer.extended')
 const Post = require('./data/post')
 const PostLike = require('./data/post.like')
 const Result = require('./data/result')
+const PostPointer = require('./data/post.pointer')
 
 /** Peer command handler */
 const Handler = class {
@@ -173,10 +174,11 @@ const Handler = class {
                  */
                 if (!Array.isArray(data[3]) ||
                     !Array.isArray(data[4]) ||
-                    !Array.isArray(data[5]) ||
-                    !Array.isArray(data[5]) ||
+                    //Ignore 5, not needed
+                    !Array.isArray(data[6]) ||
                     typeof data[7] !== 'string' ||
-                    typeof data[8] !== 'string' )
+                    typeof data[8] !== 'number' ||
+                    typeof data[9] !== 'string' )
                     return
     
                 let newPostLocation = `${data[1]}.${data[2]}`
@@ -188,7 +190,7 @@ const Handler = class {
                     data[1],
                     data[3],
                     data[4],
-                    data[5],
+                    Array.isArray(data[5]) ? new PostPointer(data[5]) : undefined,
                     data[6],
                     data[7],
                     data[8],
