@@ -37,11 +37,8 @@ const webFileServer = new WebFileServer(receiver, web)
 /** Web posting handler module */
 const webPost = new WebPost(webAccount, receiver)
 
-/** @type {number} Currently read head of timeline post*/
-let currentTimelinePost = 0
-
 web.get('/', (req,res) => {
-    currentTimelinePost = Return(() => receiver.storage.read('posts'), 0) //move to latest post
+    webPost.currentTimelinePost = Return(() => receiver.storage.read('posts'), 0) //move to latest post
 
     res.send(WebUI.body({
         avatar: webAccount.avatar,
@@ -65,23 +62,9 @@ web.post('/account-update', async (req, res) => await WebRequest.update(req, res
 web.get('/:location/:type/:file', async (req, res) => await webFileServer.serve(req, res))
 
 // Posting
-web.get('/timeline', (req, res) => {
-    if (webAccount.active === undefined)
-        return res.send(WebUI.login())
-
-    let currentPostLocation = `${webAccount.active.key.public}.timeline.${currentTimelinePost}`
-
-    if (!receiver.storage.access(currentPostLocation))
-        return res.send('') //No such post, leave it blank here
-
-    res.send('UNIMPLEMENTED')
-    // let postPointer = new PostPointer(receiver.storage.read(currentPostLocation))
-    // TODO: render timeline post
-})
-web.get('/post/:pub/:number', (req, res) => {
-    res.send('UNIMPLEMENTED')
-    // TODO: render specified post
-})
+web.get('/timeline', async (req, res) => await webPost.renderTimeline(req, res))
+web.get('/post/:pub/:number', async (req, res) => await webPost.renderFullPagePost(req, res))
+web.post('/post/:pub/:number', async (req, res) => await webPost.post(req, res))
 
 // Inititialization
 if (FileSystem.readdirSync('./data/').length <= FileSystem.readdirSync('./default/').length) {
