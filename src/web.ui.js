@@ -159,7 +159,12 @@ module.exports = {
         if (typeof size === 'undefined')
             size = 1
 
-        size = 7 - Math.min(Math.max(size, 6), 1)
+        if (size > 6)
+            size = 6
+        else if (size < 1)
+            size = 1
+
+        size = 7 - size
         return `<h${size} class="w3-center w3-opacity">${text}</h${size}>`
     },
 
