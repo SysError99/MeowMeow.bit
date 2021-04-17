@@ -56,14 +56,14 @@ web.get('/account-create', async (req, res) => await webAccount.create(res))
 web.get('/account-info/:pub', async (req,res) => await webAccount.info(req, res))
 web.get('/account-list', async (req, res) => await webAccount.list(res))
 web.post('/account-temp-avatar', async (req,res) => await webAccount.tempAvatar(req, res))
-web.post('/account-update', async (req, res) => await WebRequest.update(req, res))
+web.post('/account-update', async (req, res) => await webAccount.update(req, res))
 
 // File Server
 web.get('/:location/:type/:file', async (req, res) => await webFileServer.serve(req, res))
 
 // Posting
 web.get('/timeline', async (req, res) => await webPost.renderTimeline(req, res))
-web.get('/post/:pub/:number', async (req, res) => await webPost.renderFullPagePost(req, res))
+web.get('/post/:pub/:number', async (req, res) => await webPost.renderPost(req, res))
 web.post('/post/:pub/:number', async (req, res) => await webPost.post(req, res))
 
 // Inititialization

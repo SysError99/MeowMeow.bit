@@ -28,7 +28,7 @@ const WebPost = class {
      * @param {WebRequest} req 
      * @param {WebResponse} res 
      */
-    async renderFullPagePost (req, res) {
+    async renderPost (req, res) {
         res.send('UNIMPLEMENTED')
     }
 
@@ -58,7 +58,7 @@ const WebPost = class {
      * @param {WebResponse} res 
      */
     async post (req, res) {
-
+        
     }
 
     /**
