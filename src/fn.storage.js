@@ -90,7 +90,7 @@ const bin = {
      * @param {string} location File location
      * @returns {Buffer} Result of a read JSON
      */
-    read: location => Return(() => json(FileSystem.readFileSync(P.a + location, {encoding:'binary'}))),
+    read: location => Return(() => FileSystem.readFileSync(P.a + location, {encoding:'binary'})),
 
     /**
      * Write an object to storage
