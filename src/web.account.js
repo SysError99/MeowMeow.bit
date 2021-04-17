@@ -9,12 +9,12 @@ const Web = require('./fn.web')
 const WebUI = require('./web.ui')
 const WebRequest = Web.WebRequest
 const WebResponse = Web.WebResponse
+const {json, str} = require('./fn.json')
 
 const Acc = require('./data/acc')
 
-const {json, str} = require('./fn.json')
-
 const binEncode = {encoding: 'binary'}
+const utf8Encode = {encoding: 'utf-8'}
 
 const WebAccount = class {
     /** @type {Receiver} */
@@ -38,7 +38,7 @@ const WebAccount = class {
         res.send(WebUI.body({
             head: WebUI.css('/web/css/croppie.css'),
             avatar: this.avatar,
-            body: await WebUI.accInfo({
+            body: await this.templateAccInfo({
                 pub: this.active.key.public,
                 avatar: WebUI.header('No profile image specified'), // LOCALE_NEEDED
                 cover: WebUI.header('No cover image specified') //LOCALE_NEEDED
@@ -70,7 +70,7 @@ const WebAccount = class {
         res.send(WebUI.body({
             avatar: this.avatar,
             head: WebUI.css('/web/css/croppie.css'),
-            body: await WebUI.accInfo({
+            body: await this.templateAccInfo({
                 pub: this.active.key.public,
                 name: this.active.name,
                 description: this.active.description,
@@ -126,7 +126,7 @@ const WebAccount = class {
                         followers: '0'
                     })
                 : '' + 
-                await WebUI.accList({
+                await this.templateAccList({
                     list: accList.join('')
                 })
         }))
@@ -227,6 +227,63 @@ const WebAccount = class {
 
         this.receiver.storage.write(this.active.key.public, this.active.export())
         res.send('success')
+    }
+
+    /**
+     * Web template for account information
+     * @param param0 
+     * @returns {Promise<string>}
+     */
+    async templateAccInfo ({
+        pub,
+        name,
+        description,
+        tag,
+        avatar,
+        cover,
+        public
+    }) {
+        let accInfo = WebUI.extract(
+            await FileSystem.promises.readFile(`${WebUI.wDir}html/account-info.html`, utf8Encode),
+            [
+                'acc-pub',
+                'acc-name',
+                'acc-description',
+                'acc-tag',
+                'acc-avatar',
+                'acc-cover',
+                'acc-public'
+            ]
+        )
+    
+        accInfo[1] = typeof pub === 'string' ? pub : ''
+        accInfo[3] = typeof name === 'string' ? name : ''
+        accInfo[5] = typeof description === 'string' ? description : ''
+        accInfo[7] = typeof tag === 'string' ? tag : ''
+        accInfo[9] = typeof avatar === 'string' ? avatar : ''
+        accInfo[11] = typeof cover === 'string' ? cover : ''
+        accInfo[13] = typeof public === 'string' ? public : ''
+    
+        return accInfo.join('')
+    }
+
+    /**
+     * Web template account list
+     * @param  param0 
+     * @returns {Promise<string>}
+     */
+    async templateAccList ({
+        list
+    }) {
+        let accList = WebUI.extract(
+            await FileSystem.promises.readFile(`${WebUI.wDir}html/account-list.html`, utf8Encode),
+            [
+                'list'
+            ]
+        )
+        
+        accList[1] = typeof list === 'string' ? list : ''
+        return accList.join('')
     }
 
     /**

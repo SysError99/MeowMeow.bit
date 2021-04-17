@@ -113,53 +113,6 @@ const wScript = Return(() => extract(FileSystem.readFileSync(`${wDir}html/script
 module.exports = {
     dir: () => wDir,
 
-    accInfo: async ({
-        pub,
-        name,
-        description,
-        tag,
-        avatar,
-        cover,
-        public
-    }) => {
-        let accInfo = extract(
-            await FileSystem.promises.readFile(`${wDir}html/account-info.html`, enc),
-            [
-                'acc-pub',
-                'acc-name',
-                'acc-description',
-                'acc-tag',
-                'acc-avatar',
-                'acc-cover',
-                'acc-public'
-            ]
-        )
-
-        accInfo[1] = typeof pub === 'string' ? pub : ''
-        accInfo[3] = typeof name === 'string' ? name : ''
-        accInfo[5] = typeof description === 'string' ? description : ''
-        accInfo[7] = typeof tag === 'string' ? tag : ''
-        accInfo[9] = typeof avatar === 'string' ? avatar : ''
-        accInfo[11] = typeof cover === 'string' ? cover : ''
-        accInfo[13] = typeof public === 'string' ? public : ''
-
-        return accInfo.join('')
-    },
-
-    accList: async ({
-        list
-    }) => {
-        let accList = extract(
-            await FileSystem.promises.readFile(`${wDir}html/account-list.html`, enc),
-            [
-                'list'
-            ]
-        )
-        
-        accList[1] = typeof list === 'string' ? list : ''
-        return accList.join('')
-    },
-
     avatar: ({
         link,
         right,
@@ -265,5 +218,7 @@ module.exports = {
     script: url => {
         wScript[1] = url
         return wScript.join('')
-    }
+    },
+
+    wDir: wDir
 }
