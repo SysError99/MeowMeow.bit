@@ -5,6 +5,7 @@ const FileSystem = require('fs')
 
 const Crypt = require('./fn.crypt')
 const Receiver = require('./fn.receiver')
+const Try = require('./fn.try.catch')
 const Web = require('./fn.web')
 const WebUI = require('./web.ui')
 const WebRequest = Web.WebRequest
@@ -110,19 +111,24 @@ const WebAccount = class {
             }
         }
         else
-            accList = WebUI.header('Empty', 1)
+            accList = [WebUI.header('Empty', 1)]
+
+        console.log(accList)
 
         res.send(WebUI.body({
             avatar: this.avatar,
             body:
-                typeof acc === 'object' ?
+                typeof this.active === 'object' ?
                     await WebUI.profile({
-                        name: acc.name,
-                        urlImgAvatar: acc.img.avatar.length > 0 ? 
-                            `./data/${acc.key.public}.profile`
-                            : '/web/img/avatar2.png',
-                        description: acc.description,
-                        pub: acc.key.public,
+                        name: this.active.name,
+                        urlImgAvatar: this.active.img.avatar.length > 0 ? 
+                            `./data/${this.active.key.public}.avatar`
+                            : undefined,
+                        urlImgCover: this.active.img.cover.length > 0 ?
+                            `./data/${this.active.key.public}.cover`
+                            : undefined,
+                        description: this.active.description,
+                        pub: this.active.key.public,
                         dateJoin: new Date().toUTCString(),
                         followers: '0'
                     })
