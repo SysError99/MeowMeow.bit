@@ -169,8 +169,20 @@ const Receiver = class {
 
             peerToAdd = peers[y + pos]
 
-            if (typeof peerToAdd === 'string')
-                peersSelected.push(peerToAdd)
+            if (typeof peerToAdd === 'string') {
+                let addThis = true
+
+                for (let p of peersSelected) {
+                    if (p === peerToAdd) {
+                        addThis = false
+                        break
+                    }
+                        
+                }
+
+                if (addThis)
+                    peersSelected.push(peerToAdd)
+            }
 
             n--
         }
