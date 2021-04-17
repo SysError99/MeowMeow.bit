@@ -7,6 +7,26 @@ window.onscroll = function(ev) {
 }
 
 /**
+ * Create a post
+ */
+ const postSubmit = () => {
+    let request = new XMLHttpRequest()
+
+    request.onreadystatechange = () => {
+        if (request.readyState === request.DONE && request.status === 200) {
+            alert(request.response)
+        }
+    }
+
+    request.open('POST', '/post')
+    request.send(JSON.stringify(
+        {
+            text: document.getElementById('post-text').innerHTML
+        }
+    ))
+}
+
+/**
  * Retrieve a post from timeline
  */
 const timelineRetrieve = () => {
@@ -19,7 +39,7 @@ const timelineRetrieve = () => {
         }
     }
 
-    request.open('GET', `/timeline`)
+    request.open('GET', '/timeline')
     request.send()
 }
 

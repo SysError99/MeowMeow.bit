@@ -38,12 +38,12 @@ const webFileServer = new WebFileServer(receiver, web)
 const webPost = new WebPost(webAccount, receiver)
 
 web.get('/', (req,res) => {
-    webPost.currentTimelinePost = Return(() => receiver.storage.read('posts'), 0) //move to latest post
+    webPost.currentTimeline = Return(() => receiver.storage.read('posts'), 0) //move to latest post
 
     res.send(WebUI.body({
         avatar: webAccount.avatar,
-        body: webPost.templatePostSubmit,
-        script: WebUI.script('/web/post.js')
+        body: webPost.templatePostSubmit(),
+        script: WebUI.script('/web/js/post.js')
     }))
 })
 web.get('/me', (req, res) => {
@@ -62,9 +62,11 @@ web.post('/account-update', async (req, res) => await webAccount.update(req, res
 web.get('/:location/:type/:file', async (req, res) => await webFileServer.serve(req, res))
 
 // Posting
-web.get('/timeline', async (req, res) => await webPost.renderTimeline(req, res))
-web.get('/post/:pub/:number', async (req, res) => await webPost.renderPost(req, res))
-web.post('/post/:pub/:number', async (req, res) => await webPost.post(req, res))
+web.get('/timeline', async (req, res) => await webPost.timeline(res))
+web.get('/post/:pub/:number', async (req, res) => await webPost.post(req, res))
+web.get('/like/:pub/:number', async (req, res) => {})
+web.get('/mention/:pub/:number', async (req, res) => {})
+web.post('/post', async (req, res) => await webPost.postSubmit(req, res))
 
 // Inititialization
 if (FileSystem.readdirSync('./data/').length <= FileSystem.readdirSync('./default/').length) {
