@@ -1,3 +1,5 @@
+const Debugger = require('./fn.debugger')
+
 const TimeString = require('./data/time.string')
 
 const ignores = require('./const').TRY_CATCH_IGNORE
@@ -25,7 +27,7 @@ const tryCatch = async (fn, kick) => {
                     return true
             }
 
-            console.error(`${new TimeString().toString()} ${err.stack}`)
+            Debugger.error(`${new TimeString().toString()} ${err.stack}`)
             return true
         }
     }

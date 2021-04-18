@@ -5,6 +5,7 @@ const Crypto = require('crypto')
 const FileSystem = require('fs')
 
 const BaseN = require('./fn.base.n')
+const Debugger = require('./fn.debugger')
 
 /** @type {string} Currently used EC*/
 const curve = 'sect571k1'
@@ -131,7 +132,7 @@ const hash = file => new Promise(resolve => {
     let stream = FileSystem.createReadStream(file)
 
     stream.on('error', err => {
-        console.error(new Error(err))
+        Debugger.error(new Error(err))
         resolve(undefined)
     })
     stream.on('data', chunk => {

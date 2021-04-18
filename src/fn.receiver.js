@@ -5,6 +5,7 @@ const FileSystemPromises = FileSystem.promises
 const __ = require('./const')
 const BaseN = require('./fn.base.n')
 const Crypt = require('./fn.crypt')
+const Debugger = require('./fn.debugger')
 const Try = require('./fn.try.catch')
 const TryAsync = require('./fn.try.catch.async')
 const Return = require('./fn.try.return')
@@ -36,7 +37,7 @@ const seedersSorted = {}
 /**
  * @param {Error} err 
  */
-const showError = err => err ? console.error(err) : 0
+const showError = err => err ? Debugger.error(err) : 0
 
 /**
  * @callback RequestFunction Event handler function
@@ -598,7 +599,7 @@ const Receiver = class {
                     let myAddress = `${message[1]}:${message[2]}`
 
                     if (this.myAddress.length <= 0)
-                        console.log(`Your public address: ${myAddress}`)
+                        Debugger.log(`Your public address: ${myAddress}`)
 
                     this.myAddress = myAddress
                 }
@@ -654,7 +655,7 @@ const Receiver = class {
                 if (typeof message[1] !== 'string')
                     return
 
-                console.log(`Seeding ${message[1]}`)
+                Debugger.log(`Seeding ${message[1]}`)
                 return
 
             case 'unseeding':
@@ -665,7 +666,7 @@ const Receiver = class {
                 if (typeof message[1] !== 'string')
                     return
 
-                console.log(`Unseeding ${message[1]}`)
+                Debugger.log(`Unseeding ${message[1]}`)
                 return
         }
     }
@@ -730,7 +731,7 @@ const Receiver = class {
      */
     async seed (account) {
         if (this.trackerList.length === 0)
-            return console.error(new Error('No active trackers'))
+            return Debugger.error(new Error('No active trackers'))
 
         account = `${account}`
 
@@ -744,7 +745,7 @@ const Receiver = class {
      */
     async unseed (account) {
         if (this.trackerList.length === 0)
-            return console.error(new Error('No active trackers'))
+            return Debugger.error(new Error('No active trackers'))
 
         account = `${account}`
 
@@ -767,7 +768,7 @@ const Receiver = class {
             return 0
 
         if (data.length > __.MTU) {
-            console.log(`Receiver.send() should only be used with small streams (< ${__.MTU} bytes) `) //LOCALE_NEEDED
+            Debugger.log(`Receiver.send() should only be used with small streams (< ${__.MTU} bytes) `) //LOCALE_NEEDED
             return 0
         }
 
@@ -1108,7 +1109,7 @@ const Receiver = class {
         for (let tracker of this.trackerList)
             this.helloTracker(this.peers[tracker])
 
-        console.log(`Receiver will be known as '${this.myPub}'.`)
+        Debugger.log(`Receiver will be known as '${this.myPub}'.`)
 
         //Polling
         setInterval(() => {

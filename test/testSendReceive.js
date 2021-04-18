@@ -1,5 +1,4 @@
-const Crypt = require('../src/fn.crypt')
-const BaseN = require('../src/fn.base.n')
+const Debugger = require('./fn.debugger')
 const Peer = require('../src/data/peer')
 const Receiver = require('../src/fn.receiver')
 
@@ -8,8 +7,8 @@ const port = parseInt(process.argv[3])
 const peer = new Peer([ip, port])
 
 const receiver = new Receiver((peer, data) => {
-    console.log(data.data)
-    console.log(data.message)
+    Debugger.log(data.data)
+    Debugger.log(data.message)
 })
 
 let funcAsync = async () => {

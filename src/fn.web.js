@@ -4,6 +4,8 @@
  * By SysError99, Licensed with MIT
  */
 const HTTP = require('http')
+
+const Debugger = require('./fn.debugger')
 const isAny = require('./fn.is.any')
 const Return = require('./fn.try.return')
 const {str} = require('./fn.json')
@@ -82,7 +84,7 @@ const WebResponse = class {
      */
     cookie ({cookie, expiry, httpOnly}) {
         if (!Array.isArray(cookie)) 
-            return console.error('Cookie is not an array!')
+            return Debugger.error('Cookie is not an array!')
 
         if (typeof expiry === 'string')
             cookie.concat([`Expires=${expiry}`])
@@ -326,7 +328,7 @@ const Web = class {
                     return
                 })
                 req.on('error', err => {
-                    console.error('E -> http.on(\'error\'): ' + err.message)
+                    Debugger.error('E -> http.on(\'error\'): ' + err.message)
                 })
             }).listen(this.port)
         }

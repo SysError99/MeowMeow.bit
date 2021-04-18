@@ -4,6 +4,7 @@
  * Used to handle packets sent from other peers in the network.
  */
 const __ = require('./const')
+const Debugger = require('./fn.debugger')
 const Receiver = require('./fn.receiver')
 const WebAccount = require('./web.account')
 const WebFileServer = require('./web.file.server')
@@ -16,6 +17,7 @@ const PostPointer = require('./data/post.pointer')
 const PostLike = require('./data/post.like')
 const Result = require('./data/result')
 const SignKey = require('./data/key.sign')
+const TimeString = require('./data/time.string')
 
 /** Peer command handler */
 const Handler = class {
@@ -34,7 +36,7 @@ const Handler = class {
      */
     async handle (peer, result) {
         if (!result.success)
-            return
+            return Debugger.error(`${new TimeString().toString()} Error: ${result.message}`)
 
         let allow = true
         let data = result.data
@@ -45,12 +47,12 @@ const Handler = class {
             typeof data[1] !== 'string' ||
             typeof data[2] !== 'number' ||
             typeof data[2] !== 'string' )
-            return
+            return Debugger.error(`${new TimeString().toString()} Error: ${result.message}`)
 
         if (!await storage.access(data[1])) // account not exist
             allow = false
 
-        console.log(`[${peer.ip}:${peer.port}] ${data[0]} -> ${data[1]} -> ${data[2]}`)
+        Debugger.log(`${new TimeString().toString()} ${peer.ip}:${peer.port} ${data[0]} -> ${data[1]} -> ${data[2]}`)
 
         /**
          * Peer high-permission action section.

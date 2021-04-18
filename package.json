@@ -9,6 +9,7 @@
   "main": "app.js",
   "scripts": {
     "app": "node src/app",
+    "test": "node src/app test",
     "tracker": "node src/app.tracker"
   },
   "keywords": [
