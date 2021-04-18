@@ -153,7 +153,7 @@ const Acc = class {
             this.posts = d[4]
 
         if (typeof d[5] === 'boolean')
-            this.posts = d[5]
+            this.public = d[5]
 
         if (Array.isArray(d[6]))
             this.tag = d[6]
