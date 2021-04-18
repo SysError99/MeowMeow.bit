@@ -5,6 +5,9 @@
  */
 const __ = require('./const')
 const Receiver = require('./fn.receiver')
+const WebAccount = require('./web.account')
+const WebFileServer = require('./web.file.server')
+const WebPost = require('./web.post')
 
 const Acc = require('./data/acc')
 const Peer = require('./data/peer.extended')
@@ -15,16 +18,25 @@ const PostPointer = require('./data/post.pointer')
 
 /** Peer command handler */
 const Handler = class {
+    /** @type {Receiver} */
+    receiver
+    /** @type {WebAccount} */
+    webAccount
+    /** @type {WebFileServer} */
+    webFileServer
+    /** @type {WebPost} */
+    webPost
+
     /**
-     * @param {Receiver} receiver 
      * @param {Peer} peer 
      * @param {Result} result
      */
-    async handle (receiver, peer, result) {
+    async handle (peer, result) {
         if (!result.success)
             return
     
         let data = result.data
+        let receiver = this.receiver
         let storage = receiver.storage.promise
     
         if (typeof data[0] !== 'string')

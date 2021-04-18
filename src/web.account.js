@@ -290,13 +290,6 @@ const WebAccount = class {
         accList[1] = typeof list === 'string' ? list : ''
         return accList.join('')
     }
-
-    /**
-     * @param {Receiver} receiver 
-     */
-    constructor (receiver) {
-        this.receiver = receiver
-    }
 }
 
 module.exports = WebAccount

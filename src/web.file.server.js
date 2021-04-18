@@ -99,15 +99,6 @@ const WebFileServer = class {
         res.contentType(contentType)
         file.pipe(res.HTTP, {end:true})
     }
-
-    /**
-     * @param {Receiver} r 
-     * @param {Web} w
-     */
-    constructor (r, w) {
-        this.receiver = r
-        this.web = w
-    }
 }
 
 module.exports = WebFileServer

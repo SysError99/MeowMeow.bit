@@ -254,15 +254,6 @@ const WebPost = class {
         ])
         res.send('Post submission is successful!')
     }
-
-    /**
-     * @param {WebAccount} a 
-     * @param {Receiver} r 
-     */
-    constructor (a, r) {
-        this.webAccount = a
-        this.receiver = r
-    }
 }
 
 module.exports = WebPost
