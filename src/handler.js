@@ -163,6 +163,7 @@ const Handler = class {
                 return
     
             case 'post':
+                // TODO: Implement post receiving on Handler(), based on WebPost details.
                 /**
                  * Make a new post, can also be used for comments (mention)
                  * [3]:string[]     post media
