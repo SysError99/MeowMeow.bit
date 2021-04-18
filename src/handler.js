@@ -191,7 +191,7 @@ const Handler = class {
                 if (newAcc.img.avatar.length > 0) {
                     let awaitForData = resolve => {
                         let counter = __.MAX_TRIAL
-                        let interval = setInterval(() => {
+                        let interval = setInterval(async () => {
                             if (await storage.access(`${data[1]}.avatar`)) {
                                 clearInterval(interval)
                                 resolve(true)
@@ -218,7 +218,7 @@ const Handler = class {
                 if (newAcc.img.cover.length > 0) {
                     let awaitForData = resolve => {
                         let counter = __.MAX_TRIAL
-                        let interval = setInterval(() => {
+                        let interval = setInterval(async () => {
                             if (await storage.access(`${data[1]}.cover`)) {
                                 clearInterval(interval)
                                 resolve(true)
