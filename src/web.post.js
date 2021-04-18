@@ -114,8 +114,10 @@ const WebPost = class {
         let pointerLocation = `timeline.${this.currentTimeline}`
         let storage = this.receiver.storage.promise
 
-        if (this.currentTimeline > 0)
+        if (this.currentTimeline >= 0)
             this.currentTimeline--
+        else
+            return res.send('')
 
         if (!await storage.access(pointerLocation))
             return res.send('')

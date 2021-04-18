@@ -44,4 +44,5 @@ const timelineRetrieve = () => {
     request.send()
 }
 
-timelineRetrieve()
+for(let t = 0; t < 4; t++)
+    timelineRetrieve()
