@@ -6,7 +6,15 @@ const TimeString = class {
      * @returns {string}
      */
     toString (t) {
-        let time = new Date(t)
+        /** @type {Date} */
+        let time
+
+        if (typeof t === 'string' ||
+            typeof t === 'number' )
+            time = new Date(t)
+        else
+            time = new Date()
+
         let month = time.getUTCMonth()
         let date = time.getUTCDate()
         let hour = time.getUTCHours()
