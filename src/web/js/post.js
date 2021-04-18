@@ -15,6 +15,7 @@ window.onscroll = function(ev) {
     request.onreadystatechange = () => {
         if (request.readyState === request.DONE && request.status === 200) {
             alert(request.response)
+            window.location.reload()
         }
     }
 
