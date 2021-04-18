@@ -78,11 +78,17 @@ webPost.receiver = receiver
 web.get('/', (req,res) => {
     webPost.currentTimeline = Return(() => receiver.storage.read('posts'), 0) - 1 //move to latest post
 
-    res.send(WebUI.body({
-        avatar: webAccount.avatar,
-        body: webPost.templatePostSubmit(),
-        script: WebUI.script('/web/js/post.js')
-    }))
+    if (typeof webAccount.active !== 'undefined')
+        res.send(WebUI.body({
+            avatar: webAccount.avatar,
+            body: webPost.templatePostSubmit(),
+            script: WebUI.script('/web/js/post.js')
+        }))
+    else
+        res.send(WebUI.body({
+            avatar: webAccount.avatar,
+            body: webPost.templatePostSubmit() + WebUI.login() 
+        }))
 })
 web.get('/me', (req, res) => {
     res.status(302, {Location: '/account-list'})
