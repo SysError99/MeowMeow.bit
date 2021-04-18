@@ -12,9 +12,10 @@ const WebPost = require('./web.post')
 const Acc = require('./data/acc')
 const Peer = require('./data/peer.extended')
 const Post = require('./data/post')
+const PostPointer = require('./data/post.pointer')
 const PostLike = require('./data/post.like')
 const Result = require('./data/result')
-const PostPointer = require('./data/post.pointer')
+const SignKey = require('./data/key.sign')
 
 /** Peer command handler */
 const Handler = class {
@@ -34,33 +35,25 @@ const Handler = class {
     async handle (peer, result) {
         if (!result.success)
             return
-    
+
+        let allow = true
         let data = result.data
         let receiver = this.receiver
         let storage = receiver.storage.promise
     
-        if (typeof data[0] !== 'string')
+        if (typeof data[0] !== 'string' ||
+            typeof data[1] !== 'string' ||
+            typeof data[2] !== 'number' ||
+            typeof data[2] !== 'string' )
             return
-    
-        if (data[0] === 'account') {
-            /**
-             * Account adding section.
-             */
-    
-            if (!Array.isArray(data[1]))
-                return
-            
-            let newAcc = new Acc(data[1])
-    
-            //TODO: check if this peer is actually need this account
-        } else if (typeof data[2] !== 'number' || typeof data[2] !== 'string')
-            return
-        
+
         if (!await storage.access(data[1])) // account not exist
-            return
-    
+            allow = false
+
+        console.log(`[${peer.ip}:${peer.port}] ${data[0]} -> ${data[1]} -> ${data[2]}`)
+
         /**
-         * Peer action section.
+         * Peer high-permission action section.
          * 
          * Commands that do not have [0],[1],[2], will use this general parameters:
          * [0]:string           social Command (such as post, like, comment, share, mention)
@@ -75,17 +68,26 @@ const Handler = class {
                  * Peer make a request for specific resources.
                  * [3]:string       What resource to request
                  */
+                if (!allow) 
+                    return
+
                 switch (data[3]) {
                     case 'account':
                         /**
                          * Account Request
                          */
-                        if (!await storage.access(data[1]))
-                            return receiver.send(peer, ['accountNotFound'])
+                        let requestAcc = new Acc(await storage.read(data[1]))
     
                         receiver.send(peer, [
                             'account',
-                            new Acc(await storage.read(data[1])).exportPub()
+                            requestAcc.description,
+                            requestAcc.key.public,
+                            requestAcc.name,
+                            requestAcc.img.avatar,
+                            requestAcc.img.cover,
+                            requestAcc.public,
+                            requestAcc.tag,
+                            requestAcc.signature
                         ])
                         return
     
@@ -111,12 +113,12 @@ const Handler = class {
                          * Post request
                          */
                         if (typeof data[2] !== 'number')
-                            return receiver.send(peer, ['invalidPostFormat'])
+                            return receiver.send(peer, ['invalidPostFormat', data[1]])
     
                         let requestPostLocation = `${data[1]}.${data[2]}`
     
                         if (!await storage.access(requestPostLocation))
-                            return receiver.send(peer, ['postNotFound'])
+                            return receiver.send(peer, ['postNotFound', data[1]])
     
                         let requestPost = new Post(await storage.read(requestPostLocation))
     
@@ -135,7 +137,112 @@ const Handler = class {
                         return
                 }
                 return
-    
+
+            case 'account':
+                /**
+                 * Account create & update
+                 * [1]:string       account public key
+                 * [2]:string       account description
+                 * [3]:string       account name
+                 * [4]:string       account avatar (hash)
+                 * [5]:string       account cover (hash)
+                 * [6]:boolean      account public (anyone can post to this)
+                 * [7]:string[]     account tag
+                 * [8]:string       account signature
+                 */
+                if (typeof data[3] !== 'string' ||
+                    typeof data[4] !== 'string' ||
+                    typeof data[5] !== 'string' ||
+                    typeof data[6] !== 'boolean' ||
+                    !Array.isArray(data[7] ||
+                    typeof data[8] !== 'string') )
+                    return
+
+                if (this.webAccount.followPending.indexOf(data[1]) < 0 && !await storage.access(data[1]))
+                    return
+
+                let newAcc = new Acc([
+                    data[2],
+                    new SignKey([
+                        '',
+                        '',
+                        data[1]
+                    ]),
+                    data[3],
+                    [
+                        data[4],
+                        data[5]
+                    ],
+                    0,
+                    data[6],
+                    data[7],
+                    data[8]
+                ])
+
+                if (!newAcc.valid)
+                    return
+
+                let followingList = await storage.read('following')
+
+                followingList.push(data[1])
+                await storage.write('following', followingList)
+                await storage.write(data[1], newAcc.exportPub())
+
+                if (newAcc.img.avatar.length > 0) {
+                    let awaitForData = resolve => {
+                        let counter = __.MAX_TRIAL
+                        let interval = setInterval(() => {
+                            if (await storage.access(`${data[1]}.avatar`)) {
+                                clearInterval(interval)
+                                resolve(true)
+                            } else if (counter > 0)
+                                counter--
+                            else {
+                                clearInterval(interval)
+                                resolve(false)
+                            }
+                        }, 10000)
+                    } 
+
+                    receiver.send(peer, [
+                        'request',
+                        data[1],
+                        'avatar',
+                        'account'
+                    ])
+
+                    if (!await new Promise(awaitForData))
+                        return
+                }
+
+                if (newAcc.img.cover.length > 0) {
+                    let awaitForData = resolve => {
+                        let counter = __.MAX_TRIAL
+                        let interval = setInterval(() => {
+                            if (await storage.access(`${data[1]}.cover`)) {
+                                clearInterval(interval)
+                                resolve(true)
+                            } else if (counter > 0)
+                                counter--
+                            else {
+                                clearInterval(interval)
+                                resolve(false)
+                            }
+                        }, 10000)
+                    }
+
+                    receiver.send(peer, [
+                        'request',
+                        data[1],
+                        'cover',
+                        'account'
+                    ])
+
+                    if (!await new Promise(awaitForData))
+                        return
+                }
+                return
+
             case 'like':
                 /**
                  * Like a post
@@ -175,7 +282,6 @@ const Handler = class {
                 return
     
             case 'post':
-                // TODO: Implement post receiving on Handler(), based on WebPost details.
                 /**
                  * Make a new post, can also be used for comments (mention)
                  * [3]:string[]     post media
@@ -216,6 +322,9 @@ const Handler = class {
     
                 if (!await storage.write(newPostLocation, postData))
                     return
+
+                // TODO: categorize post by tag, and add it to timeline.
+                // * If the post is the mention request, don't add it to timeline
     
                 await receiver.broadcast(data[1], __.BROADCAST_AMOUNT, data)
                 return
@@ -224,15 +333,17 @@ const Handler = class {
                 /**
                  * !! UNSTABLE, NOT TESTED !!
                  * 
-                 * Sending media stream request
+                 * Incoming media stream
                  * [3]:number media index
                  * [4]:number media total packets that will be received
                  */
+                if (!allow)
+                    return
+
                 if (typeof peer.mediaStream !== 'undefined')
                     return receiver.send(peer, [__.MEDIA_STREAM_NOT_READY])
     
                 if (typeof data[3] !== 'number' ||
-                    typeof data[3] !== 'string' ||
                     typeof data[4] !== 'number' )
                     return receiver.send(peer, [__.MEDIA_STREAM_INFO_INVALID])
     
@@ -269,11 +380,8 @@ const Handler = class {
                 receiver.send(peer, [__.MEDIA_STREAM_READY])
                 return
     
-            //unknown messages
-            case 'what':
-                return
-    
-            default:
+            // Hello test
+            case 'hello':
                 receiver.send(peer, [`what`])
                 return
         }
