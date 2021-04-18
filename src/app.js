@@ -93,6 +93,7 @@ web.get('/me', (req, res) => {
 web.get('/account-create', async (req, res) => await webAccount.create(res))
 web.get('/account-info/:pub', async (req,res) => await webAccount.info(req, res))
 web.get('/account-list', async (req, res) => await webAccount.list(res))
+web.get('/following', async (req, res) => await webAccount.listFollowing(res))
 web.post('/account-temp-avatar', async (req,res) => await webAccount.tempAvatar(req, res))
 web.post('/account-update', async (req, res) => await webAccount.update(req, res))
 

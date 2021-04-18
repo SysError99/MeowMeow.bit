@@ -28,6 +28,9 @@ const WebAccount = class {
     avatar = WebUI.avatar({
         right: true
     })
+
+    /** @type {string[]} List of account that needs to be followed */
+    followPending = []
     
     /**
      * Account Creation
@@ -96,12 +99,16 @@ const WebAccount = class {
      * @returns {Promise<string>}
      */
     async list (res) {
+        let storage = this.receiver.storage.promise
         /** @type {string[]} */
-        let accList = json(await FileSystem.promises.readFile(`./data/accounts.json`, {encoding: 'utf-8'}))
+        let accList = await storage.read('accounts')
 
         if (accList.length > 0) {
             for (let a in accList) {
-                let accFound = new Acc(await this.receiver.storage.promise.read(accList[a]))
+                if (!await storage.access(accList[a]))
+                    continue
+
+                let accFound = new Acc(await storage.read(accList[a]))
 
                 accList[a] = WebUI.avatar({
                     url: `./data/png/${accFound.key.public}.avatar`,
@@ -116,6 +123,9 @@ const WebAccount = class {
         res.send(WebUI.body({
             avatar: this.avatar,
             body:
+                await this.templateAccList({
+                    list: accList.join('')
+                }) + '<br>' +
                 (typeof this.active === 'object' ?
                     await WebUI.profile({
                         name: this.active.name,
@@ -130,10 +140,43 @@ const WebAccount = class {
                         dateJoin: new Date().toUTCString(),
                         followers: '0'
                     })
-                : '') + '<br>' +
-                await this.templateAccList({
-                    list: accList.join('')
+                : '')
+        }))
+    }
+
+    /**
+     * List of following accounts
+     * @param {WebResponse} res 
+     */
+     async listFollowing (res) {
+        let storage = this.receiver.storage.promise
+        let title = 'Following accounts'
+        let followingList = await storage.read('following')
+
+        if (followingList.length > 0) {
+            for (let f in followingList) {
+                if (!await storage.access(followingList[a]))
+                    continue
+
+                let accFound = new Acc(await storage.read(followingList[a]))
+
+                followingList[a] = WebUI.avatar({
+                    url: `./data/png/${accFound.key.public}.avatar`,
+                    link: `/account-info/${accFound.key.public}`,
+                    text: `${accFound.name}`
                 })
+            }
+        }
+        else
+            followingList = [WebUI.header('Empty', 1)]
+
+        res.send(WebUI.body({
+            avatar: this.avatar,
+            title: `${title} - `,
+            body: WebUI.box({
+                title: title,
+                content: followingList.join('')
+            })
         }))
     }
 
