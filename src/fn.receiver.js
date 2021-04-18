@@ -114,7 +114,7 @@ const Receiver = class {
      * @param {number} n Amount of peers to broadcast
      * @param {Array|string} data Data to be sent
      */
-    broadcast (account, n, data) {
+    async broadcast (account, n, data) {
         if (n <= 0)
             return false
 
@@ -148,7 +148,7 @@ const Receiver = class {
                 seedersMyPos[account] = y
             else {
                 peers.push(this.myAddress)
-                return this.broadcast(account, n, data)
+                return await this.broadcast(account, n, data)
             }
 
             seedersSorted[account] = true
@@ -189,7 +189,7 @@ const Receiver = class {
 
         while (peersSelected.length > 0) {
             if (peersSelected[0] !== this.myAddress)
-                this.send(peersSelected[0], data)
+                await this.send(peersSelected[0], data)
 
             peersSelected.splice(0,1)
         }
