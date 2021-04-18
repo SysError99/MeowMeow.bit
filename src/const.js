@@ -42,7 +42,7 @@ const constants = {
     MAX_TRIAL: 10 - 1,
 
     /** @type {number} Max size of UDP packet in bytes*/
-    MTU: 1408,
+    MTU: 1280,
 
     /** @type {number} Last access time (in millisecods, default: 1 day) */
     LAST_ACCESS_LIMIT: 1000 * 60 * 60 * 24,
