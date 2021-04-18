@@ -200,6 +200,9 @@ const WebPost = class {
 
         if (typeof req.body.text !== 'string')
             return res.send('Some of parameters have invalid data type')
+
+        if (req.body.text.length > 144)
+            return res.send('Text length cannot exceeds 144 characters')
         
         // Create a new post
         let ownerPub = this.webAccount.active.key.public
