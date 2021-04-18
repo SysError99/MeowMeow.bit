@@ -57,6 +57,21 @@ const wBody = Return(() => {
     return body
 })
 
+/** @type {string[]} Empty box template */
+const wBox = Return(() => 
+    extract(
+        FileSystem.readFileSync(
+            `${wDir}html/box.html`,
+            enc
+        ),
+        [
+            'title',
+            'content',
+            'button'
+        ]
+    )
+)
+
 /** @type {string} Left body of this page */
 const wBodyLeft = Return(() => {
     let accordion = extract(
@@ -145,6 +160,17 @@ module.exports = {
         wBody[15] = typeof bodyRight === 'string' ? bodyRight : ''
         wBody[17] = typeof script === 'string' ? script : ''
         return wBody.join('')
+    },
+
+    box: ({
+        title,
+        content,
+        button
+    }) => {
+        wBox[1] = typeof title === 'string' ? title : ''
+        wBox[3] = typeof content === 'string' ? content : ''
+        wBox[5] = typeof button === 'string' ? button : ''
+        return wBox.join('')
     },
 
     css: location => `<link rel="stylesheet" href="${location}">`,
