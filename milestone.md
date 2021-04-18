@@ -2,52 +2,55 @@
 
 # Peer
 
-## Account Manager
-Features:
- - Choose active account
- - Create a new account
- - Delete accounts from device
+## Auto-start
+ - [ ] Send seeding to all trackers
+ - [ ] Leeching following accounts
 
 ## Data Registry
 Contains:
- - Account [$]
- - Account database [tag]
- - Account seeders [$] [n]
- - Posts [$,tag,n] [n] (tag: by tag, n: by timeline)
- - Trackers [n]
-Features:
- - Creating & Updating data
- - Querying data
- - Removing data
+ - [x] Account [$]
+ - [x] Posts [$,n] [timeline,n]
+ - [x] Trackers [ip:port]
 
-## Networking (incoming & outgoing)
-Receive & send requests [$] [signature]:
- - Configure
-    - Set account name
-    - Manage followers
-    - Manage following
-    - Rename the account
-    - Change cover picture
-    - Change profile picture
-    - Manage account tags
- - Download 
-    - Account (+follow)
-    - Peer list
-    - Post [n]
- - Interact [post]
-    - Comment
-    - Like
-    - Post & Share
-       - with tag [$]
+## Networking
+ - Request (without [$])
+    - [x] Accounts
+    - [ ] Like
+    - [x] Media
+    - [x] Post
+ - Receive
+    - [x] Account (+follow)
+    - [x] Like
+    - [ ] Media
+    - [x] Post
+       - [ ] request media, if post has
+       - [ ] tag categorize
+       - [ ] timeline categorize
 
-## Rendering (HTTP server)
-
-# Announcer
-Contains: Announcement [ip:port]
-Receive requests: 
- - Announcement [ip:port]
- - Connected port
+## User Interface (HTTP server)
+ - Account
+    - [x] Choose active account
+    - [x] Create a new account
+    - [ ] Delete accounts from device
+ - Following
+    - [ ] Add followers
+    - [x] List followers
+    - [ ] Remove followers\
+ - Post
+    - [x] Create a post
+       - [ ] with media
+       - [ ] with tag
+    - [ ] Download mentioned post
+    - [ ] Like a post
+    - [x] Render post
+       - [x] with mentions
+       - [ ] send mention in post
 
 # Tracker 
-Contains: Account seeders [$]: Peer[]
-Receive requests: Account seeders [$]
+Contains:
+ - [x] Account seeders [$]
+ - [x] Active peers [ip:port]
+Receive requests:
+ - [x] Announcement [ip:port]
+ - [x] Leeching (get seeding peers) [$]
+ - [x] Seeding/Unseeding [$]
