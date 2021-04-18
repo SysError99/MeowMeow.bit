@@ -159,7 +159,7 @@ const Handler = class {
                 likeCount++
     
                 await storage.write(likeCountFileLocation, likeCount)
-                receiver.broadcast(data[1], __.BROADCAST_AMOUNT, data)
+                await receiver.broadcast(data[1], __.BROADCAST_AMOUNT, data)
                 return
     
             case 'post':
@@ -204,7 +204,7 @@ const Handler = class {
                 if (!await storage.write(newPostLocation, postData))
                     return
     
-                receiver.broadcast(data[1], __.BROADCAST_AMOUNT, data)
+                await receiver.broadcast(data[1], __.BROADCAST_AMOUNT, data)
                 return
     
             case 'media':

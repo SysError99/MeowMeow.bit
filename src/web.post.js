@@ -220,20 +220,6 @@ const WebPost = class {
         /** @type {number} */
         let postCount = await storage.read(postCountLocation)
 
-        //Broadcast
-        this.receiver.broadcast(ownerPub, __.BROADCAST_AMOUNT, [
-            'post',
-            ownerPub,
-            postCount,
-            post.media,
-            post.mediaType,
-            post.mention,
-            post.tag,
-            post.text,
-            post.time,
-            post.signature
-        ])
-
         //Add to timeline
         /** @type {number} */
         let timelineCount = await storage.read('posts')
@@ -245,11 +231,27 @@ const WebPost = class {
         //Save to disk
         await storage.write(`${ownerPub}.${postCount}`, post.export())
         await storage.write(`timeline.${timelineCount}`, timeline.export())
+
+        let currentPostCount = postCount
+
         postCount++
         timelineCount++
         await storage.write(postCountLocation, postCount)
         await storage.write('posts', timelineCount)  
     
+        //Broadcast
+        await this.receiver.broadcast(ownerPub, __.BROADCAST_AMOUNT, [
+            'post',
+            ownerPub,
+            currentPostCount,
+            post.media,
+            post.mediaType,
+            post.mention,
+            post.tag,
+            post.text,
+            post.time,
+            post.signature
+        ])
         res.send('Post submission is successful!')
     }
 
