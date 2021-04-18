@@ -187,7 +187,7 @@ const WebAccount = class {
 
         this.active.name = req.body.name.slice(0,32)
         this.active.description = req.body.description.slice(0,144)
-        this.active.tag = req.body.tag.slice(0,16).split(',')
+        this.active.tag = req.body.tag.slice(0,32).split(',')
 
         req.body.avatar = req.body.avatar.split(';base64,')
         req.body.cover = req.body.cover.split(';base64,')
