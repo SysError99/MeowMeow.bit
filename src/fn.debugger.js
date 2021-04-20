@@ -11,14 +11,14 @@ const Debugger = class {
     }
 
     log (message) {
-        if (!__.TEST)
+        if (!__.DEBUG)
             return
 
         console.log(`${new TimeString().toString()} ${message}`)
     }
 
     warn (message) {
-        if (!__.TEST)
+        if (!__.DEBUG)
             return
 
         console.warn(`${new TimeString().toString()} W -> ${message}`)

@@ -48,6 +48,9 @@ const constants = {
     LAST_ACCESS_LIMIT: 1000 * 60 * 60 * 24,
 
     /** @type {boolean} If this is running in test mode */
-    TEST: process.argv[2] === 'test' ? true : false
+    TEST: process.argv[2] === 'test' || process.argv[2] === 'debug',
+
+    /** @type {boolean} If the app is running in full debugging mode */
+    DEBUG: process.arv[2] === 'debug'
 }
 module.exports = constants
