@@ -7,7 +7,7 @@ const Debugger = class {
         if (!__.TEST)
             return
 
-        console.error(`${new TimeString().toString()} ${message}`)
+        console.error(`${new TimeString().toString()} E -> ${message}`)
     }
 
     log (message) {
@@ -21,7 +21,7 @@ const Debugger = class {
         if (!__.TEST)
             return
 
-        console.warn(`${new TimeString().toString()} ${message}`)
+        console.warn(`${new TimeString().toString()} W -> ${message}`)
     }
 }
 
