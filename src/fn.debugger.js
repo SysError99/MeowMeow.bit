@@ -7,7 +7,7 @@ const Debugger = class {
         if (!__.TEST)
             return
 
-        console.error(`${new TimeString().toString()} E -> ${message}`)
+        console.error(`${new TimeString().toString()} E -> ${message}\n${new Error().stack}`)
     }
 
     log (message) {
