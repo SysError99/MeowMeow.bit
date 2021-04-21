@@ -51,6 +51,6 @@ const constants = {
     TEST: process.argv[2] === 'test' || process.argv[2] === 'debug',
 
     /** @type {boolean} If the app is running in full debugging mode */
-    DEBUG: process.arv[2] === 'debug'
+    DEBUG: process.argv[2] === 'debug'
 }
 module.exports = constants
