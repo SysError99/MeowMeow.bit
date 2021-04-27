@@ -1,7 +1,5 @@
 const Debugger = require('./fn.debugger')
 
-const TimeString = require('./data/time.string')
-
 const ignores = require('./const').TRY_CATCH_IGNORE
 
 /**
