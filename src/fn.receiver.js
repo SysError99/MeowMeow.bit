@@ -1141,8 +1141,11 @@ const Receiver = class {
             throw Error('No trackers has been set')
 
         for (let tracker of this.trackerList){
-            Debugger.log(`Saying hello to tracker ${tracker.ip}:${tracker.port}`)
-            this.helloTracker(this.peers[tracker])
+            /** @type {Peer} */
+            let peer = this.peers[tracker]
+
+            Debugger.log(`Saying hello to tracker ${peer.ip}:${peer.port}`)
+            this.helloTracker(peer)
         }
 
         Debugger.log(`Receiver will be known as '${this.myPub}'.`)
