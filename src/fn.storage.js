@@ -61,7 +61,7 @@ const promise = {
      */
     write: (location, data) => {
         return new Promise(resolve => {
-            resolve(Try(async () => 
+            resolve(TryAsync(async () => 
                 await FileSystem.promises.writeFile(P.a + location + P.b, convert(data), {encoding:'utf-8'})
             ))
         })
