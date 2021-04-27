@@ -27,7 +27,7 @@ const tryCatch = async (fn, kick) => {
                     return true
             }
 
-            Debugger.error(`${new TimeString().toString()} ${err.stack}`)
+            Debugger.error(err.stack)
             return true
         }
     }

@@ -260,7 +260,7 @@ const Receiver = class {
         if (typeof peer === 'undefined') {
             //Add peer to active list
             if (message.length !== Crypt.ecdh.length)
-                return 
+                return Debugger.warn(`${remote.address}:${remote.port} sent invalid key length.`)
 
             let computeKey = this.key.computeSecret(message)
 
@@ -274,8 +274,10 @@ const Receiver = class {
                 this.addPeer(peer)
                 this.startPolling(peer)
                 this.#sendEncrypted(peer, str( ['nice2meetu'] ))
+                Debugger.log(`Welcome ${remote.address}:${remote.port}!`)
             }
-            else
+            else {
+                Debugger.warn(`${remote.address}:${remote.port} sent invalid key.`)
                 this.socket.send(
                     Crypt.rand(22),
                     0,
@@ -284,7 +286,7 @@ const Receiver = class {
                     remote.address,
                     showError
                 )
-
+            }
             return 
         }
 
@@ -309,10 +311,11 @@ const Receiver = class {
 
         if (!peer.connected()) {
             if (typeof Return(() => json(peer.key.decryptToString(message))) === 'undefined')
-                return
+                return Debugger.warn(`${peer.ip}:${peer.port} is unknown, but have sent unknown message.`)
 
             // NAT transversal successful
             if (typeof peer.callback === 'function') {
+                Debugger.log(`Connection to ${remote.address}:${remote.port} is successful.`)
                 peer.callback(__.MAX_TRIAL - peer.quality)
                 peer.callback = undefined
             }
@@ -326,7 +329,7 @@ const Receiver = class {
             let lastAccess = currentTime - peer.lastAccess
 
             if (lastAccess <= __.ACCESS_COOLDOWN && typeof peer.mediaStream === 'undefined')
-                return
+                return Debugger.warn(`${remode.address}:${remote.port} send packets too frequent!`)
             else if (lastAccess >= __.LAST_ACCESS_LIMIT)
                 return this.handleBadPeer(message, remote, peer)
         }
@@ -418,6 +421,8 @@ const Receiver = class {
             let dataReceivedSignature = await Crypt.hash(peer.getMediaStreamTempLocation())
 
             if (dataReceivedSignature === peer.getMediaStreamHash()) {
+                Debugger.log(`Media accepted ${peer.mediaStreamLocation} from ${peer.ip}:${peer.port}!`)
+
                 if (await peer.closeMediaStream()) { // If can't close properly
                     this.#sendEncrypted(peer, str( [__.MEDIA_STREAM_PEER_ERR] ))
                     peer.mediaStream = undefined
@@ -433,6 +438,7 @@ const Receiver = class {
 
         if (peer.mediaStreamPacketsReceived > peer.mediaStreamPacketsTotal) {
             // Decline file
+            Debugger.warn(`Media declined ${peer.mediaStreamLocation} from ${peer.ip}:${peer.port}`)
             this.#sendEncrypted(peer, str( [__.MEDIA_STREAM_DECLINED] ))
             await peer.closeMediaStream()
             return
@@ -442,8 +448,13 @@ const Receiver = class {
             //write packet
             let packetNumber = message[0] * message[1]
 
-            if (message.length <= 2 || await TryAsync(async () => FileSystemPromises.write(peer.mediaStream, message, 2, message.length - 2, packetNumber * __.MTU)))
-                return this.#sendEncrypted(peer, str( [__.MEDIA_STREAM_PEER_ERR] ))
+            if (message.length <= 2 || await TryAsync(async () => FileSystemPromises.write(peer.mediaStream, message, 2, message.length - 2, packetNumber * __.MTU))) {
+                Debugger.error(`Media error: ${peer.ip}:${peer.port}!`)
+                this.#sendEncrypted(peer, str( [__.MEDIA_STREAM_PEER_ERR] ))
+                return
+            }
+
+            Debugger.log(`Media: write ${packetNumber} [${peer.mediaStreamPacketsReceived / peer.mediaStreamPacketsTotal}%] ${peer.ip}:${peer.port}/${peer.mediaStreamLocation}`)
         }
 
         //Return ACK signal
@@ -477,6 +488,8 @@ const Receiver = class {
                 remote.address,
                 showError
             )
+
+        Debugger.log(`${tracker.ip}:${tracker.port}://${message[0]}/.,,`)
 
         /**
          * Tracker section
@@ -541,6 +554,7 @@ const Receiver = class {
                         return
                     }
 
+                    Debugger.log(`Connecting to ${peer.ip}:${peer.port}...`)
                     peer.quality--
                     peer.setPeerPub(peer.pub)
                     this.socket.send(
@@ -574,6 +588,7 @@ const Receiver = class {
                     if (typeof this.peers[`${message[1]}:${message[2]}`] !== 'undefined')
                         return clearInterval(tryToResponse)
 
+                    Debugger.log(`Responding to ${peer.ip}:${peer.port}`)
                     this.socket.send(
                         randomResponse,
                         0,
@@ -678,9 +693,11 @@ const Receiver = class {
      * @param {Peer} peer 
      */
     async handleBadPeer (message, remote, peer) {
+        Debugger.log(`${peer.ip}:${peer.port} is known but sent malformed message, assuming the peer is bad.`)
+
         if (peer.isSender) {
-            this.deletePeer(peer)
-            this.handleSocketMessage(message, remote)
+            await this.deletePeer(peer)
+            await this.handleSocketMessage(message, remote)
         } else {
             this.stopPolling(peer)
             this.socket.send(
@@ -731,7 +748,7 @@ const Receiver = class {
      */
     async seed (account) {
         if (this.trackerList.length === 0)
-            return Debugger.error(new Error('No active trackers'))
+            return Debugger.error('No active trackers')
 
         account = `${account}`
 
@@ -745,7 +762,7 @@ const Receiver = class {
      */
     async unseed (account) {
         if (this.trackerList.length === 0)
-            return Debugger.error(new Error('No active trackers'))
+            return Debugger.error('No active trackers')
 
         account = `${account}`
 
@@ -764,8 +781,10 @@ const Receiver = class {
             if (Try(() => data = str(data)))
                 return 0
         
-        if (typeof data !== 'string')
+        if (typeof data !== 'string') {
+            Debugger.error(`'data' parameter contains malformed type.`)
             return 0
+        }
 
         if (data.length > __.MTU) {
             Debugger.log(`Receiver.send() should only be used with small streams (< ${__.MTU} bytes) `) //LOCALE_NEEDED
@@ -806,6 +825,8 @@ const Receiver = class {
                 return connectionTrialCounter
         }
 
+        Debugger.log(`Send packet to ${peer.ip}:${peer.port}`)
+
         if (Try(() => this.#sendEncrypted(peer, data)))
             return 0
 
@@ -836,8 +857,8 @@ const Receiver = class {
      *   owner:string,
      *   index:number|string,
      *   media:number
-     * }} info Media Information
-     * @returns {Promise<Number>}
+     * }} info Media Information\
+     * @returns {Promise<void>}
      */
     async sendMedia (peer, info) {
         let dummyQueue = {}
@@ -848,13 +869,20 @@ const Receiver = class {
             })
         })
 
+        Debugger.log(
+            `Media stream Queued: ${info.owner}.${info.index}${
+                typeof info.media !== 'undefined' ?
+                    `.${info.media}`:
+                    ''
+            }`
+        )
         peer.mediaStreamQueue.push(dummyQueue)
         await queueAwait()
 
-        let sendMediaResult = await this.#sendMedia(peer, info)
+        await this.#sendMedia(peer, info)
 
         peer.mediaStreamQueue.splice(0,1)
-        return sendMediaResult
+        return
     }
 
     /**
@@ -869,13 +897,13 @@ const Receiver = class {
      */
     async #sendMedia (peer, info) {
         if (typeof info !== 'object')
-            return __.MEDIA_STREAM_INFO_INVALID
+            return Debugger.error(`Parameter 'info' is invalid.`)
 
         if (typeof info.owner !== 'string' ||
             typeof info.index !== 'number' ||
             typeof info.index !== 'string' ||
             typeof info.media !== 'number' )
-            return __.MEDIA_STREAM_INFO_INVALID
+            return Debugger.error(`Parameter 'info' contains invalid varaible types.`)
 
         let fileLocation = `./data/${info.owner}.${info.index}`
         /** @type {FileSystem.Stats} */
@@ -892,13 +920,13 @@ const Receiver = class {
         }
 
         if (await TryAsync(async () => FileSystemPromises.access(fileLocation)))
-            return __.MEDIA_STREAM_FILE_NOT_FOUND
+            return Debugger.warn(`MediaStream: file "${fileLocation}" is not found.`)
 
         if (await TryAsync(async () => fileStats = FileSystemPromises.stat(fileLocation)))
-            return __.MEDIA_STREAM_FILE_NOT_READY
+            return Debugger.warn(`MediaStream: file "${fileLocation}" is not ready.`)
 
         if (fileStats.size > __.MAX_PAYLOAD || fileStats.size > 65536)
-            return __.MEDIA_STREAM_FILE_TOO_LARGE
+            return Debugger.warn(`MediaStream: file "${fileLocation}" is too large`)
 
         let fileStream = FileSystem.createReadStream(fileLocation)
         let fileStreamIndex0 = 0
@@ -932,6 +960,7 @@ const Receiver = class {
             fileStreamResolver()
         }
 
+        Debugger.log(`MediaStream: sending request to ${peer.ip}:${peer.port}`)
         this.#sendEncrypted(peer, str([
             'media',
             info.owner,
@@ -941,16 +970,16 @@ const Receiver = class {
         ]))
 
         if (await fileStreamAwaiter(8000) !== __.MEDIA_STREAM_READY)
-            return fileStreamStatus
+            return Debugger.warn(`MediaStream: ${peer.ip}:${peer.port} seems not right (${fileStreamStatus})`)
 
         while (true) {
             if (fileStreamStatus === __.MEDIA_STREAM_DECLINED)
-                // peer declined the package
-                return fileStreamStatus
+                // peer declined the packet
+                return Debugger.warn(`MediaStream: ${peer.ip}:${peer.port} declined the packet.`)
 
             if (fileStreamResendCount > __.MAX_TRIAL) {
                 this.#sendEncrypted(peer, Buffer.from([255,255]))
-                return __.MEDIA_STREAM_TIME_OUT
+                return Debugger.warn(`MediaStream: ${peer.ip}:${peer.port} timed out.`)
             }
 
             if (typeof fileStreamMissedPacket === 'undefined')
@@ -964,6 +993,7 @@ const Receiver = class {
             if (!fileStreamByte) // FALSY
                 break
 
+            Debugger.log(`MediaStream: write ${fileStreamIndex0 * fileStreamIndex1} to ${peer.ip}:${peer.port}`)
             this.#sendEncrypted(peer, Buffer.concat([
                     Buffer.from([
                         fileStreamIndex0,
@@ -999,10 +1029,11 @@ const Receiver = class {
         while (true) {
             // wait for peer to accept the packet
             if (fileStreamResendCount > __.MAX_TRIAL)
-                return __.MEDIA_STREAM_TIME_OUT
+                return Debugger.warn(`MediaStream: completed but no responses from ${peer.ip}:${peer.port}`)
             else
                 fileStreamResendCount++
 
+            Debugger.log(`MediaStream: waiting ${peer.ip}:${peer.port} to accept the media...`)
             this.#sendEncrypted(
                 peer,
                 Buffer.concat([
@@ -1017,6 +1048,7 @@ const Receiver = class {
                 break
         }
 
+        Debugger.log(`MediaStream: ${peer.ip}:${peer.port} completed!`)
         peer.mediaStreamCb = undefined
         return fileStreamStatus
     }
@@ -1084,6 +1116,7 @@ const Receiver = class {
             /** @type {Array} */
             let trackersLoaded = this.storage.read('trackers')
 
+            Debugger.log(`Trackers loaded, contains ${trackersLoaded.length} trackers`)
             trackersLoaded.forEach((el, ind) => {
                 let newTracker = new Tracker([
                     el.ip,
@@ -1096,6 +1129,7 @@ const Receiver = class {
                 if (typeof newTracker.key === 'undefined')
                     return
 
+                Debugger.log(`Adding ${el.ip}:${el.port} to tracker list.`)
                 let trackerAddress = `${el.ip}:${el.port}`
                 this.peers[trackerAddress] = newTracker
                 this.trackerList.push(trackerAddress)
@@ -1106,8 +1140,10 @@ const Receiver = class {
         if (this.trackerList.length === 0)
             throw Error('No trackers has been set')
 
-        for (let tracker of this.trackerList)
+        for (let tracker of this.trackerList){
+            Debugger.log(`Saying hello to tracker ${tracker.ip}:${tracker.port}`)
             this.helloTracker(this.peers[tracker])
+        }
 
         Debugger.log(`Receiver will be known as '${this.myPub}'.`)
 
@@ -1121,6 +1157,7 @@ const Receiver = class {
                 peer = this.pollingList[i]
 
                 if (currentTime - peer.lastAccess > __.LAST_ACCESS_LIMIT) {
+                    Debugger.warn(`${peer.ip}:${peer.port} is no longer available.`)
                     this.stopPolling(peer)
 
                     if (peer.isSender)

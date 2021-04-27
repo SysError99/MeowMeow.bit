@@ -36,23 +36,24 @@ const Handler = class {
      */
     async handle (peer, result) {
         if (!result.success)
-            return Debugger.error(`${new TimeString().toString()} Error: ${result.message}`)
+            return Debugger.error(result.message)
 
         let allow = true
         let data = result.data
         let receiver = this.receiver
         let storage = receiver.storage.promise
+        let address = `${peer.ip}:${peer.port}`
     
         if (typeof data[0] !== 'string' ||
             typeof data[1] !== 'string' ||
             typeof data[2] !== 'number' ||
             typeof data[2] !== 'string' )
-            return Debugger.error(`${new TimeString().toString()} Error: ${result.message}`)
+            return Debugger.warn(`${address} sent malformed packet.`)
 
         if (!await storage.access(data[1])) // account not exist
             allow = false
 
-        Debugger.log(`${new TimeString().toString()} ${peer.ip}:${peer.port} ${data[0]} -> ${data[1]} -> ${data[2]}`)
+        Debugger.log(`${address}://${data[0]}/${data[1]}/${data[2]}`)
 
         /**
          * Peer high-permission action section.
@@ -184,11 +185,8 @@ const Handler = class {
                 if (!newAcc.valid)
                     return
 
-                let followingList = await storage.read('following')
-
-                followingList.push(data[1])
-                await storage.write('following', followingList)
                 await storage.write(data[1], newAcc.exportPub())
+                await storage.write('following', (await storage.read('following')).push(data[1]))
 
                 if (newAcc.img.avatar.length > 0) {
                     let awaitForData = resolve => {

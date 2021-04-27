@@ -22,7 +22,7 @@ const tryCatch = (fn, errreturn) => {
                     return errreturn
             }
 
-            Debugger.error(`${new TimeString().toString()} ${err.stack}`)
+            Debugger.error(err.stack)
             return errreturn
         }
     }

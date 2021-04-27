@@ -352,7 +352,7 @@ const Web = class {
                     return
                 })
                 req.on('error', err => {
-                    Debugger.error('E -> http.on(\'error\'): ' + err.message)
+                    Debugger.error(err.message)
                 })
             }).listen(this.port)
         }
