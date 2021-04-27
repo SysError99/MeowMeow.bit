@@ -2,7 +2,10 @@ const FileSystem = require('fs')
 
 const isAny = require('./fn.is.any')
 const Try = require('./fn.try.catch')
+const TryAsync = require('./fn.try.catch.async')
 const Return = require('./fn.try.return')
+const ReturnAsync = require('./fn.try.return.async')
+
 const {json, str} = require('./fn.json')
 
 const Locale = require('./locale/locale')
@@ -48,24 +51,17 @@ const promise = {
      * @param {string} location File location
      * @returns {Promise<any[]>} JSON of a file.
      */
-    read: location => {
-        return new Promise(resolve => {
-            resolve(Return(async () => json(await FileSystem.promises.readFile(P.a + location + P.b, {encoding:'utf-8'}))))
-        })
-    },
+    read: async location =>
+        ReturnAsync(async () => json(await FileSystem.promises.readFile(P.a + location + P.b, {encoding:'utf-8'}))),
     /**
      * Write an object to storage
      * @param {string} location File location
      * @param {Object} data JSON data object
      * @returns {Promise<boolean>}
      */
-    write: (location, data) => {
-        return new Promise(resolve => {
-            resolve(TryAsync(async () => 
-                await FileSystem.promises.writeFile(P.a + location + P.b, convert(data), {encoding:'utf-8'})
-            ))
-        })
-    }
+    write: async (location, data) =>
+        TryAsync(async () => FileSystem.promises.writeFile(P.a + location + P.b, convert(data), {encoding:'utf-8'})
+)
 }
 
 /** Binary file mode */
