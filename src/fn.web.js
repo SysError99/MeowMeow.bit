@@ -181,17 +181,24 @@ const WebEvent = class {
 
 /**
  * Add event to stack
- * @param {WebEvent[]} event Event array
+ * @param {Web} web Web object
  * @param {RequestCallback} callback Callback function for this event
  * @param {string} method HTTP method for this event
  * @param {string} params URL parameters for this event
  */
-let webEventAdd = (event, callback, method, params) => {
-    event.push(new WebEvent({
+let webEventAdd = (web, callback, method, params) => {
+    let newWebEvent = new WebEvent({
         callback, callback,
         method: method,
         params: params
-    }))
+    })
+
+    if (params.split(':').length === 1) {
+        web.eventTable[params] = newWebEvent
+        return
+    }
+
+    web.events.push(newWebEvent)
 }
 
 /** Micro web server, used for serving web pages */
@@ -205,6 +212,8 @@ const Web = class {
     })
     /** @type {WebEvent[]} List of app events*/
     events = []
+    /** List of static app events for faster access */
+    eventTable = {}
 
     /**
      * Add 'GET' event handler
@@ -222,7 +231,7 @@ const Web = class {
      * @param {RequestCallback} callback Callback function for this request
      */
     get (params, callback) {
-        webEventAdd(this.events, callback, 'get', params)
+        webEventAdd(this, callback, 'get', params)
     }
 
     /**
@@ -231,7 +240,7 @@ const Web = class {
      * @param {RequestCallback} callback Callback function for this request
      */
     post (params, callback) {
-        webEventAdd(this.events, callback, 'post', params)
+        webEventAdd(this, callback, 'post', params)
     }
 
     /**
@@ -240,7 +249,7 @@ const Web = class {
      * @param {RequestCallback} callback Callback function for this request
      */
     put (params, callback) {
-        webEventAdd(this.events, callback, 'put', params)
+        webEventAdd(this, callback, 'put', params)
     }
 
     /**
@@ -250,7 +259,7 @@ const Web = class {
      */
 
     delete (params, callback) {
-        webEventAdd(this.events, callback, 'delete', params)
+        webEventAdd(this, callback, 'delete', params)
     }
 
     /** @type {number} Server port*/
@@ -275,7 +284,6 @@ const Web = class {
                 req.on('end', () => {
                     let webQuery = {}
                     let url = req.url.split('?')
-                    let params = url[0].split('/')
 
                     if (url.length === 2) {
                         let queries = url[1].split('&')
@@ -290,6 +298,22 @@ const Web = class {
                         }
                     } else if (url.length > 2)
                         return res.writeHead(400).end('Bad request.')
+
+                    /** @type {WebEvent} */
+                    let evTable = this.eventTable[url[0]]
+
+                    if (typeof evTable === 'object') {
+                        let callback = evTable.callback
+
+                        callback(new WebRequest(req,{
+                            params: {},
+                            query: webQuery,
+                            body: body
+                        }), new WebResponse(res))
+                        return
+                    }
+
+                    let params = url[0].split('/')
 
                     for (let event of this.events) {
                         let eventParams = event.params
