@@ -9,7 +9,7 @@ const Try = require('./fn.try.catch')
 const BaseN = require('./fn.base.n')
 const Crypt = require('./fn.crypt')
 const Locale = require('./locale/locale')
-const Storage = require('./fn.storage')(new Locale())
+const Storage = require('./storage')(new Locale())
 const {json, str} = require('./fn.json')
 
 const ECDHKey = require('./data/key.ecdh')

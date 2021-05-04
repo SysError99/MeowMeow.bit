@@ -3,7 +3,7 @@ const FileSystemPromises = require('fs').promises
 
 const TryAsync = require('./fn.try.catch.async')
 
-const Receiver = require('./fn.receiver')
+const Receiver = require('./receiver')
 const web = require('./fn.web')
 const Web = web.Web
 const WebRequest = web.WebRequest

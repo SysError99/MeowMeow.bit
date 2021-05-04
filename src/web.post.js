@@ -1,7 +1,7 @@
 const FileSystem = require('fs')
 
 const __ = require('./const')
-const Receiver = require('./fn.receiver')
+const Receiver = require('./receiver')
 const Try = require('./fn.try.catch')
 const Return = require('./fn.try.return')
 const WebAccount = require('./web.account')

@@ -4,7 +4,7 @@
 const FileSystem = require('fs')
 
 const Crypt = require('./fn.crypt')
-const Receiver = require('./fn.receiver')
+const Receiver = require('./receiver')
 const Try = require('./fn.try.catch')
 const Web = require('./fn.web')
 const WebUI = require('./web.ui')

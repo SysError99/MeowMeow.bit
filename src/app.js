@@ -6,7 +6,7 @@
 const FileSystem = require('fs')
 
 const __ = require('./const')
-const Receiver = require('./fn.receiver')
+const Receiver = require('./receiver')
 const Return = require('./fn.try.return')
 
 const Handler = require('./handler')

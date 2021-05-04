@@ -88,7 +88,7 @@ const Receiver = class {
     })
 
     /** Storage module */
-    storage = require('./fn.storage')(this.locale)
+    storage = require('./storage')(this.locale)
 
     /** @type {string[]} List of trackers as "ip:port" */
     trackerList = []

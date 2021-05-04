@@ -5,7 +5,7 @@
  */
 const __ = require('./const')
 const Debugger = require('./fn.debugger')
-const Receiver = require('./fn.receiver')
+const Receiver = require('./receiver')
 const WebAccount = require('./web.account')
 const WebFileServer = require('./web.file.server')
 const WebPost = require('./web.post')

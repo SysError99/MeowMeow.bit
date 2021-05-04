@@ -1,6 +1,6 @@
 const Debugger = require('./fn.debugger')
 const Peer = require('../src/data/peer')
-const Receiver = require('../src/fn.receiver')
+const Receiver = require('../src/receiver')
 
 const ip = process.argv[2]
 const port = parseInt(process.argv[3])
