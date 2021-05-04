@@ -310,7 +310,7 @@ const Receiver = class {
         }
 
         if (!peer.connected()) {
-            if (typeof Return(() => json(peer.key.decryptToString(message))) === 'undefined') {
+            if (typeof Return(() => json(peer.key.decryptToString(message))) === 'undefined' && !peer.isSender) {
                 peer.quality--
 
                 if (peer.quality <= 0) {
