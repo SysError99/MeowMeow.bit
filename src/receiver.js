@@ -310,8 +310,18 @@ const Receiver = class {
         }
 
         if (!peer.connected()) {
-            if (typeof Return(() => json(peer.key.decryptToString(message))) === 'undefined')
-                return Debugger.warn(`${peer.ip}:${peer.port} is unknown, but have sent unknown message.`)
+            if (typeof Return(() => json(peer.key.decryptToString(message))) === 'undefined') {
+                peer.quality--
+
+                if (peer.quality <= 0) {
+                    Debugger.warn(`${peer.ip}:${peer.port} trying too much of connection, assuming trolling, kicking out.`)
+                    this.#handleBadPeer(message, remote, peer)
+                    return
+                }
+
+                Debugger.warn(`${peer.ip}:${peer.port} is trying to connect, but have sent unknown message.`)
+                return
+            }
 
             // NAT transversal successful
             if (typeof peer.callback === 'function') {
@@ -331,7 +341,7 @@ const Receiver = class {
             if (lastAccess <= __.ACCESS_COOLDOWN && typeof peer.mediaStream === 'undefined')
                 return Debugger.warn(`${remode.address}:${remote.port} send packets too frequent!`)
             else if (lastAccess >= __.LAST_ACCESS_LIMIT)
-                return this.handleBadPeer(message, remote, peer)
+                return this.#handleBadPeer(message, remote, peer)
         }
 
         peer.lastAccess = currentTime
@@ -340,13 +350,13 @@ const Receiver = class {
             return peer.mediaStreamCb(__.MEDIA_STREAM_ACK)
 
         if (Try(() => message = peer.key.decrypt(message)))
-            return this.handleBadPeer(message, remote, peer)
+            return this.#handleBadPeer(message, remote, peer)
 
         if (Try(() => message = json(message))) {
             if (typeof peer.mediaStream !== 'undefined')
                 return this.#handleMediaStream(message, peer)
             else
-                return this.handleBadPeer(message, remote, peer)
+                return this.#handleBadPeer(message, remote, peer)
         }
 
         if (typeof peer.mediaStreamCb === 'function') {
@@ -692,7 +702,7 @@ const Receiver = class {
      * @param {Datagram.RemoteInfo} remote 
      * @param {Peer} peer 
      */
-    async handleBadPeer (message, remote, peer) {
+    async #handleBadPeer (message, remote, peer) {    
         Debugger.log(`${peer.ip}:${peer.port} is known but sent malformed message, assuming the peer is bad.`)
 
         if (peer.isSender) {
