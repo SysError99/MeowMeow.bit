@@ -291,10 +291,10 @@ const Receiver = class {
         }
 
         if (peer.isPeer)
-            return this.handlePeerMessage(message, remote, peer)
+            return this.#handlePeerMessage(message, remote, peer)
 
         if (peer.isTracker)
-            return this.handleTrackerMessage(message, remote, peer)
+            return this.#handleTrackerMessage(message, remote, peer)
     }
 
     /**
@@ -303,7 +303,7 @@ const Receiver = class {
      * @param {Datagram.RemoteInfo} remote Remote info
      * @param {Peer} peer Peer sent this
      */
-    async handlePeerMessage (message, remote, peer) {
+    async #handlePeerMessage (message, remote, peer) {
         if (message.length === 0) {
             peer.lastAccess = currentTime
             return
@@ -478,7 +478,7 @@ const Receiver = class {
      * @param {Datagram.RemoteInfo} remote Remote Info
      * @param {Tracker} tracker Tracker have sen message
      */
-    async handleTrackerMessage (message, remote, tracker) {
+    async #handleTrackerMessage (message, remote, tracker) {
         if (Try(() => message = json(tracker.key.decryptToString(message))))
             return this.socket.send(
                 tracker.myPub,
