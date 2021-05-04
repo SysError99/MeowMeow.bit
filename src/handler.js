@@ -61,7 +61,7 @@ const Handler = class {
          * Commands that do not have [0],[1],[2], will use this general parameters:
          * [0]:string           social Command (such as post, like, comment, share, mention)
          * [1]:string           account public key
-         * [2]:number|string    account section (avatar, cover, posts, etc.)
+         * [2]:number|string    account section: avatar, cover, post (number)
          * :
          * [n]:any
          */
@@ -128,7 +128,7 @@ const Handler = class {
                         receiver.send(peer, [
                             'post',
                             data[1],
-                            data[2],
+                            requestPost.number,
                             requestPost.media,
                             requestPost.mediaType,
                             requestPost.mention,
@@ -307,6 +307,7 @@ const Handler = class {
                     return
     
                 let newPost = new Post([
+                    data[2],
                     data[1],
                     data[3],
                     data[4],

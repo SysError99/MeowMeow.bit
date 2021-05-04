@@ -212,15 +212,16 @@ const WebPost = class {
         let postCountLocation = `${ownerPub}.posts`
         let storage = this.receiver.storage.promise
 
-        post.owner = ownerPub
-        post.text = req.body.text
-        post.sign(this.webAccount.active.key.private, this.webAccount.active.key.password)
-
         if (!await storage.access(postCountLocation))
             await storage.write(postCountLocation, 0)
 
         /** @type {number} */
         let postCount = await storage.read(postCountLocation)
+
+        post.owner = ownerPub
+        post.number = postCount
+        post.text = req.body.text
+        post.sign(this.webAccount.active.key.private, this.webAccount.active.key.password)
 
         //Add to timeline
         /** @type {number} */

@@ -9,6 +9,9 @@ const Post = class {
     /** @type {boolean} This is 'Post' object*/
     isPost = true
 
+    /** @type {number} Post number*/
+    number = 0
+
     /** @type {string[]} List of media hashes*/
     media = []
 
@@ -59,6 +62,7 @@ const Post = class {
      */
     #exportPost () {
         return [
+            this.number,
             this.owner,
             this.media,
             this.mediaType,
@@ -95,29 +99,32 @@ const Post = class {
         if (!Array.isArray(d))
             return
 
-        if (typeof d[0] === 'string')
-            this.owner = d[0]
+        if (typeof d[0] === 'number')
+            this.number = d[0]
 
-        if (Array.isArray(d[1]))
-            this.media = d[1]
+        if (typeof d[1] === 'string')
+            this.owner = d[1]
 
         if (Array.isArray(d[2]))
-            this.mediaType = d[2]
+            this.media = d[2]
 
         if (Array.isArray(d[3]))
-            this.mention = new PostPointer(d[3])
+            this.mediaType = d[3]
 
         if (Array.isArray(d[4]))
-            this.tag = d[4]
+            this.mention = new PostPointer(d[4])
 
-        if (typeof d[5] === 'string')
-            this.text = d[5]
+        if (Array.isArray(d[5]))
+            this.tag = d[5]
 
-        if (typeof d[6] === 'number')
-            this.time = d[6]
+        if (typeof d[6] === 'string')
+            this.text = d[6]
 
-        if (typeof d[7] === 'string')
-            this.signature = d[7]
+        if (typeof d[7] === 'number')
+            this.time = d[7]
+
+        if (typeof d[8] === 'string')
+            this.signature = d[8]
 
         if (this.signature.length  > 0)
             this.valid = Return(() => Crypt.sign.verify(str(this.#exportPost()), this.owner.split('').reverse().join(''), this.signature))
