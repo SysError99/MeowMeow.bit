@@ -10,12 +10,6 @@ const Acc = class {
     /** @type {string} Account description*/
     description = ''
 
-    /** @type {string[]} List of followers (account public key)*/
-    follower = []
-
-    /** @type {string[]} List of following users (account public key)*/
-    following = []
-
     /** Account images */
     img = {
         /** @type {string} Avatar (profile) image hash */
