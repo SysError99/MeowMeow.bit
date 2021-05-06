@@ -88,8 +88,10 @@ const Post = class {
      * @param {string} password Owner's password (passphrase)
      */
     sign (privateKey, password) {
-        this.signature = Crypt.sign.perform(str(this.#exportPost()), privateKey, typeof password === 'string' ? password : '')
-        this.verify()
+        this.signature = Return(() => Crypt.sign.perform(str(this.#exportPost()), privateKey, typeof password === 'string' ? password : ''), '')
+        
+        if (this.signature.length > 0)
+            this.verify()
     }
 
     /**
