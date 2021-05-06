@@ -89,16 +89,15 @@ const Post = class {
      */
     sign (privateKey, password) {
         this.signature = Return(() => Crypt.sign.perform(str(this.#exportPost()), privateKey, typeof password === 'string' ? password : ''), '')
-        
-        if (this.signature.length > 0)
-            this.verify()
+        this.verify()
     }
 
     /**
      * Verify if this post is legitimately created.
      */
     verify () {
-        this.valid = Return(() => Crypt.sign.verify(str(this.#exportPost()), this.owner.split('').reverse().join(''), this.signature), false)
+        if (this.signature.length > 0)
+            this.valid = Return(() => Crypt.sign.verify(str(this.#exportPost()), this.owner.split('').reverse().join(''), this.signature), false)
     }
 
     /**
@@ -136,8 +135,7 @@ const Post = class {
         if (typeof d[8] === 'string')
             this.signature = d[8]
 
-        if (this.signature.length  > 0)
-            this.verify()
+        this.verify()
     }
 }
 
