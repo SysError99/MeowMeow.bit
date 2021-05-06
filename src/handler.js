@@ -188,11 +188,21 @@ const Handler = class {
                 await storage.write(data[1], newAcc.exportPub())
                 await storage.write('following', (await storage.read('following')).push(data[1]))
 
-                if (newAcc.img.avatar.length > 0) {
+                /**
+                 * Retrieve data request data from peer
+                 * @param {string} target 
+                 * @returns 
+                 */
+                let picRequestFn = async target => {
+                    if (typeof target !== 'string')
+                        return Debugger.error(`picRequestFn() got invalid 'target' (type ${typeof target})`)
+
                     let awaitForData = resolve => {
-                        let counter = __.MAX_TRIAL
-                        let interval = setInterval(async () => {
-                            if (await storage.access(`${data[1]}.avatar`)) {
+                        /** @type {NodeJS.Timeout} */
+                        let interval
+                        let counter = __.MAX_TRIAL + 1
+                        let intervalFn = async () => {
+                            if (await storage.access(`${data[1]}.${target}`)) {
                                 clearInterval(interval)
                                 resolve(true)
                             } else if (counter > 0)
@@ -201,45 +211,30 @@ const Handler = class {
                                 clearInterval(interval)
                                 resolve(false)
                             }
-                        }, 10000)
-                    } 
 
-                    receiver.send(peer, [
-                        'request',
-                        data[1],
-                        'avatar',
-                        'account'
-                    ])
+                            receiver.send(peer, [
+                                'request',
+                                data[1],
+                                target,
+                                'account'
+                            ])
+                        }
 
-                    if (!await new Promise(awaitForData))
-                        return
+                        interval = setInterval(intervalFn, 10000)
+                        intervalFn()
+                    }
+
+                    return await new Promise(awaitForData)
+                }
+
+                if (newAcc.img.avatar.length > 0) {
+                    if (!await picRequestFn('avatar'))
+                        return Debugger.error(`Can't retrieve avatar image for account ${data[1]}`)
                 }
 
                 if (newAcc.img.cover.length > 0) {
-                    let awaitForData = resolve => {
-                        let counter = __.MAX_TRIAL
-                        let interval = setInterval(async () => {
-                            if (await storage.access(`${data[1]}.cover`)) {
-                                clearInterval(interval)
-                                resolve(true)
-                            } else if (counter > 0)
-                                counter--
-                            else {
-                                clearInterval(interval)
-                                resolve(false)
-                            }
-                        }, 10000)
-                    }
-
-                    receiver.send(peer, [
-                        'request',
-                        data[1],
-                        'cover',
-                        'account'
-                    ])
-
-                    if (!await new Promise(awaitForData))
-                        return
+                    if (!await picRequestFn('cover'))
+                        return Debugger.error(`Can't retrieve cover image for account ${data[1]}`)
                 }
                 return
 
