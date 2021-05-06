@@ -216,7 +216,7 @@ const Handler = class {
                                 'request',
                                 data[1],
                                 target,
-                                'account'
+                                'media'
                             ])
                         }
 
