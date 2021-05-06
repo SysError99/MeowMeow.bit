@@ -152,8 +152,8 @@ const Acc = class {
         if (Array.isArray(d[6]))
             this.tag = d[6]
 
-        if (typeof d[6] === 'string') {
-            this.signature = d[6]
+        if (typeof d[7] === 'string') {
+            this.signature = d[7]
             this.verify()
         }
     }
