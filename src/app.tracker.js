@@ -14,7 +14,6 @@ const {json, str} = require('./fn.json')
 
 const ECDHKey = require('./data/key.ecdh')
 const Peer = require('./data/peer.tracker')
-const { send } = require('process')
 
 const knownPeers = {}
 const accountSeeders = {}
