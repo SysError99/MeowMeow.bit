@@ -89,6 +89,14 @@ const Post = class {
      */
     sign (privateKey, password) {
         this.signature = Crypt.sign.perform(str(this.#exportPost()), privateKey, typeof password === 'string' ? password : '')
+        this.verify()
+    }
+
+    /**
+     * Verify if this post is legitimately created.
+     */
+    verify () {
+        this.valid = Return(() => Crypt.sign.verify(str(this.#exportPost()), this.owner.split('').reverse().join(''), this.signature))
     }
 
     /**
@@ -127,7 +135,7 @@ const Post = class {
             this.signature = d[8]
 
         if (this.signature.length  > 0)
-            this.valid = Return(() => Crypt.sign.verify(str(this.#exportPost()), this.owner.split('').reverse().join(''), this.signature))
+            this.verify()
     }
 }
 
