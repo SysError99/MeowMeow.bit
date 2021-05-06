@@ -25,7 +25,7 @@ const Post = class {
     owner = ''
 
     /** @type {string} Post signature from owner*/
-    signature = Buffer.from([])
+    signature = ''
 
     /** @type {string[]} Account Tags*/
     tag = []
