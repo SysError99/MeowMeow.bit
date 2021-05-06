@@ -96,7 +96,7 @@ const Post = class {
      * Verify if this post is legitimately created.
      */
     verify () {
-        this.valid = Return(() => Crypt.sign.verify(str(this.#exportPost()), this.owner.split('').reverse().join(''), this.signature))
+        this.valid = Return(() => Crypt.sign.verify(str(this.#exportPost()), this.owner.split('').reverse().join(''), this.signature), false)
     }
 
     /**
