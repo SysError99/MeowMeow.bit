@@ -50,7 +50,13 @@ const PostLike = class {
      * Sign this using private key
      */
     sign (privateKey, password) {
-        this.signature = Crypt.sign.perform(str(this.#exportPostLike()), privateKey, typeof password === 'string' ? password : '')
+        this.signature = Return(() => Crypt.sign.perform(str(this.#exportPostLike()), privateKey, typeof password === 'string' ? password : ''), '')
+        this.verify()
+    }
+
+    verify () {
+        if (this.signature.length > 0)
+            this.valid = Return(() => Crypt.sign.verify(str(this.#exportPostLike()), this.owner, this.signature), false)
     }
 
     /**
@@ -67,7 +73,7 @@ const PostLike = class {
         if (typeof d[3] === 'number') this.pos = d[3]
         if (typeof d[4] === 'string') this.signature = d[4]
 
-        this.valid = Return(() => Crypt.sign.verify(str(this.#exportPostLike()), this.owner, this.signature), false)
+        this.verify()
     }
 }
 
