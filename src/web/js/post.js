@@ -1,6 +1,6 @@
 // let currentPostNumber = 0
 
-window.onscroll = function(ev) {
+window.onscroll = () => {
     if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight) {
         timelineRetrieve()
     }
@@ -33,7 +33,7 @@ window.onscroll = function(ev) {
 const timelineRetrieve = () => {
     let request = new XMLHttpRequest()
 
-    request.onreadystatechange = e => {
+    request.onreadystatechange = () => {
         if (request.readyState === request.DONE && request.status === 200) {
             if (request.responseText.length > 0)
                 document.getElementById('body').innerHTML += request.responseText

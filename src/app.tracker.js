@@ -107,7 +107,6 @@ udp.bind(12345)
 udp.on('listening', () => console.log(`Server is running on port `+udp.address().port))
 udp.on('error', showError)
 udp.on('message', (msg, remote) => {
-
     let remoteAddress = `${remote.address}:${remote.port}`
     /** @type {Buffer|message} */
     let message

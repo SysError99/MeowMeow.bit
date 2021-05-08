@@ -1167,8 +1167,8 @@
             circle = data.circle,
             canvas = document.createElement('canvas'),
             ctx = canvas.getContext('2d'),
-            startX = 0,
-            startY = 0,
+            //startX = 0,
+            //startY = 0,
             canvasWidth = data.outputWidth || width,
             canvasHeight = data.outputHeight || height;
 

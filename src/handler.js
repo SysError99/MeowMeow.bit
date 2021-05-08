@@ -17,7 +17,6 @@ const PostPointer = require('./data/post.pointer')
 const PostLike = require('./data/post.like')
 const Result = require('./data/result')
 const SignKey = require('./data/key.sign')
-const TimeString = require('./data/time.string')
 
 /** Peer command handler */
 const Handler = class {

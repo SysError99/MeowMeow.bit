@@ -217,7 +217,7 @@ module.exports = {
     ecdh: ecdh,
     hash: hash,
     newKey: keyCreator,
-    sect571k1, sect571k1,
+    sect571k1,
     sign: sign,
     symmetric: symmetric,
 
