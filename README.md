@@ -1,4 +1,6 @@
 # MeowMeow.bit
+[![CodeFactor](https://www.codefactor.io/repository/github/syserror99/meowmeow.bit/badge)](https://www.codefactor.io/repository/github/syserror99/meowmeow.bit)
+
 A decentralized social network that mainly focuses on you.
 
 This project is still under development. Many core features are still missing.
