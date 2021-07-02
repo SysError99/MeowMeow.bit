@@ -94,166 +94,12 @@ const Receiver = class {
     trackerList = []
 
     /**
-     * Add peer to known list
-     * @param {Peer} peer Peer to be added
-     * @returns {boolean} Did peer been added?
-     */
-    addPeer (peer) {
-        let remoteAddress = `${peer.ip}:${peer.port}`
-
-        if (typeof this.peers[remoteAddress] === 'undefined') {
-            this.peers[remoteAddress] = peer
-            return true
-        }
-
-        return false
-    }
-
-    /**
-     * Broadcast data to certain amount of peers
-     * @param {string} account Account Public key (Base62)
-     * @param {number} n Amount of peers to broadcast
-     * @param {Array|string} data Data to be sent
-     */
-    async broadcast (account, n, data) {
-        if (n <= 0)
-            return false
-
-        /** @type {string[]} */
-        let peers = seeders[account]
-        let y
-
-        if (!Array.isArray(peers))
-            return false
-
-        if (Array.isArray(data))
-            data = str(data)
-        else if (typeof data !== 'string')
-            return false
-
-        if (data.length > __.MTU)
-            return false
-
-        if (!seedersSorted[account]) {
-            peers.sort()
-
-            //find self position
-            while (y < peers.length) {
-                if (peers[y] === this.myAddress)
-                    break
-
-                y++
-            }
-
-            if (y < peers.length)
-                seedersMyPos[account] = y
-            else {
-                peers.push(this.myAddress)
-                return await this.broadcast(account, n, data)
-            }
-
-            seedersSorted[account] = true
-        }
-
-        /** @type {string[]} */
-        let peersSelected = []
-        let peerToAdd = ''
-        let pos = 0
-
-        y = seedersMyPos[account]
-
-        while (n > 0) {
-            if (p > 0)
-                pos = - Math.abs(pos)
-            else
-                pos =  Math.abs(pos) + 1
-
-            peerToAdd = peers[y + pos]
-
-            if (typeof peerToAdd === 'string') {
-                let addThis = true
-
-                for (let p of peersSelected) {
-                    if (p === peerToAdd) {
-                        addThis = false
-                        break
-                    }
-                        
-                }
-
-                if (addThis)
-                    peersSelected.push(peerToAdd)
-            }
-
-            n--
-        }
-
-        while (peersSelected.length > 0) {
-            if (peersSelected[0] !== this.myAddress)
-                await this.send(peersSelected[0], data)
-
-            peersSelected.splice(0,1)
-        }
-
-        return true
-    }
-
-    /**
-     * Delete a peer from known list
-     * @param {Peer} peer Peer to delete
-     * @returns {Promise<void>}
-     */
-    async deletePeer (peer) {
-        let remoteAddress = `${peer.ip}:${peer.port}`
-
-        if (typeof peer.mediaStream !== 'undefined')
-            await peer.closeMediaStream()
-
-        if (typeof this.peers[remoteAddress] === 'object')
-            delete this.peers[remoteAddress]
-    }
-
-    /**
-     * Do port forwarding and avoid NAT.
-     * @param {number} p Port to forward to
-     */
-    forwardPort (p) {
-        this.socket.bind(p)
-        for (let tracker of this.trackerList)
-            this.#sendEncrypted(this.peers[tracker], str( [`forwardPort`, p] ))
-    }
-
-    /**
-     * Handshake to a tracker
-     * @param {Tracker} tracker Tracker to be initialized
-     */
-    helloTracker (tracker) {
-        let myPub = tracker.myPub
-        let trialCount = __.MAX_TRIAL
-
-        let tryToConnect = setInterval(() => {
-            if (tracker.connected || trialCount < 0)
-                return clearInterval(tryToConnect)
-
-            trialCount--
-            this.socket.send(
-                myPub,
-                0,
-                myPub.length,
-                tracker.port,
-                tracker.ip,
-                showError
-            )
-        }, 1000)
-    }
-
-    /**
      * Handle socket incoming message
      * @param {Array|Buffer|string} message 
      * @param {Datagram.RemoteInfo} remote 
      * @returns {Promise<void>}
      */
-    async handleSocketMessage (message, remote) {
+    async _handleMessage (message, remote) {
         /** @type {Peer|Tracker} */
         let peer = this.peers[`${remote.address}:${remote.port}`]
 
@@ -271,9 +117,9 @@ const Receiver = class {
                 ])
                 peer.isSender = true
                 peer.key = computeKey
-                this.addPeer(peer)
-                this.startPolling(peer)
-                this.#sendEncrypted(peer, str( ['nice2meetu'] ))
+                this.peerAdd(peer)
+                this.pollingStart(peer)
+                this._sendEncrypted(peer, str( ['nice2meetu'] ))
                 Debugger.log(`Welcome ${remote.address}:${remote.port}!`)
             }
             else {
@@ -291,10 +137,10 @@ const Receiver = class {
         }
 
         if (peer.isPeer)
-            return this.#handlePeerMessage(message, remote, peer)
+            return this._handleMessagePeer(message, remote, peer)
 
         if (peer.isTracker)
-            return this.#handleTrackerMessage(message, remote, peer)
+            return this._handleMessageTracker(message, remote, peer)
     }
 
     /**
@@ -303,7 +149,7 @@ const Receiver = class {
      * @param {Datagram.RemoteInfo} remote Remote info
      * @param {Peer} peer Peer sent this
      */
-    async #handlePeerMessage (message, remote, peer) {
+    async _handleMessagePeer (message, remote, peer) {
         if (message.length === 0) {
             peer.lastAccess = currentTime
             return
@@ -315,7 +161,7 @@ const Receiver = class {
 
                 if (peer.quality <= 0) {
                     Debugger.warn(`${peer.ip}:${peer.port} trying too much of connection, assuming trolling, kicking out.`)
-                    this.#handleBadPeer(message, remote, peer)
+                    this._handleBadPeer(message, remote, peer)
                     return
                 }
 
@@ -330,7 +176,7 @@ const Receiver = class {
                 peer.callback = undefined
             }
 
-            this.startPolling(peer)
+            this.pollingStart(peer)
             return
         }
 
@@ -341,7 +187,7 @@ const Receiver = class {
             if (lastAccess <= __.ACCESS_COOLDOWN && typeof peer.mediaStream === 'undefined')
                 return Debugger.warn(`${remode.address}:${remote.port} send packets too frequent!`)
             else if (lastAccess >= __.LAST_ACCESS_LIMIT)
-                return this.#handleBadPeer(message, remote, peer)
+                return this._handleBadPeer(message, remote, peer)
         }
 
         peer.lastAccess = currentTime
@@ -350,13 +196,13 @@ const Receiver = class {
             return peer.mediaStreamCb(__.MEDIA_STREAM_ACK)
 
         if (Try(() => message = peer.key.decrypt(message)))
-            return this.#handleBadPeer(message, remote, peer)
+            return this._handleBadPeer(message, remote, peer)
 
         if (Try(() => message = json(message))) {
             if (typeof peer.mediaStream !== 'undefined')
-                return this.#handleMediaStream(message, peer)
+                return this._handleMediaStream(message, peer)
             else
-                return this.#handleBadPeer(message, remote, peer)
+                return this._handleBadPeer(message, remote, peer)
         }
 
         if (typeof peer.mediaStreamCb === 'function') {
@@ -424,7 +270,7 @@ const Receiver = class {
      * @param {Buffer|string} message Encrypted message received
      * @param {Peer} peer Peer sent this
      */
-    async #handleMediaStream (message, peer) {
+    async _handleMediaStream (message, peer) {
         // Streaming media
         if (message[0] === 255 && message[1] === 255) {
             //Verifying signature
@@ -434,11 +280,11 @@ const Receiver = class {
                 Debugger.log(`Media accepted ${peer.mediaStreamLocation} from ${peer.ip}:${peer.port}!`)
 
                 if (await peer.closeMediaStream()) { // If can't close properly
-                    this.#sendEncrypted(peer, str( [__.MEDIA_STREAM_PEER_ERR] ))
+                    this._sendEncrypted(peer, str( [__.MEDIA_STREAM_PEER_ERR] ))
                     peer.mediaStream = undefined
                 }
 
-                this.#sendEncrypted(peer, str( [__.MEDIA_STREAM_ACCEPTED] ))
+                this._sendEncrypted(peer, str( [__.MEDIA_STREAM_ACCEPTED] ))
                 return
             }
             else
@@ -449,7 +295,7 @@ const Receiver = class {
         if (peer.mediaStreamPacketsReceived > peer.mediaStreamPacketsTotal) {
             // Decline file
             Debugger.warn(`Media declined ${peer.mediaStreamLocation} from ${peer.ip}:${peer.port}`)
-            this.#sendEncrypted(peer, str( [__.MEDIA_STREAM_DECLINED] ))
+            this._sendEncrypted(peer, str( [__.MEDIA_STREAM_DECLINED] ))
             await peer.closeMediaStream()
             return
         }
@@ -460,7 +306,7 @@ const Receiver = class {
 
             if (message.length <= 2 || await TryAsync(async () => FileSystemPromises.write(peer.mediaStream, message, 2, message.length - 2, packetNumber * __.MTU))) {
                 Debugger.error(`Media error: ${peer.ip}:${peer.port}!`)
-                this.#sendEncrypted(peer, str( [__.MEDIA_STREAM_PEER_ERR] ))
+                this._sendEncrypted(peer, str( [__.MEDIA_STREAM_PEER_ERR] ))
                 return
             }
 
@@ -488,7 +334,7 @@ const Receiver = class {
      * @param {Datagram.RemoteInfo} remote Remote Info
      * @param {Tracker} tracker Tracker have sen message
      */
-    async #handleTrackerMessage (message, remote, tracker) {
+    async _handleMessageTracker (message, remote, tracker) {
         if (Try(() => message = json(tracker.key.decryptToString(message))))
             return this.socket.send(
                 tracker.myPub,
@@ -631,7 +477,7 @@ const Receiver = class {
 
                 this.ready = true
                 tracker.connected = true
-                this.#sendEncrypted(tracker, str( ['setPub', this.myPub] ))
+                this._sendEncrypted(tracker, str( ['setPub', this.myPub] ))
                 tracker.keepAlive = setInterval(
                     () =>
                         this.socket.send(
@@ -702,14 +548,14 @@ const Receiver = class {
      * @param {Datagram.RemoteInfo} remote 
      * @param {Peer} peer 
      */
-    async #handleBadPeer (message, remote, peer) {    
+    async _handleBadPeer (message, remote, peer) {    
         Debugger.log(`${peer.ip}:${peer.port} is known but sent malformed message, assuming the peer is bad.`)
 
         if (peer.isSender) {
-            await this.deletePeer(peer)
-            await this.handleSocketMessage(message, remote)
+            await this.peerDelete(peer)
+            await this._handleMessage(message, remote)
         } else {
-            this.stopPolling(peer)
+            this.pollingStop(peer)
             this.socket.send(
                 peer.myPub,
                 0,
@@ -722,11 +568,312 @@ const Receiver = class {
     }
 
     /**
+     * Encrypt a string and send to specific peer
+     * @param {Peer} peer Peer to send the message
+     * @param {Buffer|string} message message to send
+     */
+    _sendEncrypted (peer, message) {
+        message = peer.key.encrypt(message)
+        this.socket.send(
+            message,
+            0,
+            message.length,
+            peer.port, 
+            peer.ip,
+            showError
+        )
+    }
+
+    /**
+     * Send media to target peer
+     * @param {Peer} peer Peer to send file to
+     * @param {{
+     *   owner:string,
+     *   index:number|string,
+     *   media:number
+     * }} info Media Information
+     * @returns {Promise<Number>}
+     */
+    async _sendMedia (peer, info) {
+        if (typeof info !== 'object')
+            return Debugger.error(`Parameter 'info' is invalid.`)
+
+        if (typeof info.owner !== 'string' ||
+            typeof info.index !== 'number' ||
+            typeof info.index !== 'string' ||
+            typeof info.media !== 'number' )
+            return Debugger.error(`Parameter 'info' contains invalid varaible types.`)
+
+        let fileLocation = `./data/${info.owner}.${info.index}`
+        /** @type {FileSystem.Stats} */
+        let fileStats
+
+        switch (info.media) {
+            case 'avatar':
+            case 'cover':
+                fileLocation += '.png'
+                break
+            
+            default:
+                fileLocation += `.${info.media}`
+        }
+
+        if (await TryAsync(async () => FileSystemPromises.access(fileLocation)))
+            return Debugger.warn(`MediaStream: file "${fileLocation}" is not found.`)
+
+        if (await TryAsync(async () => fileStats = FileSystemPromises.stat(fileLocation)))
+            return Debugger.warn(`MediaStream: file "${fileLocation}" is not ready.`)
+
+        if (fileStats.size > __.MAX_PAYLOAD || fileStats.size > 65536)
+            return Debugger.warn(`MediaStream: file "${fileLocation}" is too large`)
+
+        let fileStream = FileSystem.createReadStream(fileLocation)
+        let fileStreamIndex0 = 0
+        let fileStreamIndex1 = 0
+        let fileStreamByte = Buffer.from([])
+        let fileStreamStatus
+        /** @type {NodeJS.Timeout} */
+        let fileStreamTimeout
+        let fileStreamResolver = resolve => {
+            clearTimeout(fileStreamTimeout)
+            fileStreamTimeout = undefined
+            resolve(fileStreamStatus)
+        }
+        let fileStreamAwaiter = time => {
+            fileStreamTimeout = setTimeout(() => {
+                fileStreamStatus = __.MEDIA_STREAM_TIME_OUT
+                fileStreamResolver()
+            }, time)
+
+            return new Promise(fileStreamResolver)
+        }
+        let fileStreamResendCount = 0
+        /** @type {Buffer} */
+        let fileStreamMissedPacket
+
+        peer.mediaStreamCb = message => {
+            if (fileStreamStatus === __.MEDIA_STREAM_DECLINED)
+                return
+
+            fileStreamStatus = message
+            fileStreamResolver()
+        }
+
+        Debugger.log(`MediaStream: sending request to ${peer.ip}:${peer.port}`)
+        this._sendEncrypted(peer, str([
+            'media',
+            info.owner,
+            info.index,
+            typeof info.media === 'number' ? info.media : 0,
+            Math.ceil(fileStats.size / 1024)
+        ]))
+
+        if (await fileStreamAwaiter(8000) !== __.MEDIA_STREAM_READY)
+            return Debugger.warn(`MediaStream: ${peer.ip}:${peer.port} seems not right (${fileStreamStatus})`)
+
+        while (true) {
+            if (fileStreamStatus === __.MEDIA_STREAM_DECLINED)
+                // peer declined the packet
+                return Debugger.warn(`MediaStream: ${peer.ip}:${peer.port} declined the packet.`)
+
+            if (fileStreamResendCount > __.MAX_TRIAL) {
+                this._sendEncrypted(peer, Buffer.from([255,255]))
+                return Debugger.warn(`MediaStream: ${peer.ip}:${peer.port} timed out.`)
+            }
+
+            if (typeof fileStreamMissedPacket === 'undefined')
+                fileStreamByte = fileStream.read(__.MTU)
+            else {
+                // If peer missed the package, send the old one
+                fileStreamByte = fileStreamMissedPacket
+                fileStreamMissedPacket = undefined
+            }
+            
+            if (!fileStreamByte) // FALSY
+                break
+
+            Debugger.log(`MediaStream: write ${fileStreamIndex0 * fileStreamIndex1} to ${peer.ip}:${peer.port}`)
+            this._sendEncrypted(peer, Buffer.concat([
+                    Buffer.from([
+                        fileStreamIndex0,
+                        fileStreamIndex1
+                    ]),
+                    fileStreamByte
+                ]))
+
+            let waitForAck = await fileStreamAwaiter(10000)
+
+            if (waitForAck === __.MEDIA_STREAM_ACK) {
+                fileStreamResendCount = 0
+
+                if (fileStreamIndex1 < 255)
+                    fileStreamIndex1++
+                else {
+                    fileStreamIndex1 = 0
+
+                    if (fileStreamIndex0 < 255)
+                        fileStreamIndex0++
+                    else
+                        break
+                }
+            } else if (waitForAck === __.MEDIA_STREAM_TIME_OUT) {
+                fileStreamMissedPacket = fileStreamByte
+                fileStreamResendCount++
+                continue
+            }
+        }
+
+        fileStream.close()
+        
+        while (true) {
+            // wait for peer to accept the packet
+            if (fileStreamResendCount > __.MAX_TRIAL)
+                return Debugger.warn(`MediaStream: completed but no responses from ${peer.ip}:${peer.port}`)
+            else
+                fileStreamResendCount++
+
+            Debugger.log(`MediaStream: waiting ${peer.ip}:${peer.port} to accept the media...`)
+            this._sendEncrypted(
+                peer,
+                Buffer.concat([
+                    Buffer.from([255, 255]),
+                    Crypt.rand(128 + Math.floor(Math.random() * 128))
+                ])
+            )
+
+            if (await fileStreamAwaiter(1000) === __.MEDIA_STREAM_TIME_OUT)
+                continue
+            else
+                break
+        }
+
+        Debugger.log(`MediaStream: ${peer.ip}:${peer.port} completed!`)
+        peer.mediaStreamCb = undefined
+        return fileStreamStatus
+    }
+
+    /**
+     * Broadcast data to certain amount of peers
+     * @param {string} account Account Public key (Base62)
+     * @param {number} n Amount of peers to broadcast
+     * @param {Array|string} data Data to be sent
+     */
+     async broadcast (account, n, data) {
+        if (n <= 0)
+            return false
+
+        /** @type {string[]} */
+        let peers = seeders[account]
+        let y
+
+        if (!Array.isArray(peers))
+            return false
+
+        if (Array.isArray(data))
+            data = str(data)
+        else if (typeof data !== 'string')
+            return false
+
+        if (data.length > __.MTU)
+            return false
+
+        if (!seedersSorted[account]) {
+            peers.sort()
+
+            //find self position
+            while (y < peers.length) {
+                if (peers[y] === this.myAddress)
+                    break
+
+                y++
+            }
+
+            if (y < peers.length)
+                seedersMyPos[account] = y
+            else {
+                peers.push(this.myAddress)
+                return await this.broadcast(account, n, data)
+            }
+
+            seedersSorted[account] = true
+        }
+
+        /** @type {string[]} */
+        let peersSelected = []
+        let peerToAdd = ''
+        let pos = 0
+
+        y = seedersMyPos[account]
+
+        while (n > 0) {
+            if (p > 0)
+                pos = - Math.abs(pos)
+            else
+                pos =  Math.abs(pos) + 1
+
+            peerToAdd = peers[y + pos]
+
+            if (typeof peerToAdd === 'string') {
+                let addThis = true
+
+                for (let p of peersSelected) {
+                    if (p === peerToAdd) {
+                        addThis = false
+                        break
+                    }
+                        
+                }
+
+                if (addThis)
+                    peersSelected.push(peerToAdd)
+            }
+
+            n--
+        }
+
+        while (peersSelected.length > 0) {
+            if (peersSelected[0] !== this.myAddress)
+                await this.send(peersSelected[0], data)
+
+            peersSelected.splice(0,1)
+        }
+
+        return true
+    }
+
+    /**
+     * Do port forwarding and avoid NAT.
+     * @param {number} p Port to forward to
+     */
+    forwardPort (p) {
+        this.socket.bind(p)
+
+        for (let tracker of this.trackerList)
+            this._sendEncrypted(this.peers[tracker], str( [`forwardPort`, p] ))
+    }
+
+    /**
+     * Add peer to known list
+     * @param {Peer} peer Peer to be added
+     * @returns {boolean} Did peer been added?
+     */
+    peerAdd (peer) {
+        let remoteAddress = `${peer.ip}:${peer.port}`
+
+        if (typeof this.peers[remoteAddress] === 'undefined') {
+            this.peers[remoteAddress] = peer
+            return true
+        }
+
+        return false
+    }
+
+    /**
      * Initialize connection for the target
      * @param {Peer} peer Peer to initialize connection
      * @returns {Promise<number>} How many tries used to connect to peer (__.MAX_trial means unsuccessful)
      */
-    initializeConnection (peer) {
+    peerConnect (peer) {
         return new Promise(resolve => {
             if (peer.connected())
                 return resolve(1)
@@ -747,9 +894,70 @@ const Receiver = class {
             let tracker = randTracker(this)
 
             peer.callback = trial => resolve(trial)
-            this.#sendEncrypted(tracker, str( [`announce`, `${peer.ip}:${peer.port}`] ))
-            // Have a look at this.handleTrackerMessage() -> 'sendpub' to find more clues.
+            this._sendEncrypted(tracker, str( [`announce`, `${peer.ip}:${peer.port}`] ))
+            // Have a look at this._handleMessageTracker() -> 'sendpub' to find more clues.
         })
+    }
+
+    /**
+     * Delete a peer from known list
+     * @param {Peer} peer Peer to delete
+     * @returns {Promise<void>}
+     */
+    async peerDelete (peer) {
+        let remoteAddress = `${peer.ip}:${peer.port}`
+
+        if (typeof peer.mediaStream !== 'undefined')
+            await peer.closeMediaStream()
+
+        if (typeof this.peers[remoteAddress] === 'object')
+            delete this.peers[remoteAddress]
+    }
+
+    /**
+     * Start polling on this peer
+     * @param {Peer} peer Peer to start polling
+     */
+    pollingStart (peer) {
+        if (peer.connected())
+            return false
+
+        this.pollingList.push(peer)
+        peer.keepAlive = true
+        return true
+    }
+
+    /**
+     * Stop polling on this peer
+     * @param {Peer} peer Peer to stop polling
+     */
+    pollingStop (peer) {
+        if (typeof peer === 'number') {
+            /** @type {Peer} */
+            let peerToDelete = this.pollingList[peer]
+
+            if (typeof peerToDelete === 'object') {
+                if (peerToDelete.connected()) {
+                    this.pollingList.splice(peer, 1)
+                    return true
+                }
+            }
+
+            return false
+        }
+
+        if (peer.connected()) {
+            peer.keepAlive = false
+
+            for (let i in this.pollingList) {
+                if (this.pollingList[i] === peer) {
+                    this.pollingList.splice(i, 1)
+                    return true
+                }
+            }
+        }
+
+        return false
     }
 
     /**
@@ -825,11 +1033,11 @@ const Receiver = class {
 
         let connectionTrialCounter = 1
 
-        this.addPeer(peer)
+        this.peerAdd(peer)
 
         if (!peer.connected()) {
             peer.quality = __.MAX_TRIAL
-            connectionTrialCounter = await this.initializeConnection(peer)
+            connectionTrialCounter = await this.peerConnect(peer)
 
             if (__.MAX_TRIAL < connectionTrialCounter)
                 return connectionTrialCounter
@@ -837,27 +1045,10 @@ const Receiver = class {
 
         Debugger.log(`Send packet to ${peer.ip}:${peer.port}`)
 
-        if (Try(() => this.#sendEncrypted(peer, data)))
+        if (Try(() => this._sendEncrypted(peer, data)))
             return 0
 
         return connectionTrialCounter
-    }
-
-        /**
-     * Encrypt a string and send to specific peer
-     * @param {Peer} peer Peer to send the message
-     * @param {Buffer|string} message message to send
-     */
-    #sendEncrypted (peer, message) {
-        message = peer.key.encrypt(message)
-        this.socket.send(
-            message,
-            0,
-            message.length,
-            peer.port, 
-            peer.ip,
-            showError
-        )
     }
 
     /**
@@ -889,224 +1080,34 @@ const Receiver = class {
         peer.mediaStreamQueue.push(dummyQueue)
         await queueAwait()
 
-        await this.#sendMedia(peer, info)
+        await this._sendMedia(peer, info)
 
         peer.mediaStreamQueue.splice(0,1)
         return
     }
 
     /**
-     * Send media to target peer
-     * @param {Peer} peer Peer to send file to
-     * @param {{
-     *   owner:string,
-     *   index:number|string,
-     *   media:number
-     * }} info Media Information
-     * @returns {Promise<Number>}
+     * Handshake to a tracker
+     * @param {Tracker} tracker Tracker to be initialized
      */
-    async #sendMedia (peer, info) {
-        if (typeof info !== 'object')
-            return Debugger.error(`Parameter 'info' is invalid.`)
+    trackerConnect (tracker) {
+        let myPub = tracker.myPub
+        let trialCount = __.MAX_TRIAL
 
-        if (typeof info.owner !== 'string' ||
-            typeof info.index !== 'number' ||
-            typeof info.index !== 'string' ||
-            typeof info.media !== 'number' )
-            return Debugger.error(`Parameter 'info' contains invalid varaible types.`)
+        let tryToConnect = setInterval(() => {
+            if (tracker.connected || trialCount < 0)
+                return clearInterval(tryToConnect)
 
-        let fileLocation = `./data/${info.owner}.${info.index}`
-        /** @type {FileSystem.Stats} */
-        let fileStats
-
-        switch (info.media) {
-            case 'avatar':
-            case 'cover':
-                fileLocation += '.png'
-                break
-            
-            default:
-                fileLocation += `.${info.media}`
-        }
-
-        if (await TryAsync(async () => FileSystemPromises.access(fileLocation)))
-            return Debugger.warn(`MediaStream: file "${fileLocation}" is not found.`)
-
-        if (await TryAsync(async () => fileStats = FileSystemPromises.stat(fileLocation)))
-            return Debugger.warn(`MediaStream: file "${fileLocation}" is not ready.`)
-
-        if (fileStats.size > __.MAX_PAYLOAD || fileStats.size > 65536)
-            return Debugger.warn(`MediaStream: file "${fileLocation}" is too large`)
-
-        let fileStream = FileSystem.createReadStream(fileLocation)
-        let fileStreamIndex0 = 0
-        let fileStreamIndex1 = 0
-        let fileStreamByte = Buffer.from([])
-        let fileStreamStatus
-        /** @type {NodeJS.Timeout} */
-        let fileStreamTimeout
-        let fileStreamResolver = resolve => {
-            clearTimeout(fileStreamTimeout)
-            fileStreamTimeout = undefined
-            resolve(fileStreamStatus)
-        }
-        let fileStreamAwaiter = time => {
-            fileStreamTimeout = setTimeout(() => {
-                fileStreamStatus = __.MEDIA_STREAM_TIME_OUT
-                fileStreamResolver()
-            }, time)
-
-            return new Promise(fileStreamResolver)
-        }
-        let fileStreamResendCount = 0
-        /** @type {Buffer} */
-        let fileStreamMissedPacket
-
-        peer.mediaStreamCb = message => {
-            if (fileStreamStatus === __.MEDIA_STREAM_DECLINED)
-                return
-
-            fileStreamStatus = message
-            fileStreamResolver()
-        }
-
-        Debugger.log(`MediaStream: sending request to ${peer.ip}:${peer.port}`)
-        this.#sendEncrypted(peer, str([
-            'media',
-            info.owner,
-            info.index,
-            typeof info.media === 'number' ? info.media : 0,
-            Math.ceil(fileStats.size / 1024)
-        ]))
-
-        if (await fileStreamAwaiter(8000) !== __.MEDIA_STREAM_READY)
-            return Debugger.warn(`MediaStream: ${peer.ip}:${peer.port} seems not right (${fileStreamStatus})`)
-
-        while (true) {
-            if (fileStreamStatus === __.MEDIA_STREAM_DECLINED)
-                // peer declined the packet
-                return Debugger.warn(`MediaStream: ${peer.ip}:${peer.port} declined the packet.`)
-
-            if (fileStreamResendCount > __.MAX_TRIAL) {
-                this.#sendEncrypted(peer, Buffer.from([255,255]))
-                return Debugger.warn(`MediaStream: ${peer.ip}:${peer.port} timed out.`)
-            }
-
-            if (typeof fileStreamMissedPacket === 'undefined')
-                fileStreamByte = fileStream.read(__.MTU)
-            else {
-                // If peer missed the package, send the old one
-                fileStreamByte = fileStreamMissedPacket
-                fileStreamMissedPacket = undefined
-            }
-            
-            if (!fileStreamByte) // FALSY
-                break
-
-            Debugger.log(`MediaStream: write ${fileStreamIndex0 * fileStreamIndex1} to ${peer.ip}:${peer.port}`)
-            this.#sendEncrypted(peer, Buffer.concat([
-                    Buffer.from([
-                        fileStreamIndex0,
-                        fileStreamIndex1
-                    ]),
-                    fileStreamByte
-                ]))
-
-            let waitForAck = await fileStreamAwaiter(10000)
-
-            if (waitForAck === __.MEDIA_STREAM_ACK) {
-                fileStreamResendCount = 0
-
-                if (fileStreamIndex1 < 255)
-                    fileStreamIndex1++
-                else {
-                    fileStreamIndex1 = 0
-
-                    if (fileStreamIndex0 < 255)
-                        fileStreamIndex0++
-                    else
-                        break
-                }
-            } else if (waitForAck === __.MEDIA_STREAM_TIME_OUT) {
-                fileStreamMissedPacket = fileStreamByte
-                fileStreamResendCount++
-                continue
-            }
-        }
-
-        fileStream.close()
-        
-        while (true) {
-            // wait for peer to accept the packet
-            if (fileStreamResendCount > __.MAX_TRIAL)
-                return Debugger.warn(`MediaStream: completed but no responses from ${peer.ip}:${peer.port}`)
-            else
-                fileStreamResendCount++
-
-            Debugger.log(`MediaStream: waiting ${peer.ip}:${peer.port} to accept the media...`)
-            this.#sendEncrypted(
-                peer,
-                Buffer.concat([
-                    Buffer.from([255, 255]),
-                    Crypt.rand(128 + Math.floor(Math.random() * 128))
-                ])
+            trialCount--
+            this.socket.send(
+                myPub,
+                0,
+                myPub.length,
+                tracker.port,
+                tracker.ip,
+                showError
             )
-
-            if (await fileStreamAwaiter(1000) === __.MEDIA_STREAM_TIME_OUT)
-                continue
-            else
-                break
-        }
-
-        Debugger.log(`MediaStream: ${peer.ip}:${peer.port} completed!`)
-        peer.mediaStreamCb = undefined
-        return fileStreamStatus
-    }
-
-    /**
-     * Start polling on this peer
-     * @param {Peer} peer Peer to start polling
-     */
-    startPolling (peer) {
-        if (peer.connected())
-            return false
-
-        this.pollingList.push(peer)
-        peer.keepAlive = true
-        return true
-    }
-
-    /**
-     * Stop polling on this peer
-     * @param {Peer} peer Peer to stop polling
-     */
-    stopPolling (peer) {
-        if (typeof peer === 'number') {
-            /** @type {Peer} */
-            let peerToDelete = this.pollingList[peer]
-
-            if (typeof peerToDelete === 'object') {
-                if (peerToDelete.connected()) {
-                    this.pollingList.splice(peer, 1)
-                    return true
-                }
-            }
-
-            return false
-        }
-
-        if (peer.connected()) {
-            peer.keepAlive = false
-
-            for (let i in this.pollingList) {
-                if (this.pollingList[i] === peer) {
-                    this.pollingList.splice(i, 1)
-                    return true
-                }
-            }
-        }
-
-        return false
+        }, 1000)
     }
 
     /**
@@ -1119,7 +1120,7 @@ const Receiver = class {
 
         this.callback = callback
         this.socket.on('error', showError)
-        this.socket.on('message', (msg, remote) => this.handleSocketMessage(msg, remote, 0))
+        this.socket.on('message', (msg, remote) => this._handleMessage(msg, remote, 0))
 
         // handshake to trackers
         if (Try(() => {
@@ -1155,7 +1156,7 @@ const Receiver = class {
             let peer = this.peers[tracker]
 
             Debugger.log(`Saying hello to tracker ${peer.ip}:${peer.port}`)
-            this.helloTracker(peer)
+            this.trackerConnect(peer)
         }
 
         Debugger.log(`Receiver will be known as '${this.myPub}'.`)
@@ -1171,10 +1172,10 @@ const Receiver = class {
 
                 if (currentTime - peer.lastAccess > __.LAST_ACCESS_LIMIT) {
                     Debugger.warn(`${peer.ip}:${peer.port} is no longer available.`)
-                    this.stopPolling(peer)
+                    this.pollingStop(peer)
 
                     if (peer.isSender)
-                        this.deletePeer(peer)
+                        this.peerDelete(peer)
                     continue
                 }
 
