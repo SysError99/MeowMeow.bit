@@ -231,7 +231,7 @@ udp.on('message', (msg, remote) => {
                 let seedersList = []
 
                 for (let s in seeders) {
-                    if (s > 7)
+                    if (seedersList.length > 7)
                         break
 
                     let pick = true
@@ -260,6 +260,7 @@ udp.on('message', (msg, remote) => {
         case 'seed':
             /**
              * Tell tracker that I'm seeding this account
+             * [1]:string   account public key
              */
             {
                 if (typeof message[1] !== 'string')
