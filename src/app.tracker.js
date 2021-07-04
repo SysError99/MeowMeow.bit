@@ -6,12 +6,14 @@ const Datagram = require('dgram')
 const __ = require('./const')
 const Return = require('./fn.try.return')
 const Try = require('./fn.try.catch')
+const TryAsync = require('./fn.try.catch.async')
 const BaseN = require('./fn.base.n')
 const Crypt = require('./fn.crypt')
 const Locale = require('./locale/locale')
 const Storage = require('./storage')(new Locale())
 const {json, str} = require('./fn.json')
 
+const Acc = require('./data/acc')
 const ECDHKey = require('./data/key.ecdh')
 const Peer = require('./data/peer.tracker')
 
@@ -106,7 +108,7 @@ setInterval(() => currentTime = new Date().getTime(), 1000)
 udp.bind(12345)
 udp.on('listening', () => console.log(`Server is running on port `+udp.address().port))
 udp.on('error', showError)
-udp.on('message', (msg, remote) => {
+udp.on('message', async (msg, remote) => {
     let remoteAddress = `${remote.address}:${remote.port}`
     /** @type {Buffer|message} */
     let message
@@ -231,7 +233,7 @@ udp.on('message', (msg, remote) => {
                 let seedersList = []
 
                 for (let s in seeders) {
-                    if (seedersList.length > 7)
+                    if (s > 7)
                         break
 
                     let pick = true
@@ -260,7 +262,7 @@ udp.on('message', (msg, remote) => {
         case 'seed':
             /**
              * Tell tracker that I'm seeding this account
-             * [1]:string   account public key
+             * [1]:string   account public
              */
             {
                 if (typeof message[1] !== 'string')
@@ -312,6 +314,65 @@ udp.on('message', (msg, remote) => {
 
                 sendEncrypted(peer, str( ['unseeding', message[1]] ))
                 return
+            }
+
+        case 'upload':
+            /**
+             * Upload account to the tracker
+             * [1]:string   Account
+             * [2]:string   profile image blob
+             * [3]:string   cover image blob
+             */
+            {
+                if (typeof message[1] !== 'string' ||
+                    typeof message[2] !== 'string' ||
+                    typeof message[3] !== 'string' )
+                    return
+
+                let acc = new Acc(message[1])
+
+                if (!acc.valid)
+                    return
+
+                /** @type {Buffer} */
+                let cover = Return(() => BaseN.decode(message[2], '92'))
+
+                if (!cover)
+                    return
+
+                /** @type {Buffer} */
+                let profile = Return(() => BaseN.decode(message[3]), '92')
+
+                if (!profile)
+                    return
+
+                await Storage.promise.write('acc.' + acc.key.public, acc.exportPub())
+                await Storage.promise.writeBin('cover.' + acc.key.public, cover)
+                await Storage.promise.writeBin('profile.' + acc.key.public, profile)
+                sendEncrypted(peer, str( ['uploaded', message[1]] ))
+                return
+            }
+
+        case 'download':
+            /**
+             * Download account information from tracker
+             * [1]:string   account public key
+             */
+            {
+                if (typeof message[1] !== 'string')
+                    return
+
+                /** @type {string} */
+                let accPub = message[1]
+                    
+                if (accPub.length > 255)
+                    return
+
+                if (!Storage.access('acc.' + message[1]))
+                    return sendEncrypted(peer, str( ['download-unknown', accPub] ))
+
+                let acc = await Storage.promise.readBin('acc.' + accPub)
+
             }
     }
 })

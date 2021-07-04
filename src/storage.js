@@ -55,8 +55,8 @@ const promise = {
         ReturnAsync(async () => json(await FileSystem.promises.readFile(P.a + location + P.b, {encoding:'utf-8'}))),
     /**
      * Read a file as binary from storage
-     * @param {string} location 
-     * @returns {Promise<Buffer>}
+     * @param {string} location File location
+     * @returns {Promise<Buffer>} Buffer of read data
      */
     readBin: async location =>
         ReturnAsync(async () => await FileSystem.promises.readFile(P.a + location, {encoding: 'binary'})),
@@ -64,18 +64,18 @@ const promise = {
      * Write an object to storage
      * @param {string} location File location
      * @param {Object} data JSON data object
-     * @returns {Promise<boolean>}
+     * @returns {Promise<boolean>} If this is successfully been written.
      */
     write: async (location, data) =>
-        TryAsync(async () => await FileSystem.promises.writeFile(P.a + location + P.b, convert(data), {encoding:'utf-8'})),
+        !TryAsync(async () => await FileSystem.promises.writeFile(P.a + location + P.b, convert(data), {encoding:'utf-8'})),
     /**
      * Write binary data to storage
-     * @param {string} location 
-     * @param {Buffer} data 
-     * @returns 
+     * @param {string} location File location
+     * @param {Buffer} data Buffer to be written in
+     * @returns {Promise<boolean>} If this is successfully been written.
      */
     writeBin: async (location, data) =>
-        TryAsync(async () => await FileSystem.promises.writeFile(P.a + location, data, {encoding: 'binary'})),
+        !TryAsync(async () => await FileSystem.promises.writeFile(P.a + location, data, {encoding: 'binary'})),
 }
 
 /** Binary file mode */
