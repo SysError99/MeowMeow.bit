@@ -56,7 +56,7 @@ const promise = {
     /**
      * Read a file as binary from storage
      * @param {string} location 
-     * @returns 
+     * @returns {Promise<Buffer>}
      */
     readBin: async location =>
         ReturnAsync(async () => await FileSystem.promises.readFile(P.a + location, {encoding: 'binary'})),
