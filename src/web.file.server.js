@@ -37,7 +37,7 @@ const WebFileServer = class {
                 break
         }
 
-        if (await TryAsync(async () => FileSystemPromises.access(fileLocation)))
+        if (await TryAsync(() => FileSystemPromises.access(fileLocation)))
             return this.web.ev404.callback(res)
 
         /** @type {string} */

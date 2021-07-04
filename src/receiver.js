@@ -304,7 +304,7 @@ const Receiver = class {
             //write packet
             let packetNumber = message[0] * message[1]
 
-            if (message.length <= 2 || await TryAsync(async () => FileSystemPromises.write(peer.mediaStream, message, 2, message.length - 2, packetNumber * __.MTU))) {
+            if (message.length <= 2 || await TryAsync(() => FileSystemPromises.write(peer.mediaStream, message, 2, message.length - 2, packetNumber * __.MTU))) {
                 Debugger.error(`Media error: ${peer.ip}:${peer.port}!`)
                 this._sendEncrypted(peer, str( [__.MEDIA_STREAM_PEER_ERR] ))
                 return
@@ -618,10 +618,10 @@ const Receiver = class {
                 fileLocation += `.${info.media}`
         }
 
-        if (await TryAsync(async () => FileSystemPromises.access(fileLocation)))
+        if (await TryAsync(() => FileSystemPromises.access(fileLocation)))
             return Debugger.warn(`MediaStream: file "${fileLocation}" is not found.`)
 
-        if (await TryAsync(async () => fileStats = FileSystemPromises.stat(fileLocation)))
+        if (await TryAsync(() => fileStats = FileSystemPromises.stat(fileLocation)))
             return Debugger.warn(`MediaStream: file "${fileLocation}" is not ready.`)
 
         if (fileStats.size > __.MAX_PAYLOAD || fileStats.size > 65536)
