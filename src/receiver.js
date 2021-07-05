@@ -539,6 +539,43 @@ const Receiver = class {
 
                 Debugger.log(`Unseeding ${message[1]}`)
                 return
+
+            case 'upload-key-invalid':
+                /**
+                 * Tracker told that you sent wrong key type
+                 * [1]:string   key that is invalid
+                 */
+                if (typeof message[1] !== 'string')
+                    return
+
+                Debugger.error(`Upload verification key ${message[1]} is invalid.`)
+                return
+            
+            case 'upload-key-expired':
+                /**
+                 * Tracker reported that this key is expired
+                 * [1]:string   key that is expired
+                 */
+                if (typeof message[1] !== 'string')
+                    return
+
+                Debugger.error(`Upload key ${message[1]} is expired.`)
+                return
+
+            case 'upload-account-invalid':
+            case 'upload-cover-invalid':
+            case 'upload-profile-invalid':
+                /**
+                 * Tracker reported that the account has wrong signature
+                 * [1]:string   account public key
+                 */
+
+                if (typeof message[1] !== 'string')
+                    return
+
+                Debugger.error(`Upload account ${message[1]} has invalid resources (${message[0]})`)
+                return
+                //TODO: add callback on the browser side for upload notificaitons from tracker.
         }
     }
 
