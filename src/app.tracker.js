@@ -6,11 +6,11 @@ const Datagram = require('dgram')
 const __ = require('./const')
 const Return = require('./fn.try.return')
 const Try = require('./fn.try.catch')
-const TryAsync = require('./fn.try.catch.async')
 const BaseN = require('./fn.base.n')
 const Crypt = require('./fn.crypt')
 const Locale = require('./locale/locale')
 const Storage = require('./storage')(new Locale())
+const Web = require('./fn.web').web
 const {json, str} = require('./fn.json')
 
 const Acc = require('./data/acc')
@@ -19,6 +19,7 @@ const Peer = require('./data/peer.tracker')
 
 const knownPeers = {}
 const accountSeeders = {}
+const verificationKeys = {}
 
 /** @type {ECDHKey} ECDH key being used on the tracker */
 const myKey = Return(() => {
@@ -67,6 +68,23 @@ const deletePeer = peer => {
 }
 
 /**
+ * Get verification key
+ * @returns {string}
+ */
+const getVerificationKey = () => {
+    /** @type {string} */
+    let verificationKey
+
+    do {
+        verificationKey = BaseN.encode(Crypt.rand(8))
+    } while (typeof verificationKeys[verificationKey] === 'number')
+
+    verificationKeys[verificationKey] = new Date().getMilliseconds()
+
+    return verificationKey
+}
+
+/**
  * Shows error via log
  * @param {Error} err Error object
  */
@@ -76,6 +94,9 @@ const showError = err => err ? console.error(err) : 0
  * Datagram object
  */
 const udp = Datagram.createSocket('udp4')
+
+/** Web server */
+const web = new Web({port: 80})
 
 /**
  * Send random bytes to target
@@ -316,35 +337,71 @@ udp.on('message', async (msg, remote) => {
                 return
             }
 
+        case 'account':
+            /**
+             * Download account information from tracker
+             * [1]:string   account public key
+             */
+            {
+                if (typeof message[1] !== 'string')
+                    return sendEncrypted(peer, ['account-invalid'])
+
+                /** @type {string} */
+                let accPub = message[1]
+                    
+                if (accPub.length > 255)
+                    return sendEncrypted(peer, ['account-pub-invalid'])
+
+                if (!Storage.access('acc.' + message[1]))
+                    return sendEncrypted(peer, str( ['account-unknown', accPub] ))
+
+                let acc = (await Storage.promise.readBin('acc.' + accPub)).toString('utf-8')
+
+                sendEncrypted(peer, ['account', acc])
+                return
+            }
+
         case 'upload':
             /**
              * Upload account to the tracker
              * [1]:string   Account
              * [2]:string   profile image blob
              * [3]:string   cover image blob
+             * [4]:string   verification key
              */
             {
                 if (typeof message[1] !== 'string' ||
                     typeof message[2] !== 'string' ||
-                    typeof message[3] !== 'string' )
+                    typeof message[3] !== 'string' ||
+                    typeof message[4] !== 'string')
                     return
+
+                if (typeof verificationKeys[message[4]] !== 'number')
+                    return sendEncrypted(peer, ['upload-key-invalid', message[4]])
+
+                let verificationKeyDate = new Date(verificationKeys[message[4]])
+
+                delete verificationKeys[message[4]]
+
+                if (new Date() - verificationKeyDate > 86400000)
+                    return sendEncrypted(peer, ['upload-key-expired', message[4]])
 
                 let acc = new Acc(message[1])
 
                 if (!acc.valid)
-                    return
+                    return sendEncrypted(peer, ['upload-account-invalid', acc.key.public])
 
                 /** @type {Buffer} */
                 let cover = Return(() => BaseN.decode(message[2], '92'))
 
                 if (!cover)
-                    return
+                    return sendEncrypted(peer, ['upload-cover-invalid', acc.key.public])
 
                 /** @type {Buffer} */
                 let profile = Return(() => BaseN.decode(message[3]), '92')
 
                 if (!profile)
-                    return
+                    return sendEncrypted(peer, ['upload-profile-invalid', acc.key.public])
 
                 await Storage.promise.write('acc.' + acc.key.public, acc.exportPub())
                 await Storage.promise.writeBin('cover.' + acc.key.public, cover)
@@ -352,29 +409,11 @@ udp.on('message', async (msg, remote) => {
                 sendEncrypted(peer, str( ['uploaded', message[1]] ))
                 return
             }
-
-        case 'download':
-            /**
-             * Download account information from tracker
-             * [1]:string   account public key
-             */
-            {
-                if (typeof message[1] !== 'string')
-                    return
-
-                /** @type {string} */
-                let accPub = message[1]
-                    
-                if (accPub.length > 255)
-                    return
-
-                if (!Storage.access('acc.' + message[1]))
-                    return sendEncrypted(peer, str( ['download-unknown', accPub] ))
-
-                let acc = await Storage.promise.readBin('acc.' + accPub)
-
-            }
     }
 })
 
 console.log(`Tracker is now on! \n\nPublic key: <${myKey.getPub().toString('base64')}>`)
+
+web.get('/get-key', (req, res) => res.send(getVerificationKey())) // This is just an example, and not designed for production!
+
+module.exports = { getVerificationKey: getVerificationKey }
